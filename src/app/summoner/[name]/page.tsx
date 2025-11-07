@@ -81,6 +81,7 @@ export default function SummonerPage({
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
 
   // Data Dragon version (update periodically)
   const DD_VERSION = "15.22.1";
@@ -365,6 +366,11 @@ export default function SummonerPage({
     fetchSummonerData();
     fetchMatchHistory();
   }, [puuid, region]);
+
+  // Set mounted state for client-side only rendering
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Infinite scroll handler
   useEffect(() => {
@@ -723,8 +729,10 @@ export default function SummonerPage({
                               {formatDuration(match.info.gameDuration)}
                             </span>
                             <span>•</span>
-                            <span>
-                              {formatTimeAgo(match.info.gameCreation)}
+                            <span suppressHydrationWarning>
+                              {isMounted
+                                ? formatTimeAgo(match.info.gameCreation)
+                                : "..."}
                             </span>
                           </div>
                         </div>
