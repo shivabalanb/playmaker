@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { MatchData } from "./types";
 import {
@@ -16,6 +17,7 @@ interface MatchCardProps {
   match: MatchData;
   puuid: string;
   isMounted: boolean;
+  region?: string;
   getChampionImageUrl: (championName: string) => string;
   getItemImageUrl: (itemId: number) => string;
   getQueueType: (queueId: number) => string;
@@ -38,6 +40,7 @@ export function MatchCard({
   match,
   puuid,
   isMounted,
+  region = "americas",
   getChampionImageUrl,
   getItemImageUrl,
   getQueueType,
@@ -453,9 +456,12 @@ export function MatchCard({
 
         {/* Review Button */}
         <div className="flex items-center w-[80px] h-16 flex-shrink-0">
-          <button className="cursor-pointer px-3 py-1.5 bg-black hover:bg-gray-900 text-white text-xs rounded transition-colors whitespace-nowrap">
+          <Link
+            href={`/match/${match.metadata.matchId}?region=${region}`}
+            className="cursor-pointer px-3 py-1.5 bg-black hover:bg-gray-900 text-white text-xs rounded transition-colors whitespace-nowrap text-center"
+          >
             Review
-          </button>
+          </Link>
         </div>
       </div>
     </div>

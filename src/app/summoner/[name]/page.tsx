@@ -475,6 +475,7 @@ export default function SummonerPage({
                   match={match}
                   puuid={puuid!}
                   isMounted={isMounted}
+                  region={region}
                   getChampionImageUrl={getChampionImageUrl}
                   getItemImageUrl={getItemImageUrl}
                   getQueueType={getQueueType}

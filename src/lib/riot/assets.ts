@@ -75,3 +75,32 @@ export function getSummonerSpellImageUrl(spellImage: string): string {
 export function getRuneImageUrl(runeIcon: string): string {
   return `https://ddragon.leagueoflegends.com/cdn/img/${runeIcon}`;
 }
+
+/**
+ * Get objective icon URL from Community Dragon
+ * @param objectiveType - Type of objective (kills, dragons, barons, towers, inhibitors, riftHeralds)
+ * @returns URL to objective icon image
+ */
+export function getObjectiveIconUrl(objectiveType: string): string {
+  // Community Dragon paths for objective icons - using game UI assets
+  const objectiveMap: Record<string, string> = {
+    kills: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/champion-icon-kill.png",
+    dragons: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/champion-icon-dragon.png",
+    barons: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/champion-icon-baron.png",
+    towers: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/champion-icon-turret.png",
+    inhibitors: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/champion-icon-inhibitor.png",
+    riftHeralds: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/champion-icon-herald.png",
+  };
+  
+  // Fallback to alternative paths if the above don't work
+  const fallbackMap: Record<string, string> = {
+    kills: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/tft/championsplashes/icon-kill.png",
+    dragons: "https://ddragon.leagueoflegends.com/cdn/img/champion/Dragon.png",
+    barons: "https://ddragon.leagueoflegends.com/cdn/img/champion/Baron.png",
+    towers: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/tft/championsplashes/icon-turret.png",
+    inhibitors: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/tft/championsplashes/icon-inhibitor.png",
+    riftHeralds: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/tft/championsplashes/icon-herald.png",
+  };
+  
+  return objectiveMap[objectiveType] || fallbackMap[objectiveType] || "";
+}
