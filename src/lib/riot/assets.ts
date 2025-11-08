@@ -38,15 +38,15 @@ export function getRankEmblemUrl(tier: string): string {
 }
 
 /**
- * Get champion loading screen (splash art) URL from Community Dragon
- * Always uses base skin (skin 0) and centered version
- * @param championName - Champion name (e.g., "Ahri", "Yasuo")
- * @returns URL to champion splash art (centered, base skin)
+ * Get champion loading screen (splash art) URL from Data Dragon CDN
+ * Always uses base skin (skin 0)
+ * @param championName - Champion name (e.g., "Ahri", "Yasuo", "Leblanc")
+ * @returns URL to champion splash art (base skin)
  */
 export function getChampionSplashUrl(championName: string): string {
-  // Champion name must be lowercase in the URL path
-  const championNameLower = championName.toLowerCase();
-  return `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/characters/${championNameLower}/skins/base/images/${championNameLower}_splash_centered_0.jpg`;
+  // Data Dragon uses the champion name as-is (case-sensitive, but most are capitalized)
+  // Format: https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{championName}_0.jpg
+  return `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${championName}_0.jpg`;
 }
 
 /**
@@ -56,4 +56,22 @@ export function getChampionSplashUrl(championName: string): string {
  */
 export function getAbilityIconUrl(abilityImage: string): string {
   return `https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${abilityImage}`;
+}
+
+/**
+ * Get summoner spell image URL from Data Dragon CDN
+ * @param spellImage - Summoner spell image filename (e.g., "SummonerFlash.png")
+ * @returns URL to summoner spell image
+ */
+export function getSummonerSpellImageUrl(spellImage: string): string {
+  return `https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spellImage}`;
+}
+
+/**
+ * Get rune image URL from Data Dragon CDN
+ * @param runeIcon - Rune icon path (e.g., "perk-images/Styles/Domination/Electrocute/Electrocute.png")
+ * @returns URL to rune image
+ */
+export function getRuneImageUrl(runeIcon: string): string {
+  return `https://ddragon.leagueoflegends.com/cdn/img/${runeIcon}`;
 }

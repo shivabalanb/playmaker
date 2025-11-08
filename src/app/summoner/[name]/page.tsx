@@ -18,6 +18,7 @@ import {
   getRankEmblemUrl,
   getQueueType,
   isRankedQueue,
+  isSwarmQueue,
   getPlatformRegion,
   reorderItemsWithBootsFirst,
   formatDuration,
@@ -303,12 +304,14 @@ export default function SummonerPage({
           const batchResults = await Promise.all(batchPromises);
 
           // Filter and add valid matches to our collection
+          // Exclude Swarm matches and invalid matches
           const validBatchMatches = batchResults.filter(
             (match): match is MatchData =>
               match !== null &&
               match.info !== undefined &&
               match.info.participants !== undefined &&
-              Array.isArray(match.info.participants)
+              Array.isArray(match.info.participants) &&
+              !isSwarmQueue(match.info.queueId)
           );
 
           allMatches.push(...validBatchMatches);

@@ -1,5 +1,16 @@
+"use client";
+
 import Image from "next/image";
+import { useEffect, useState, useMemo } from "react";
 import { MatchData } from "./types";
+import {
+  getSummonerSpellImageUrl,
+  getRuneImageUrl,
+  getRoleIconUrl,
+  DD_VERSION,
+} from "@/lib";
+import { calculatePlayerRank } from "@/lib/utils/performanceScore";
+import { PerformanceScore } from "./PerformanceScore";
 
 interface MatchCardProps {
   match: MatchData;
@@ -13,6 +24,15 @@ interface MatchCardProps {
   formatTimeAgo: (timestamp: number) => string;
   reorderItemsWithBootsFirst: (items: number[]) => number[];
 }
+
+// Cache for summoner spells data
+let summonerSpellCache: Map<number, { image: { full: string } }> | null = null;
+
+// Cache for runes data (rune ID -> rune data)
+let runeCache: Map<number, { icon: string }> | null = null;
+
+// Cache for rune styles data (style ID -> style data)
+let runeStyleCache: Map<number, { icon: string }> | null = null;
 
 export function MatchCard({
   match,
@@ -29,9 +49,129 @@ export function MatchCard({
   const playerData = match.info.participants.find((p) => p.puuid === puuid);
   if (!playerData) return null;
 
+  const [summonerSpellsLoaded, setSummonerSpellsLoaded] = useState(false);
+  const [runesLoaded, setRunesLoaded] = useState(false);
+
+  // Fetch and cache summoner spells data
+  useEffect(() => {
+    if (summonerSpellCache) {
+      setSummonerSpellsLoaded(true);
+      return;
+    }
+
+    fetch(
+      `https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/summoner.json`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const map = new Map<number, { image: { full: string } }>();
+        for (const [spellKey, spellData] of Object.entries(data.data)) {
+          const spellId = parseInt((spellData as { key: string }).key);
+          map.set(spellId, spellData as { image: { full: string } });
+        }
+        summonerSpellCache = map;
+        setSummonerSpellsLoaded(true);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch summoner spells:", err);
+        setSummonerSpellsLoaded(true); // Set to true anyway to avoid infinite loading
+      });
+  }, []);
+
+  // Fetch and cache runes data
+  useEffect(() => {
+    if (runeCache && runeStyleCache) {
+      setRunesLoaded(true);
+      return;
+    }
+
+    fetch(
+      `https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/runesReforged.json`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const runeMap = new Map<number, { icon: string }>();
+        const styleMap = new Map<number, { icon: string }>();
+        // Data Dragon returns an array of rune trees (styles)
+        for (const style of data) {
+          // Cache the style itself (for secondary tree icon)
+          styleMap.set(style.id, { icon: style.icon });
+          // Add all runes in each slot
+          if (style.slots) {
+            for (const slot of style.slots) {
+              for (const rune of slot.runes) {
+                runeMap.set(rune.id, { icon: rune.icon });
+              }
+            }
+          }
+        }
+        runeCache = runeMap;
+        runeStyleCache = styleMap;
+        setRunesLoaded(true);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch runes:", err);
+        setRunesLoaded(true); // Set to true anyway to avoid infinite loading
+      });
+  }, []);
+
   const isVictory = playerData.win;
   const kda = `${playerData.kills}/${playerData.deaths}/${playerData.assists}`;
   const cs = playerData.totalMinionsKilled + playerData.neutralMinionsKilled;
+
+  // Calculate performance score and rank
+  const performanceData = useMemo(() => {
+    try {
+      return calculatePlayerRank(
+        puuid,
+        match.info.participants,
+        match.info.gameDuration
+      );
+    } catch (error) {
+      console.error("Error calculating performance score:", error);
+      return { score: 0, rank: 0 };
+    }
+  }, [puuid, match.info.participants, match.info.gameDuration]);
+
+  // Get summoner spell image URLs
+  const summoner1Spell = summonerSpellCache?.get(playerData.summoner1Id);
+  const summoner2Spell = summonerSpellCache?.get(playerData.summoner2Id);
+  const summoner1Image = summoner1Spell
+    ? getSummonerSpellImageUrl(summoner1Spell.image.full)
+    : null;
+  const summoner2Image = summoner2Spell
+    ? getSummonerSpellImageUrl(summoner2Spell.image.full)
+    : null;
+
+  // Extract primary keystone and secondary style
+  let primaryKeystoneImage: string | null = null;
+  let secondaryStyleImage: string | null = null;
+
+  if (playerData.perks?.styles && playerData.perks.styles.length > 0) {
+    // Primary keystone (first rune from first style)
+    const primaryStyle = playerData.perks.styles[0];
+    if (primaryStyle.selections && primaryStyle.selections.length > 0) {
+      const keystoneId = primaryStyle.selections[0].perk;
+      if (keystoneId) {
+        const keystone = runeCache?.get(keystoneId);
+        if (keystone) {
+          primaryKeystoneImage = getRuneImageUrl(keystone.icon);
+        }
+      }
+    }
+
+    // Secondary style icon (the tree itself, not the runes)
+    if (playerData.perks.styles.length > 1) {
+      const secondaryStyle = playerData.perks.styles[1];
+      const secondaryStyleId = secondaryStyle.style;
+      if (secondaryStyleId) {
+        const style = runeStyleCache?.get(secondaryStyleId);
+        if (style) {
+          secondaryStyleImage = getRuneImageUrl(style.icon);
+        }
+      }
+    }
+  }
 
   // Separate regular items (0-5) from trinket (6)
   const rawItems = [
@@ -50,54 +190,118 @@ export function MatchCard({
 
   return (
     <div
-      className={`bg-[#1e2a3a] border-l-4 ${
-        isVictory ? "border-green-500" : "border-red-500"
-      } rounded-lg p-4 hover:bg-[#22303f] transition-colors`}
+      className={`relative border-l-4 ${
+        isVictory ? "border-green-500" : "border-red-500 "
+      } rounded-lg p-4 transition-colors overflow-hidden `}
     >
-      <div className="flex items-center gap-6">
+      {/* Base background */}
+      <div className="absolute inset-0 bg-[#1e2a3a] -z-10" />
+      {/* Background pattern texture */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)`,
+          backgroundSize: '20px 20px',
+        }}
+      />
+      {/* Background with color theme - softer */}
+      <div
+        className={`absolute inset-0 ${
+          isVictory
+            ? "bg-gradient-to-r from-green-500/8 via-green-500/5 to-green-500/2"
+            : "bg-gradient-to-r from-red-500/8 via-red-500/5 to-red-500/2"
+        }`}
+      />
+      {/* Softening pattern for left side - more gradual */}
+      <div
+        className="absolute inset-0 opacity-40"
+        style={{
+          backgroundImage: `radial-gradient(ellipse 200% 100% at 0% 50%, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 30%, transparent 70%)`,
+        }}
+      />
+      {/* Content container */}
+      <div className="relative z-10 flex items-center gap-6 hover:opacity-90 transition-opacity">
         {/* Champion and Result */}
-        <div className="flex items-center gap-4 min-w-[280px]">
-          {/* Champion Icon */}
-          <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#3a4a5a] shrink-0">
-            <Image
-              src={getChampionImageUrl(playerData.championName)}
-              alt={playerData.championName}
-              width={48}
-              height={48}
-              className="object-cover"
-              unoptimized
-            />
+        <div className="flex items-center gap-4 w-[320px] h-16 flex-shrink-0">
+          {/* Champion Icon with Summoner Spells */}
+          <div className="flex items-center gap-2 shrink-0 h-full">
+            <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#3a4a5a]">
+              <Image
+                src={getChampionImageUrl(playerData.championName)}
+                alt={playerData.championName}
+                width={48}
+                height={48}
+                className="object-cover"
+                unoptimized
+              />
+              {/* Role Icon Overlay */}
+              {playerData.teamPosition && (
+                <div className="absolute bottom-0 left-0 w-5 h-5 rounded-sm overflow-hidden border border-[#1a1a1a] bg-[#1a1a1a]">
+                  <Image
+                    src={getRoleIconUrl(playerData.teamPosition)}
+                    alt={playerData.teamPosition}
+                    width={20}
+                    height={20}
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              )}
+            </div>
+            {/* Summoner Spells */}
+            <div className="flex flex-col gap-1 w-[20px] flex-shrink-0">
+              {summoner1Image ? (
+                <div className="relative w-5 h-5 rounded border border-[#3a4a5a] overflow-hidden">
+                  <Image
+                    src={summoner1Image}
+                    alt="Summoner Spell 1"
+                    width={20}
+                    height={20}
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="w-5 h-5" />
+              )}
+              {summoner2Image ? (
+                <div className="relative w-5 h-5 rounded border border-[#3a4a5a] overflow-hidden">
+                  <Image
+                    src={summoner2Image}
+                    alt="Summoner Spell 2"
+                    width={20}
+                    height={20}
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="w-5 h-5" />
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-col gap-0.5 flex-1">
-            <div className="flex items-center gap-3">
-              <span className="text-base font-semibold text-white">
+          <div className="flex flex-col gap-0.5 flex-1 h-full justify-center">
+            <div className="flex items-center gap-3 min-h-[20px]">
+              <span className="text-base font-semibold text-white w-[120px] truncate">
                 {playerData.championName}
               </span>
-              <span
-                className={`text-xs font-semibold px-2 py-0.5 rounded whitespace-nowrap ${
-                  isVictory
-                    ? "bg-green-500/20 text-green-400"
-                    : "bg-red-500/20 text-red-400"
-                }`}
-              >
-                {isVictory ? "VICTORY" : "DEFEAT"}
-              </span>
+              
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="flex items-center gap-2 text-xs text-gray-400 min-h-[16px] flex-wrap">
               <span
-                className={
+                className={`whitespace-nowrap ${
                   isRankedQueue(match.info.queueId)
                     ? "text-gray-300"
                     : "text-gray-500"
-                }
+                }`}
               >
                 {getQueueType(match.info.queueId)}
               </span>
-              <span>•</span>
-              <span>{formatDuration(match.info.gameDuration)}</span>
-              <span>•</span>
-              <span suppressHydrationWarning>
+              <span className="whitespace-nowrap">•</span>
+              <span className="whitespace-nowrap">{formatDuration(match.info.gameDuration)}</span>
+              <span className="whitespace-nowrap">•</span>
+              <span className="whitespace-nowrap" suppressHydrationWarning>
                 {isMounted ? formatTimeAgo(match.info.gameCreation) : "..."}
               </span>
             </div>
@@ -105,7 +309,7 @@ export function MatchCard({
         </div>
 
         {/* KDA */}
-        <div className="flex flex-col items-center min-w-[90px]">
+        <div className="flex flex-col items-center justify-center w-[90px] h-16 flex-shrink-0">
           <div className="text-lg font-bold text-white">{kda}</div>
           <div className="text-xs text-gray-400 whitespace-nowrap">
             {playerData.deaths > 0
@@ -118,8 +322,42 @@ export function MatchCard({
           </div>
         </div>
 
-        {/* Items */}
-        <div className="flex items-start gap-1.5 min-w-[110px]">
+        {/* Items and Runes */}
+        <div className="flex items-center gap-1.5 w-[180px] h-16 flex-shrink-0">
+          {/* Runes - Primary Keystone and Secondary Tree */}
+          <div className="flex flex-col gap-1 w-[28px] flex-shrink-0">
+            {/* Primary Keystone */}
+            {primaryKeystoneImage ? (
+              <div className="relative w-7 h-7 rounded border border-[#3a4a5a] overflow-hidden bg-[#0a0e14]">
+                <Image
+                  src={primaryKeystoneImage}
+                  alt="Keystone"
+                  width={28}
+                  height={28}
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            ) : (
+              <div className="w-7 h-7" />
+            )}
+            {/* Secondary Tree Icon */}
+            {secondaryStyleImage ? (
+              <div className="relative w-6 h-6 rounded border border-[#3a4a5a] overflow-hidden bg-[#0a0e14]">
+                <Image
+                  src={secondaryStyleImage}
+                  alt="Secondary Tree"
+                  width={24}
+                  height={24}
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            ) : (
+              <div className="w-6 h-6" />
+            )}
+          </div>
+
           {/* Regular Items (6 slots) */}
           <div className="flex flex-col gap-1">
             <div className="flex gap-1">
@@ -192,7 +430,7 @@ export function MatchCard({
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-4 text-xs text-gray-300 ml-auto">
+        <div className="flex items-center gap-4 text-xs text-gray-300 ml-auto h-16">
           <div className="text-center">
             <div className="font-semibold">{cs}</div>
             <div className="text-gray-500">CS</div>
@@ -203,12 +441,22 @@ export function MatchCard({
             </div>
             <div className="text-gray-500">Gold</div>
           </div>
+          {/* Performance Score */}
+          <div className="flex items-center">
+            <PerformanceScore
+              score={performanceData.score}
+              rank={performanceData.rank}
+              totalPlayers={match.info.participants.length}
+            />
+          </div>
         </div>
 
         {/* Review Button */}
-        <button className= "cursor-pointer px-3 py-1.5 bg-black hover:bg-gray-900 text-white text-xs rounded transition-colors whitespace-nowrap">
-          Review
-        </button>
+        <div className="flex items-center w-[80px] h-16 flex-shrink-0">
+          <button className="cursor-pointer px-3 py-1.5 bg-black hover:bg-gray-900 text-white text-xs rounded transition-colors whitespace-nowrap">
+            Review
+          </button>
+        </div>
       </div>
     </div>
   );

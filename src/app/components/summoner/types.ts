@@ -25,8 +25,31 @@ export interface MatchData {
       item6: number;
       summoner1Id: number;
       summoner2Id: number;
+      teamId: number;
+      teamPosition?: string;
+      visionScore?: number;
+      wardsPlaced?: number;
+      wardsKilled?: number;
+      detectorWardsPlaced?: number;
+      turretTakedowns?: number;
+      dragonKills?: number;
+      baronKills?: number;
+      damageDealtToObjectives?: number;
+      totalDamageDealtToChampions?: number;
+      totalTimeSpentDead?: number;
+      totalHealsOnTeammates?: number;
+      totalDamageShieldedOnTeammates?: number;
+      timeCCingOthers?: number;
+      challenges?: {
+        soloKills?: number;
+        multikills?: number;
+        effectiveHealAndShielding?: number;
+        killParticipation?: number;
+        teamDamagePercentage?: number;
+      };
       perks: {
         styles: Array<{
+          style?: number; // Style ID (e.g., 8000 for Precision, 8100 for Domination)
           selections: Array<{
             perk: number;
           }>;

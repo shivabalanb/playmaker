@@ -54,6 +54,16 @@ export const RANKED_QUEUES = {
 } as const;
 
 /**
+ * Swarm queue IDs
+ */
+export const SWARM_QUEUES = {
+  SWARM_1P: 1810,
+  SWARM_2P: 1820,
+  SWARM_3P: 1830,
+  SWARM_4P: 1840,
+} as const;
+
+/**
  * Get human-readable queue type name
  * @param queueId - Queue ID from match data
  * @returns Queue type name or generic "Queue {id}"
@@ -82,6 +92,20 @@ export function isRankedQueue(queueId: number): boolean {
  */
 export function isSoloQueueRanked(queueId: number): boolean {
   return queueId === RANKED_QUEUES.SOLO_DUO;
+}
+
+/**
+ * Check if a queue is a Swarm match
+ * @param queueId - Queue ID from match data
+ * @returns True if queue is a Swarm match
+ */
+export function isSwarmQueue(queueId: number): boolean {
+  return (
+    queueId === SWARM_QUEUES.SWARM_1P ||
+    queueId === SWARM_QUEUES.SWARM_2P ||
+    queueId === SWARM_QUEUES.SWARM_3P ||
+    queueId === SWARM_QUEUES.SWARM_4P
+  );
 }
 
 /**

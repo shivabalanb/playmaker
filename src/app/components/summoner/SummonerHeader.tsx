@@ -3,6 +3,7 @@ import Image from "next/image";
 import { SummonerData, RankData } from "./types";
 import { ProfileHeader } from "./ProfileHeader";
 import { RankCard } from "./RankCard";
+import { UnrankedCard } from "./UnrankedCard";
 import { getChampionSplashUrl } from "@/lib";
 
 interface SummonerHeaderProps {
@@ -29,6 +30,10 @@ export function SummonerHeader({
   // Debug logging
   if (featuredChampion) {
     console.log("Featured Champion:", featuredChampion);
+    console.log("Splash URL:", splashUrl);
+  }
+
+  if (splashUrl=== '') {
     console.log("Splash URL:", splashUrl);
   }
 
@@ -88,18 +93,19 @@ export function SummonerHeader({
               summonerName={summonerName}
               getProfileIconUrl={getProfileIconUrl}
             />
-            {!rankData && (
-              <p className="text-gray-400 text-sm mt-2">Unranked</p>
-            )}
           </div>
 
-          {/* Right: Rank Card */}
-          {rankData && (
+          {/* Right: Rank Card or Unranked Card */}
+          {rankData ? (
             <div>
               <RankCard
                 rankData={rankData}
                 getRankEmblemUrl={getRankEmblemUrl}
               />
+            </div>
+          ) : (
+            <div>
+              <UnrankedCard />
             </div>
           )}
         </div>
