@@ -15,8 +15,8 @@ export default function Home() {
     const regionMap: Record<string, string> = {
       na1: "americas",
       br1: "americas",
-      lan: "americas",
-      las: "americas",
+      la1: "americas",
+      la2: "americas",
       euw1: "europe",
       eun1: "europe",
       tr1: "europe",
@@ -85,7 +85,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a1428] via-[#1a2332] to-[#0f1923]">
+    <div className="min-h-screen bg-linear-to-b from-[#0a1428] via-[#1a2332] to-[#0f1923]">
       {/* Header */}
       <header className="pt-8 pb-12">
         <div className="container mx-auto px-4 text-center">
@@ -119,8 +119,6 @@ export default function Home() {
                     <optgroup label="Americas">
                       <option value="na1">North America</option>
                       <option value="br1">Brazil</option>
-                      <option value="lan">LAN</option>
-                      <option value="las">LAS</option>
                     </optgroup>
                     <optgroup label="Europe">
                       <option value="euw1">Europe West</option>

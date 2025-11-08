@@ -18,9 +18,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Use PUUID endpoint for better rate limits: 20,000 req/10s vs lower limits for summoner ID
+    // Get top champion masteries (sorted by mastery points, descending)
+    // Limit to top 1 to get the highest mastery champion
     const response = await fetch(
-      `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`,
+      `https://${platform}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=1`,
       {
         headers: {
           "X-Riot-Token": apiKey,
@@ -39,9 +40,9 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error fetching league data:", error);
+    console.error("Error fetching mastery data:", error);
     return NextResponse.json(
-      { error: "Failed to fetch league data" },
+      { error: "Failed to fetch mastery data" },
       { status: 500 }
     );
   }
