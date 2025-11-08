@@ -98,9 +98,11 @@ export default function MatchDetailPage() {
           return;
         }
         setMatchData(data);
-        
+
         // Fetch timeline data
-        return fetch(`/api/riot/match/timeline?matchId=${matchId}&region=${region}`);
+        return fetch(
+          `/api/riot/match/timeline?matchId=${matchId}&region=${region}`
+        );
       })
       .then((res) => {
         if (!res) return;
@@ -131,7 +133,9 @@ export default function MatchDetailPage() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0a1428] via-[#1a2332] to-[#0f1923] flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-400 text-xl mb-4">{error || "Match not found"}</div>
+          <div className="text-red-400 text-xl mb-4">
+            {error || "Match not found"}
+          </div>
           <Link
             href="/"
             className="text-blue-400 hover:text-blue-300 underline"
@@ -323,12 +327,14 @@ function MapTimeline({
   // Get current frame
   const frame = frames[currentFrame] || null;
 
-  // Create a map of participant ID to champion name
+  // Create a map of participant ID to champion name and team
   // Timeline uses participant IDs 1-10, which correspond to participants array indices
   const participantMap = new Map<number, string>();
+  const participantTeamMap = new Map<number, number>(); // participantId -> teamId
   matchData.info.participants.forEach((p, index) => {
     // Participant IDs in timeline are 1-indexed
     participantMap.set(index + 1, p.championName);
+    participantTeamMap.set(index + 1, p.teamId);
   });
 
   // Extract champion positions from current frame
@@ -337,32 +343,48 @@ function MapTimeline({
     x: number;
     y: number;
     participantId: number;
+    teamId: number;
+    isDead: boolean;
   }> = [];
 
   if (frame && frame.participantFrames) {
-    Object.entries(frame.participantFrames).forEach(([participantId, participantFrame]: [string, any]) => {
-      const pid = parseInt(participantId);
-      const championName = participantMap.get(pid);
-      if (championName && participantFrame.position) {
-        championPositions.push({
-          championName,
-          x: participantFrame.position.x,
-          y: participantFrame.position.y,
-          participantId: pid,
-        });
+    Object.entries(frame.participantFrames).forEach(
+      ([participantId, participantFrame]: [string, any]) => {
+        const pid = parseInt(participantId);
+        const championName = participantMap.get(pid);
+        const teamId = participantTeamMap.get(pid);
+        if (championName && participantFrame.position && teamId) {
+          // Check if champion is dead (health is 0 or null)
+          const health =
+            participantFrame.championStats?.currentHealth ??
+            participantFrame.championStats?.health ??
+            null;
+          const isDead = health === 0 || health === null;
+
+          championPositions.push({
+            championName,
+            x: participantFrame.position.x,
+            y: participantFrame.position.y,
+            participantId: pid,
+            teamId,
+            isDead,
+          });
+        }
       }
-    });
+    );
   }
 
   // Convert game coordinates to map coordinates
-  // League of Legends map coordinates range from approximately -7400 to 7400 in both directions
-  // Total map size is approximately 14800 x 14800 in game units
-  const mapMinX = -7400;
-  const mapMaxX = 7400;
-  const mapMinY = -7400;
-  const mapMaxY = 7400;
-  const mapWidth = mapMaxX - mapMinX; // 14800
-  const mapHeight = mapMaxY - mapMinY; // 14800
+  // League of Legends map coordinates range from 0 to 15000 in both directions
+  // Total map size is 15000 x 15000 in game units
+  // (0, 0) is bottom-left (Blue fountain)
+  // (15000, 15000) is top-right (Red fountain)
+  const mapMinX = -1000;
+  const mapMaxX = 14500;
+  const mapMinY = -1000;
+  const mapMaxY = 14500;
+  const mapWidth = mapMaxX - mapMinX; // 15000
+  const mapHeight = mapMaxY - mapMinY; // 15000
 
   // Format time for display
   const formatTime = (timestamp: number) => {
@@ -371,40 +393,111 @@ function MapTimeline({
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
+  // Console log champion positions on frame change
+  useEffect(() => {
+    if (championPositions.length > 0) {
+      console.log(`\n=== Frame ${currentFrame + 1} / ${totalFrames} ===`);
+      console.log(`Timestamp: ${frame ? formatTime(frame.timestamp) : "N/A"}`);
+      console.log(`Champion Positions (${championPositions.length}):`);
+      championPositions.forEach((pos) => {
+        const xPercent = ((pos.x - mapMinX) / mapWidth) * 100;
+        const yPercent = 100 - ((pos.y - mapMinY) / mapHeight) * 100;
+        console.log(
+          `  ${pos.championName} (ID: ${pos.participantId}): ` +
+            `game(${pos.x}, ${pos.y}) → screen(${xPercent.toFixed(2)}%, ${yPercent.toFixed(2)}%) ` +
+            `${pos.isDead ? "[DEAD]" : "[ALIVE]"}`
+        );
+      });
+    }
+  }, [
+    currentFrame,
+    totalFrames,
+    frame,
+    mapWidth,
+    mapHeight,
+    mapMinX,
+    mapMinY,
+    championPositions,
+  ]);
+
   return (
-    <div className="mt-4 w-full">
+    <div className="mt-6 w-full">
       {/* Slider Controls */}
-      <div className="mb-2 flex items-center gap-4">
-        <button
-          onClick={() => setCurrentFrame(Math.max(0, currentFrame - 1))}
-          disabled={currentFrame === 0}
-          className="px-3 py-1 bg-[#1e2a3a] text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#253040] transition-colors text-xs"
-        >
-          ←
-        </button>
-        <input
-          type="range"
-          min="0"
-          max={Math.max(0, totalFrames - 1)}
-          value={currentFrame}
-          onChange={(e) => setCurrentFrame(parseInt(e.target.value))}
-          className="flex-1"
-        />
-        <button
-          onClick={() => setCurrentFrame(Math.min(totalFrames - 1, currentFrame + 1))}
-          disabled={currentFrame >= totalFrames - 1}
-          className="px-3 py-1 bg-[#1e2a3a] text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#253040] transition-colors text-xs"
-        >
-          →
-        </button>
-        <div className="text-xs text-gray-400 min-w-[80px]">
-          Frame {currentFrame + 1} / {totalFrames}
-        </div>
-        {frame && (
-          <div className="text-xs text-gray-400">
-            {formatTime(frame.timestamp)}
+      <div className="bg-[#1a2332] rounded-xl p-4 border border-[#2a3544]/50 shadow-lg">
+        <div className="flex items-center gap-4">
+          {/* Previous Button */}
+          <button
+            onClick={() => setCurrentFrame(Math.max(0, currentFrame - 1))}
+            disabled={currentFrame === 0}
+            className="w-10 h-10 flex items-center justify-center bg-[#0f1923] hover:bg-[#1a2332] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-[#0f1923] rounded-lg border border-[#2a3544]/50 transition-all text-white"
+            aria-label="Previous frame"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          {/* Progress Bar / Slider */}
+          <div className="flex-1 relative">
+            <input
+              type="range"
+              min="0"
+              max={Math.max(0, totalFrames - 1)}
+              value={currentFrame}
+              onChange={(e) => setCurrentFrame(parseInt(e.target.value))}
+              className="timeline-slider w-full"
+              style={{
+                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
+                  (currentFrame / Math.max(1, totalFrames - 1)) * 100
+                }%, #1a2332 ${
+                  (currentFrame / Math.max(1, totalFrames - 1)) * 100
+                }%, #1a2332 100%)`,
+              }}
+            />
           </div>
-        )}
+
+          {/* Next Button */}
+          <button
+            onClick={() =>
+              setCurrentFrame(Math.min(totalFrames - 1, currentFrame + 1))
+            }
+            disabled={currentFrame >= totalFrames - 1}
+            className="w-10 h-10 flex items-center justify-center bg-[#0f1923] hover:bg-[#1a2332] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-[#0f1923] rounded-lg border border-[#2a3544]/50 transition-all text-white"
+            aria-label="Next frame"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
+          {/* Frame Info */}
+          <div className="flex items-center gap-3 min-w-[140px]">
+            <div className="text-sm font-semibold text-white">
+              {currentFrame + 1} / {totalFrames}
+            </div>
+            {frame && (
+              <div className="text-sm text-gray-400 font-mono">
+                {formatTime(frame.timestamp)}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Map with Champion Positions */}
@@ -421,18 +514,25 @@ function MapTimeline({
         <div className="absolute inset-0 pointer-events-none">
           {championPositions.map((pos) => {
             // Convert game coordinates to percentage
-            // Game coordinates range from approximately -7400 to 7400
-            // Convert to 0-100% for positioning
+            // Game coordinates range from 0 to ~15000
+            // (0, 0) is bottom-left, (15000, 15000) is top-right
+            // Note: Game Y-axis increases upward, but CSS top increases downward, so we invert Y
+            // Account for mapMin offsets in the calculation
             const xPercent = ((pos.x - mapMinX) / mapWidth) * 100;
-            const yPercent = ((pos.y - mapMinY) / mapHeight) * 100;
-            
+            const yPercent = 100 - ((pos.y - mapMinY) / mapHeight) * 100; // Invert Y-axis
+
+            // Apply fine-tuning offsets to align with map image
+            // Shift icons down and to the left to match visual map positioning
+            const xOffset = -5; // Shift left by 5%
+            const yOffset = 3; // Shift down by 3%
+
             return (
               <div
                 key={pos.participantId}
                 className="absolute transform -translate-x-1/2 -translate-y-1/2"
                 style={{
-                  left: `${xPercent}%`,
-                  top: `${yPercent}%`,
+                  left: `${xPercent + xOffset}%`,
+                  top: `${yPercent + yOffset}%`,
                 }}
               >
                 <Image
@@ -440,7 +540,9 @@ function MapTimeline({
                   alt={pos.championName}
                   width={32}
                   height={32}
-                  className="w-8 h-8 rounded-full border-2 border-white shadow-lg"
+                  className={`w-16 h-16 rounded-full border-4 shadow-lg ${
+                    pos.teamId === 100 ? "border-blue-400" : "border-red-400"
+                  } ${pos.isDead ? "grayscale opacity-60" : ""}`}
                   unoptimized
                 />
               </div>
@@ -541,9 +643,7 @@ function PlayerRow({
 
   // Calculate CS
   const cs = player.totalMinionsKilled + player.neutralMinionsKilled;
-  const csPerMin = (
-    cs / (matchData.info.gameDuration / 60)
-  ).toFixed(1);
+  const csPerMin = (cs / (matchData.info.gameDuration / 60)).toFixed(1);
 
   // Calculate gold
   const gold = player.goldEarned;
@@ -557,7 +657,8 @@ function PlayerRow({
   // Calculate vision score per minute
   const visionScore = player.visionScore || 0;
   const visionPerMin = (
-    visionScore / (matchData.info.gameDuration / 60)
+    visionScore /
+    (matchData.info.gameDuration / 60)
   ).toFixed(1);
 
   return (
@@ -603,7 +704,9 @@ function PlayerRow({
             <div className="text-[10px] font-semibold text-white truncate">
               {player.riotIdGameName || player.summonerName || "Unknown"}
             </div>
-            <div className="text-[8px] text-gray-400 truncate">{player.championName}</div>
+            <div className="text-[8px] text-gray-400 truncate">
+              {player.championName}
+            </div>
           </div>
         </div>
 
@@ -730,7 +833,9 @@ function PlayerRow({
         {/* CS/min or Vision/min */}
         {player.teamPosition === "UTILITY" ? (
           <div className="text-center min-w-[45px] flex-shrink-0">
-            <div className="text-xs font-semibold text-white">{visionPerMin}</div>
+            <div className="text-xs font-semibold text-white">
+              {visionPerMin}
+            </div>
             <div className="text-[8px] text-gray-400">VS/min</div>
           </div>
         ) : (
@@ -764,4 +869,3 @@ function PlayerRow({
     </div>
   );
 }
-
