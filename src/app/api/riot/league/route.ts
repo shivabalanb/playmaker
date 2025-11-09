@@ -9,6 +9,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "puuid is required" }, { status: 400 });
   }
 
+  // Validate and sanitize PUUID
+  const sanitizedPuuid = String(puuid).trim();
+  if (!sanitizedPuuid || sanitizedPuuid.length === 0) {
+    return NextResponse.json(
+      { error: "puuid cannot be empty" },
+      { status: 400 }
+    );
+  }
+
+  // URL-encode PUUID to handle special characters in path
+  const encodedPuuid = encodeURIComponent(sanitizedPuuid);
+
   const apiKey = process.env.RIOT_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -20,7 +32,7 @@ export async function GET(request: NextRequest) {
   try {
     // Use PUUID endpoint for better rate limits: 20,000 req/10s vs lower limits for summoner ID
     const response = await fetch(
-      `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`,
+      `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodedPuuid}`,
       {
         headers: {
           "X-Riot-Token": apiKey,

@@ -9,6 +9,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "puuid is required" }, { status: 400 });
   }
 
+  // Validate and sanitize PUUID
+  const sanitizedPuuid = String(puuid).trim();
+  if (!sanitizedPuuid || sanitizedPuuid.length === 0) {
+    return NextResponse.json(
+      { error: "puuid cannot be empty" },
+      { status: 400 }
+    );
+  }
+
+  // URL-encode PUUID to handle special characters in path
+  const encodedPuuid = encodeURIComponent(sanitizedPuuid);
+
   const apiKey = process.env.RIOT_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -21,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Get top champion masteries (sorted by mastery points, descending)
     // Limit to top 1 to get the highest mastery champion
     const response = await fetch(
-      `https://${platform}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=1`,
+      `https://${platform}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/${encodedPuuid}/top?count=1`,
       {
         headers: {
           "X-Riot-Token": apiKey,

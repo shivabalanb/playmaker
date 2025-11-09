@@ -1,7 +1,9 @@
 import json
 import os
+import re
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict
+from urllib.parse import quote
 
 import boto3
 import urllib3
@@ -48,8 +50,16 @@ def fetch_with_retry(
             if response.status == 200:
                 return json.loads(response.data.decode("utf-8"))
             else:
-                error_text = response.data.decode("utf-8")
-                raise Exception(f"Riot API error ({response.status}): {error_text}")
+                # Try to get error message from response body
+                error_body = ""
+                try:
+                    error_body = response.data.decode("utf-8") if response.data else ""
+                except:
+                    pass
+                error_msg = f"API returned status {response.status}"
+                if error_body:
+                    error_msg += f": {error_body}"
+                raise Exception(error_msg)
 
         except urllib3.exceptions.HTTPError:
             if i == retries - 1:
@@ -126,8 +136,20 @@ def parse_event(event: Dict[str, Any]) -> Dict[str, Any]:
     else:
         body = event
 
+    puuid = body.get("puuid")
+    if puuid:
+        # Validate and sanitize PUUID
+        puuid = str(puuid).strip()
+        if not puuid or len(puuid) == 0:
+            raise ValueError("PUUID cannot be empty")
+
+        # Validate PUUID format (Riot PUUIDs are typically 78 characters, base64-like with dashes)
+        puuid_pattern = re.compile(r"^[A-Za-z0-9_-]{70,80}$")
+        if not puuid_pattern.match(puuid):
+            raise ValueError(f"Invalid PUUID format: {puuid[:20]}...")
+
     return {
-        "puuid": body.get("puuid"),
+        "puuid": puuid,
         "region": body.get("region", "americas"),
         "start": body.get("start", "0"),
         "count": body.get("count", "20"),
@@ -146,10 +168,20 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
         params = parse_event(event)
 
-        if not params["puuid"]:
+        puuid = params.get("puuid")
+        if not puuid:
             return {
                 "statusCode": 400,
                 "body": json.dumps({"error": "puuid is required"}),
+            }
+
+        # PUUID is already validated and sanitized in parse_event
+        # Ensure it's a string (should already be from parse_event)
+        puuid = str(puuid).strip()
+        if not puuid or len(puuid) == 0:
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"error": "puuid cannot be empty"}),
             }
 
         api_key = get_riot_api_key()
@@ -157,6 +189,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         bucket_name = os.environ.get("S3_BUCKET_NAME")
 
         # Step 1: Fetch match IDs with pagination
+        # URL-encode PUUID to handle special characters
+        encoded_puuid = quote(puuid, safe="")
         query_params = []
         query_params.append(f"start={params['start']}")
         query_params.append(f"count={params['count']}")
@@ -169,11 +203,15 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
         match_ids_url = (
             f"https://{params['region']}.api.riotgames.com/"
-            f"lol/match/v5/matches/by-puuid/{params['puuid']}/ids"
+            f"lol/match/v5/matches/by-puuid/{encoded_puuid}/ids"
             f"?{'&'.join(query_params)}"
         )
 
-        match_ids = fetch_with_retry(match_ids_url, headers)
+        try:
+            match_ids = fetch_with_retry(match_ids_url, headers)
+        except Exception as e:
+            print(f"Error fetching match IDs: {str(e)}")
+            raise Exception(f"Failed to fetch match IDs: {str(e)}")
 
         if not isinstance(match_ids, list):
             return {
@@ -200,9 +238,11 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         continue
 
                 # Fetch from Riot API
+                # URL-encode match ID to handle special characters
+                encoded_match_id = quote(str(match_id), safe="")
                 match_url = (
                     f"https://{params['region']}.api.riotgames.com/"
-                    f"lol/match/v5/matches/{match_id}"
+                    f"lol/match/v5/matches/{encoded_match_id}"
                 )
 
                 match_data = fetch_with_retry(match_url, headers)

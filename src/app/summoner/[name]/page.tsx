@@ -53,7 +53,7 @@ export default function SummonerPage({
     null
   );
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
 
   // Decode summoner name
   const decodedName = decodeURIComponent(resolvedParams.name).replace("-", "#");
@@ -210,10 +210,8 @@ export default function SummonerPage({
     fetchMatchHistory(0, false);
 
     // Fetch match stats for last 20 games
-    const fetchMatchStats = async () => {
-      if (!puuid) return;
-
-      setIsLoadingStats(true);
+    const fetchPlayerAnalysis = async () => {
+      setIsLoadingAnalysis(true);
       try {
         const response = await fetch(`/api/riot/player-analysis`, {
           method: "POST",
@@ -227,20 +225,20 @@ export default function SummonerPage({
         });
 
         if (response.ok) {
-          const analysis = await response.json();
-          setMatchStats(analysis);
-          console.log("Player analysis loaded:", analysis);
+          const stats = await response.json();
+          setMatchStats(stats);
+          console.log("Match stats loaded:", stats);
         } else {
           console.error("Failed to fetch match stats:", response.status);
         }
       } catch (err) {
         console.error("Error fetching match stats:", err);
       } finally {
-        setIsLoadingStats(false);
+        setIsLoadingAnalysis(false);
       }
     };
 
-    fetchMatchStats();
+    fetchPlayerAnalysis();
   }, [puuid, region]);
 
   // Infinite scroll handler using Intersection Observer

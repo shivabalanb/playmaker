@@ -20,6 +20,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate and sanitize matchId
+    const matchId = String(body.matchId).trim();
+    if (!matchId || matchId.length === 0) {
+      return NextResponse.json(
+        { error: "matchId cannot be empty" },
+        { status: 400 }
+      );
+    }
+
+    // Validate and sanitize PUUID
+    const puuid = String(body.puuid).trim();
+    if (!puuid || puuid.length === 0) {
+      return NextResponse.json(
+        { error: "puuid cannot be empty" },
+        { status: 400 }
+      );
+    }
+
+    // Validate PUUID format (Riot PUUIDs are typically 78 characters, base64-like with dashes)
+    const puuidPattern = /^[A-Za-z0-9_-]{70,80}$/;
+    if (!puuidPattern.test(puuid)) {
+      return NextResponse.json(
+        { error: "Invalid PUUID format" },
+        { status: 400 }
+      );
+    }
+
     if (!LAMBDA_FUNCTION_URL) {
       return NextResponse.json(
         { error: "Lambda Function URL not configured" },
@@ -27,16 +54,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call Lambda
+    // Call Lambda - send everything as body parameters
     const lambdaResponse = await fetch(LAMBDA_FUNCTION_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        matchId: body.matchId,
+        matchId: matchId,
         region: body.region || "americas",
-        puuid: body.puuid,
+        puuid: puuid,
       }),
     });
 

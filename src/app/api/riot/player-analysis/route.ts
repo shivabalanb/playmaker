@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate PUUID format (Riot PUUIDs are typically 78 characters, base64-like with dashes)
-    // Format: alphanumeric, dashes, underscores, typically 70-80 characters
     const puuidPattern = /^[A-Za-z0-9_-]{70,80}$/;
     if (!puuidPattern.test(puuid)) {
       return NextResponse.json(
@@ -39,15 +38,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call Lambda - it will fetch matches itself
+    // Call Lambda - send everything as body parameters
     const lambdaResponse = await fetch(LAMBDA_FUNCTION_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        puuid: puuid,
         region: body.region || "americas",
+        puuid: puuid,
       }),
     });
 
@@ -63,9 +62,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Function URL returns the Lambda body directly as JSON
-    const stats = await lambdaResponse.json();
+    const analysis = await lambdaResponse.json();
 
-    return NextResponse.json(stats);
+    return NextResponse.json(analysis);
   } catch (error) {
     if (error instanceof SyntaxError) {
       return NextResponse.json(
@@ -73,10 +72,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.error("Error fetching player analysis:", error);
+    console.error("Error fetching match analysis:", error);
     return NextResponse.json(
       {
-        error: "Failed to fetch player analysis",
+        error: "Failed to fetch match analysis",
         details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }

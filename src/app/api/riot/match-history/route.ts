@@ -74,11 +74,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate and sanitize PUUID
+    const puuid = String(body.puuid).trim();
+    if (!puuid || puuid.length === 0) {
+      return NextResponse.json(
+        { error: "puuid cannot be empty" },
+        { status: 400 }
+      );
+    }
+
+    // Validate PUUID format (Riot PUUIDs are typically 78 characters, base64-like with dashes)
+    const puuidPattern = /^[A-Za-z0-9_-]{70,80}$/;
+    if (!puuidPattern.test(puuid)) {
+      return NextResponse.json(
+        { error: "Invalid PUUID format" },
+        { status: 400 }
+      );
+    }
+
     const region = body.region || "americas";
     const start = body.start || "0";
     const count = body.count || "20";
 
     // Step 1: Fetch match IDs
+    // URL-encode PUUID to handle special characters
+    const encodedPuuid = encodeURIComponent(puuid);
     const queryParams = new URLSearchParams();
     queryParams.append("start", start);
     queryParams.append("count", count);
@@ -86,8 +106,13 @@ export async function POST(request: NextRequest) {
     if (body.startTime) queryParams.append("startTime", body.startTime);
     if (body.endTime) queryParams.append("endTime", body.endTime);
 
+    console.log("[DEBUG] Original PUUID:", puuid);
+    console.log("[DEBUG] Encoded PUUID:", encodedPuuid);
+    console.log("[DEBUG] Full URL:", `https://${region}.api.riotgames.com/lol/match/v5/matches/by-puuid/${encodedPuuid}/ids?${queryParams.toString()}`);
+    console.log("[DEBUG] Region:", region);
+    
     const matchIdsResponse = await fetchWithRetry(
-      `https://${region}.api.riotgames.com/lol/match/v5/matches/by-puuid/${body.puuid}/ids?${queryParams.toString()}`,
+      `https://${region}.api.riotgames.com/lol/match/v5/matches/by-puuid/${encodedPuuid}/ids?${queryParams.toString()}`,
       apiKey
     );
 
@@ -112,26 +137,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 2: Fetch match details in parallel for speed
-    const matchPromises = matchIds.map((matchId) =>
-      fetchWithRetry(
-        `https://${region}.api.riotgames.com/lol/match/v5/matches/${matchId}`,
-        apiKey
+    const matchPromises = matchIds.map((matchId) => {
+      // URL-encode match ID to handle special characters
+      const encodedMatchId = encodeURIComponent(matchId);
+      return fetchWithRetry(
+        `https://${region}.api.riotgames.com/lol/match/v5/matches/${encodedMatchId}`,
+          apiKey
       )
         .then(async (response) => {
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(
-              `Failed to fetch match ${matchId}: ${response.status} - ${errorText}`
-            );
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(
+            `Failed to fetch match ${matchId}: ${response.status} - ${errorText}`
+          );
             return null;
-          }
+        }
           return response.json();
         })
         .catch((error) => {
-          console.error(`Error fetching match ${matchId}:`, error);
+        console.error(`Error fetching match ${matchId}:`, error);
           return null;
-        })
-    );
+        });
+    });
 
     const matches = await Promise.all(matchPromises);
 

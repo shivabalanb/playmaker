@@ -93,7 +93,7 @@ def fetch_timeline_data(match_id: str, region: str) -> Dict[str, Any]:
 
 
 def fetch_match_data(
-    match_id: str, region: str, puuid: Optional[str] = None
+    match_id: str, region: str = None
 ) -> Dict[str, Any]:
     # Fetch from Riot API
     api_key = get_riot_api_key()

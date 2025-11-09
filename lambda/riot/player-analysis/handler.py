@@ -1,9 +1,8 @@
 import json
 import os
-import re
 import time
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from urllib.parse import quote
 
 import boto3
@@ -90,47 +89,39 @@ def fetch_with_retry(
 
     raise Exception("Max retries exceeded")
 
-
 def fetch_matches_from_api(
-    puuid: str, region: str, match_ids: Optional[List[str]] = None, count: int = 20
+    puuid: str, region: str, count: int = 20
 ) -> List[Dict[str, Any]]:
-    """Fetch match details from Riot API given match IDs."""
+    """Fetch match IDs and match details from Riot API."""
     api_key = get_riot_api_key()
     headers = {"X-Riot-Token": api_key}
+    encoded_puuid = quote(puuid, safe="-_.!~*'()")
 
-    # If match_ids not provided, fetch them
-    if match_ids is None:
-        # URL-encode PUUID to handle special characters
-        encoded_puuid = quote(puuid, safe="")
-        match_ids_url = (
-            f"https://{region}.api.riotgames.com/"
-            f"lol/match/v5/matches/by-puuid/{encoded_puuid}/ids"
-            f"?start=0&count={count}"
-        )
+    # Step 1: Fetch match IDs
+    match_ids_url = (
+        f"https://{region}.api.riotgames.com/"
+        f"lol/match/v5/matches/by-puuid/{encoded_puuid}/ids"
+        f"?start=0&count={count}"
+    )
 
-        try:
-            match_ids = fetch_with_retry(match_ids_url, headers)
-        except Exception as e:
-            print(f"Failed to fetch match IDs from {match_ids_url}: {str(e)}")
-            raise Exception(f"Failed to fetch match IDs: {str(e)}")
+    match_ids = fetch_with_retry(match_ids_url, headers)
 
-        if not isinstance(match_ids, list):
-            raise Exception("Invalid match IDs response")
+    if not isinstance(match_ids, list):
+        raise Exception("Invalid match IDs response")
 
-    # Fetch match details from API (no caching)
+    # Step 2: Fetch match details 
     matches = []
 
     for i, match_id in enumerate(match_ids):
         try:
-            # URL-encode match ID to handle special characters
-            encoded_match_id = quote(str(match_id), safe="")
             # Fetch from Riot API
             match_url = (
                 f"https://{region}.api.riotgames.com/"
-                f"lol/match/v5/matches/{encoded_match_id}"
+                f"lol/match/v5/matches/{match_id}"
             )
 
             match_data = fetch_with_retry(match_url, headers)
+
             matches.append(match_data)
 
             # Small delay between requests
@@ -138,7 +129,7 @@ def fetch_matches_from_api(
                 time.sleep(0.1)
 
         except Exception as e:
-            print(f"Failed to fetch match {match_id} from {match_url}: {str(e)}")
+            print(f"Failed to fetch match {match_id}: {str(e)}")
             continue
 
     return matches
@@ -155,20 +146,8 @@ def parse_event(event: Dict[str, Any]) -> Dict[str, Any]:
     else:
         body = event
 
-    puuid = body.get("puuid")
-    if puuid:
-        # Validate and sanitize PUUID
-        puuid = str(puuid).strip()
-        if not puuid or len(puuid) == 0:
-            raise ValueError("PUUID cannot be empty")
-
-        # Validate PUUID format (Riot PUUIDs are typically 78 characters, base64-like with dashes)
-        puuid_pattern = re.compile(r"^[A-Za-z0-9_-]{70,80}$")
-        if not puuid_pattern.match(puuid):
-            raise ValueError(f"Invalid PUUID format: {puuid[:20]}...")
-
     return {
-        "puuid": puuid,
+        "puuid": body.get("puuid"),
         "region": body.get("region", "americas"),
     }
 
@@ -559,7 +538,7 @@ def aggregate_stats(matches: List[Dict[str, Any]], puuid: str) -> Dict[str, Any]
     )
 
     # Champion analysis
-    champion_analysis = []
+    champion_performance = []
     for champ_name, stats in champion_stats.items():
         if stats["games"] >= 3:  # Only include champions with 3+ games
             champ_win_rate = stats["wins"] / stats["games"] if stats["games"] > 0 else 0
@@ -568,7 +547,7 @@ def aggregate_stats(matches: List[Dict[str, Any]], puuid: str) -> Dict[str, Any]
                 stats["deaths"] / stats["games"],
                 stats["assists"] / stats["games"],
             )
-            champion_analysis.append(
+            champion_performance.append(
                 {
                     "champion": champ_name,
                     "games": stats["games"],
@@ -581,15 +560,15 @@ def aggregate_stats(matches: List[Dict[str, Any]], puuid: str) -> Dict[str, Any]
             )
 
     # Sort by win rate, then games
-    champion_analysis.sort(key=lambda x: (x["winRate"], x["games"]), reverse=True)
-    best_champion = champion_analysis[0] if champion_analysis else None
+    champion_performance.sort(key=lambda x: (x["winRate"], x["games"]), reverse=True)
+    best_champion = champion_performance[0] if champion_performance else None
 
     # Role analysis
-    role_analysis = []
+    role_performance = []
     for role, stats in role_stats.items():
         if stats["games"] > 0:
             role_win_rate = stats["wins"] / stats["games"]
-            role_analysis.append(
+            role_performance.append(
                 {"role": role, "games": stats["games"], "winRate": role_win_rate}
             )
 
@@ -600,7 +579,7 @@ def aggregate_stats(matches: List[Dict[str, Any]], puuid: str) -> Dict[str, Any]
             "losses": losses,
             "winRate": win_rate,
         },
-        "analysis": {
+        "performance": {
             "kda": {
                 "average": avg_kda,
                 "kills": avg_kills,
@@ -687,13 +666,13 @@ def aggregate_stats(matches: List[Dict[str, Any]], puuid: str) -> Dict[str, Any]
         },
         "champions": {
             "mostPlayed": sorted(
-                champion_analysis, key=lambda x: x["games"], reverse=True
+                champion_performance, key=lambda x: x["games"], reverse=True
             )[:5],
             "bestPerforming": best_champion,
-            "all": champion_analysis,
+            "all": champion_performance,
             "diversity": len(champion_stats),
         },
-        "roles": role_analysis,
+        "roles": role_performance,
         "matches": player_matches,  # Reduced match data for LLM context
     }
 
@@ -707,54 +686,33 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
         params = parse_event(event)
 
-        puuid = params.get("puuid")
-        if not puuid:
+        if not params["puuid"]:
             return {
                 "statusCode": 400,
                 "body": json.dumps({"error": "puuid is required"}),
             }
 
-        # PUUID is already validated and sanitized in parse_event
-        # Ensure it's a string (should already be from parse_event)
-        puuid = str(puuid).strip()
-        if not puuid or len(puuid) == 0:
-            return {
-                "statusCode": 400,
-                "body": json.dumps({"error": "puuid cannot be empty"}),
-            }
-
         bucket_name = os.environ.get("S3_BUCKET_NAME")
+        puuid = params["puuid"]
         region = params.get("region", "americas")
 
-        # Step 1: Fetch match IDs to get latest match ID
-        api_key = get_riot_api_key()
-        headers = {"X-Riot-Token": api_key}
-        # URL-encode PUUID to handle special characters
-        encoded_puuid = quote(puuid, safe="")
-        match_ids_url = (
-            f"https://{region}.api.riotgames.com/"
-            f"lol/match/v5/matches/by-puuid/{encoded_puuid}/ids"
-            f"?start=0&count=20"
-        )
+        # Always fetch matches from Riot API
+        matches = fetch_matches_from_api(puuid, region, count=20)
 
-        try:
-            match_ids = fetch_with_retry(match_ids_url, headers)
-        except Exception as e:
-            print(f"Error fetching match IDs: {str(e)}")
-            raise Exception(f"Failed to fetch match IDs: {str(e)}")
-
-        if not isinstance(match_ids, list) or len(match_ids) == 0:
+        if not matches:
             return {
                 "statusCode": 404,
                 "body": json.dumps({"error": "No matches found for this player"}),
             }
 
-        # Get the latest match ID (first in the list is most recent)
-        latest_match_id = match_ids[0]
+        # Get the latest match ID (most recent match)
+        latest_match_id = None
+        if matches and len(matches) > 0:
+            latest_match_id = matches[0].get("metadata", {}).get("matchId")
 
-        # Step 2: Check S3 cache for aggregated stats
-        if bucket_name:
-            cache_key = f"riot/player-analysis/{puuid}/last-20-summary.json"
+        # Check S3 cache first
+        if bucket_name and latest_match_id:
+            cache_key = f"riot/player-analyses/{puuid}-last-20-summary.json"
 
             if s3_object_exists(bucket_name, cache_key):
                 try:
@@ -772,16 +730,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     # If cache read fails, continue to recompute
                     print(f"Failed to read cache from S3: {str(e)}")
 
-        # Step 3: Fetch all match data from API (no caching)
-        matches = fetch_matches_from_api(puuid, region, match_ids=match_ids)
-
-        if not matches:
-            return {
-                "statusCode": 404,
-                "body": json.dumps({"error": "No matches found for this player"}),
-            }
-
-        # Step 4: Recompute statistics
+        # Recompute statistics (either no cache or new match detected)
         stats = aggregate_stats(matches, puuid)
 
         # Add metadata with latest match ID
@@ -791,10 +740,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "numMatches": len(matches),
         }
 
-        # Step 5: Save aggregated stats to S3 (overwrite if exists)
+        # Save aggregated stats to S3 for caching
         if bucket_name:
             try:
-                key = f"riot/player-analysis/{puuid}/last-20-summary.json"
+                key = f"riot/player-analyses/{puuid}-last-20-summary.json"
                 s3_client.put_object(
                     Bucket=bucket_name,
                     Key=key,
