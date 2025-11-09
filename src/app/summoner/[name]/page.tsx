@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   SummonerHeader,
@@ -33,8 +33,13 @@ export default function SummonerPage({
   const COUNT = 10;
   const resolvedParams = use(params);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const puuid = searchParams.get("puuid");
   const region = searchParams.get("region") || "americas";
+  const [isGeneratingRecap, setIsGeneratingRecap] = useState(false);
+  const [recapStatus, setRecapStatus] = useState<
+    "not_eligible" | "eligible" | "available" | "loading" | "processing"
+  >("loading");
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [summonerData, setSummonerData] = useState<SummonerData | null>(null);
   const [rankData, setRankData] = useState<RankData | null>(null);
@@ -238,36 +243,89 @@ export default function SummonerPage({
     fetchPlayerAnalysis();
   }, [puuid, region]);
 
-  // Manual load more handler
-  const handleLoadMore = async () => {
-    if (isLoadingMore || !hasMoreMatches || !puuid) return;
-    
-    console.log(`[Summoner Page] 📥 User clicked Load More - fetching from ${currentStart}`);
-    setIsLoadingMore(true);
+  // Check recap status on page load
+  useEffect(() => {
+    if (!puuid) {
+      setRecapStatus("loading");
+      return;
+    }
 
-    try {
-      const response = await fetch(`/api/riot/match-history`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          puuid,
-          region,
-          start: currentStart.toString(),
-          count: COUNT.toString(),
-        }),
-      });
+    const checkRecapStatus = async () => {
+      try {
+        const statusRes = await fetch(
+          `/api/riot/recap/status?puuid=${puuid}&region=${region}`
+        );
+        const statusData = await statusRes.json();
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to fetch match history");
+        // Handle error response
+        if (statusData.error) {
+          console.error("Error checking recap status:", statusData);
+          // If there's an error but we might have a cached recap, try to show it
+          // Otherwise, default to not_eligible to disable the button
+          setRecapStatus("not_eligible");
+          return;
+        }
+
+        setRecapStatus(statusData.status || "loading");
+      } catch (error) {
+        console.error("Error checking recap status:", error);
+        // On error, default to not_eligible to be safe
+        setRecapStatus("not_eligible");
+      }
+    };
+
+    checkRecapStatus();
+  }, [puuid, region]);
+
+  // Infinite scroll handler using Intersection Observer
+  useEffect(() => {
+    if (!hasMoreMatches || isLoadingMore || !puuid || matches.length === 0)
+      return;
+
+    const loadMoreMatches = async () => {
+      // Lock: prevent multiple simultaneous requests
+      if (isLoadingMore || !hasMoreMatches) return;
+
+      // Throttle: prevent load more from being called too frequently
+      const now = Date.now();
+      const timeSinceLastLoad = now - lastLoadMoreTimeRef.current;
+
+      // If ref is 0 (initial state) or enough time has passed, allow the request
+      if (
+        lastLoadMoreTimeRef.current !== 0 &&
+        timeSinceLastLoad < MIN_LOAD_MORE_DELAY_MS
+      ) {
+        const remainingDelay = MIN_LOAD_MORE_DELAY_MS - timeSinceLastLoad;
+        console.log(
+          `[Infinite Scroll] Throttled: waiting ${remainingDelay}ms before next load`
+        );
+        return;
       }
 
-      const { matches: newMatches } = await response.json();
-      const validMatches = filterValidMatches(newMatches);
-      
-      console.log(`[Summoner Page] ✅ Loaded ${validMatches.length} more matches`);
+      lastLoadMoreTimeRef.current = now;
+        setIsLoadingMore(true);
+
+        try {
+          const response = await fetch(`/api/riot/match-history`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              puuid,
+              region,
+              start: currentStart.toString(),
+              count: COUNT.toString(),
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || "Failed to fetch match history");
+          }
+
+          const { matches: newMatches } = await response.json();
+          const validMatches = filterValidMatches(newMatches);
 
       setMatches((prev) => [...prev, ...validMatches]);
       setHasMoreMatches(validMatches.length === COUNT);
@@ -280,8 +338,110 @@ export default function SummonerPage({
     }
   };
 
-  // REMOVED: Automatic infinite scroll to prevent excessive API calls
-  // REMOVED: Auto-load more matches when screen is not full
+    // Use Intersection Observer for better reliability
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting) {
+          loadMoreMatches();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "200px", // Start loading 200px before the sentinel is visible
+        threshold: 0.1,
+      }
+    );
+
+    // Find the sentinel element (the loading indicator or end message)
+    const sentinel = document.getElementById("infinite-scroll-sentinel");
+    if (sentinel) {
+      observer.observe(sentinel);
+    }
+
+    return () => {
+      if (sentinel) {
+        observer.unobserve(sentinel);
+      }
+    };
+  }, [
+    currentStart,
+    isLoadingMore,
+    hasMoreMatches,
+    puuid,
+    region,
+    matches.length,
+  ]);
+
+  // Check if we need to load more when all matches fit on screen (no scrollbar)
+  useEffect(() => {
+    if (
+      !hasMoreMatches ||
+      isLoadingMore ||
+      !puuid ||
+      matches.length === 0 ||
+      isLoading
+    )
+      return;
+
+    const checkAndLoad = () => {
+      // Small delay to ensure DOM is fully rendered
+      setTimeout(() => {
+        // Check if page is scrollable
+        const isScrollable =
+          document.documentElement.scrollHeight > window.innerHeight;
+
+        // If not scrollable and we have more matches, load more automatically
+        if (!isScrollable && hasMoreMatches && !isLoadingMore) {
+          setIsLoadingMore(true);
+
+          fetch(`/api/riot/match-history`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              puuid,
+              region,
+              start: currentStart.toString(),
+              count: COUNT.toString(),
+            }),
+          })
+            .then((response) => {
+              if (response.ok) {
+                return response.json();
+              }
+              throw new Error("Failed to fetch match history");
+            })
+            .then((data) => {
+              const validMatches = filterValidMatches(data.matches);
+
+          setMatches((prev) => {
+            const existingIds = new Set(
+              prev.map((m) => m.metadata?.matchId).filter(Boolean)
+            );
+            const uniqueNewMatches = validMatches.filter(
+                  (m) =>
+                    m.metadata?.matchId && !existingIds.has(m.metadata.matchId)
+            );
+            return [...prev, ...uniqueNewMatches];
+          });
+          setHasMoreMatches(validMatches.length === COUNT);
+          setCurrentStart((prev) => prev + validMatches.length);
+            })
+            .catch((err) => {
+              console.error("Failed to load more matches:", err);
+            })
+            .finally(() => {
+          setIsLoadingMore(false);
+            });
+        }
+      }, 300);
+    };
+
+    checkAndLoad();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matches.length]); // Only run when matches change to check if we need to load more
 
   if (isLoading) {
     return (
@@ -327,6 +487,143 @@ export default function SummonerPage({
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-white">Match History</h2>
+              <button
+                onClick={async () => {
+                  if (
+                    !puuid ||
+                    isGeneratingRecap ||
+                    recapStatus === "not_eligible"
+                  )
+                    return;
+
+                  if (recapStatus === "available") {
+                    // Recap already exists, redirect to view it
+                    router.push(`/recap?puuid=${puuid}&region=${region}`);
+                    return;
+                  }
+
+                  if (recapStatus === "processing") {
+                    // Already processing - redirect to recap page to see progress
+                    router.push(`/recap?puuid=${puuid}&region=${region}`);
+                    return;
+                  }
+
+                  // Eligible - start the job
+                  if (recapStatus === "eligible") {
+                    setIsGeneratingRecap(true);
+                    try {
+                      const response = await fetch("/api/riot/recap/generate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          puuid,
+                          region,
+                        }),
+                      });
+                      await response.json();
+                      // Redirect to recap page - it will poll for status
+                      router.push(`/recap?puuid=${puuid}&region=${region}`);
+                    } catch (error) {
+                      console.error("Failed to generate recap:", error);
+                      setIsGeneratingRecap(false);
+                    }
+                  }
+                }}
+                disabled={
+                  isGeneratingRecap ||
+                  !puuid ||
+                  recapStatus === "not_eligible" ||
+                  recapStatus === "loading" ||
+                  recapStatus === "processing"
+                }
+                className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                  recapStatus === "not_eligible"
+                    ? "bg-gray-700 text-gray-400 cursor-not-allowed opacity-50"
+                    : recapStatus === "available"
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                }`}
+              >
+                {recapStatus === "loading" ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    <span>Loading</span>
+                  </>
+                ) : recapStatus === "processing" ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    <span>Generating...</span>
+                  </>
+                ) : recapStatus === "not_eligible" ? (
+                  "Season Recap (Ineligible)"
+                ) : recapStatus === "available" ? (
+                  "View Season Recap"
+                ) : isGeneratingRecap ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    <span>Generating</span>
+                  </>
+                ) : (
+                  "Generate Season Recap"
+                )}
+              </button>
             </div>
 
             <div className="space-y-2">
