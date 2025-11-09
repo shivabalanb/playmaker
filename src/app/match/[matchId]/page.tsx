@@ -374,17 +374,15 @@ function MapTimeline({
     );
   }
 
-  // Convert game coordinates to map coordinates
-  // League of Legends map coordinates range from 0 to 15000 in both directions
-  // Total map size is 15000 x 15000 in game units
-  // (0, 0) is bottom-left (Blue fountain)
-  // (15000, 15000) is top-right (Red fountain)
-  const mapMinX = -1000;
-  const mapMaxX = 14500;
-  const mapMinY = -1000;
-  const mapMaxY = 14500;
-  const mapWidth = mapMaxX - mapMinX; // 15000
-  const mapHeight = mapMaxY - mapMinY; // 15000
+  // Summoner's Rift coordinate bounds
+  // Min position: { x: -120, y: -120 }
+  // Max position: { x: 14,870, y: 14,980 }
+  const mapMinX = -120;
+  const mapMaxX = 14870;
+  const mapMinY = -120;
+  const mapMaxY = 14980;
+  const mapWidth = mapMaxX - mapMinX;
+  const mapHeight = mapMaxY - mapMinY;
 
   // Format time for display
   const formatTime = (timestamp: number) => {
@@ -400,8 +398,10 @@ function MapTimeline({
       console.log(`Timestamp: ${frame ? formatTime(frame.timestamp) : "N/A"}`);
       console.log(`Champion Positions (${championPositions.length}):`);
       championPositions.forEach((pos) => {
-        const xPercent = ((pos.x - mapMinX) / mapWidth) * 100;
-        const yPercent = 100 - ((pos.y - mapMinY) / mapHeight) * 100;
+        const normalizedX = (pos.x - mapMinX) / mapWidth;
+        const normalizedY = 1 - (pos.y - mapMinY) / mapHeight;
+        const xPercent = normalizedX * 100;
+        const yPercent = normalizedY * 100;
         console.log(
           `  ${pos.championName} (ID: ${pos.participantId}): ` +
             `game(${pos.x}, ${pos.y}) → screen(${xPercent.toFixed(2)}%, ${yPercent.toFixed(2)}%) ` +
@@ -508,43 +508,55 @@ function MapTimeline({
           width={1920}
           height={1080}
           className="w-full h-auto object-contain"
-          unoptimized
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1920px"
+          priority={true}
         />
         {/* Overlay Champion Icons */}
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {championPositions.map((pos) => {
-            // Convert game coordinates to percentage
-            // Game coordinates range from 0 to ~15000
-            // (0, 0) is bottom-left, (15000, 15000) is top-right
-            // Note: Game Y-axis increases upward, but CSS top increases downward, so we invert Y
-            // Account for mapMin offsets in the calculation
-            const xPercent = ((pos.x - mapMinX) / mapWidth) * 100;
-            const yPercent = 100 - ((pos.y - mapMinY) / mapHeight) * 100; // Invert Y-axis
-
-            // Apply fine-tuning offsets to align with map image
-            // Shift icons down and to the left to match visual map positioning
-            const xOffset = -5; // Shift left by 5%
-            const yOffset = 3; // Shift down by 3%
+            // Convert game coordinates to percentage positions on the map
+            // Game coordinate system: (0, 0) is bottom-left, Y increases upward
+            // CSS coordinate system: (0, 0) is top-left, Y increases downward
+            // So we need to invert the Y-axis
+            
+            // Normalize X coordinate: map from [mapMinX, mapMaxX] to [0, 1]
+            const normalizedX = (pos.x - mapMinX) / mapWidth;
+            // Normalize Y coordinate and invert: map from [mapMinY, mapMaxY] to [1, 0]
+            const normalizedY = 1 - (pos.y - mapMinY) / mapHeight;
+            
+            // Convert to percentage
+            const xPercent = normalizedX * 100;
+            const yPercent = normalizedY * 100;
 
             return (
               <div
                 key={pos.participantId}
                 className="absolute transform -translate-x-1/2 -translate-y-1/2"
                 style={{
-                  left: `${xPercent + xOffset}%`,
-                  top: `${yPercent + yOffset}%`,
+                  left: `${xPercent}%`,
+                  top: `${yPercent}%`,
+                  width: '64px',
+                  height: '64px',
+                  minWidth: '64px',
+                  minHeight: '64px',
                 }}
               >
-                <Image
-                  src={getChampionImageUrl(pos.championName)}
-                  alt={pos.championName}
-                  width={32}
-                  height={32}
-                  className={`w-16 h-16 rounded-full border-4 shadow-lg ${
+                <div
+                  className={`w-full h-full rounded-full border-4 shadow-lg ${
                     pos.teamId === 100 ? "border-blue-400" : "border-red-400"
-                  } ${pos.isDead ? "grayscale opacity-60" : ""}`}
-                  unoptimized
-                />
+                  } ${pos.isDead ? "opacity-60" : ""}`}
+                >
+                  <Image
+                    src={getChampionImageUrl(pos.championName)}
+                    alt={pos.championName}
+                    width={64}
+                    height={64}
+                    className={`w-full h-full rounded-full object-cover ${
+                      pos.isDead ? "grayscale" : ""
+                    }`}
+                    unoptimized
+                  />
+                </div>
               </div>
             );
           })}
