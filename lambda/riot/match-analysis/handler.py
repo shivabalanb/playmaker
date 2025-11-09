@@ -750,7 +750,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     print(f"Failed to read cache from S3: {str(e)}")
 
         # Fetch match and timeline data
-        match_data = fetch_match_data(match_id, region, puuid)
+        match_data = fetch_match_data(match_id, region)
         timeline_data = fetch_timeline_data(match_id, region)
 
         # Synthesize analysis
