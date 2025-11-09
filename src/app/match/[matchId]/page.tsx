@@ -29,9 +29,15 @@ export default function MatchDetailPage() {
   const searchParams = useSearchParams();
   const matchId = params.matchId as string;
   const region = searchParams.get("region") || "americas";
+  const puuid = searchParams.get("puuid"); // Optional - for analyzing specific player
   const [matchData, setMatchData] = useState<MatchData | null>(null);
   const [timelineData, setTimelineData] = useState<any>(null);
+  // Match performance analysis for AI insights (will be used for LLM context)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [matchPerformance, setMatchPerformance] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isLoadingPerformance, setIsLoadingPerformance] = useState(false);
   const [error, setError] = useState("");
   const [currentFrame, setCurrentFrame] = useState(0);
 
@@ -100,17 +106,31 @@ export default function MatchDetailPage() {
         setMatchData(data);
 
         // Fetch timeline data
-        return fetch(
-          `/api/riot/match/timeline?matchId=${matchId}&region=${region}`
-        );
+        return fetch(`/api/riot/match/timeline`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            matches: [{ matchId, region }],
+          }),
+        });
       })
       .then((res) => {
         if (!res) return;
         return res.json();
       })
-      .then((timeline) => {
-        if (timeline && !timeline.error) {
-          setTimelineData(timeline);
+      .then((response) => {
+        if (response && !response.error) {
+          const result = response.results?.[0];
+          if (result?.success && result.timelineData) {
+            setTimelineData(result.timelineData);
+          } else if (result && !result.success) {
+            console.error("Timeline fetch failed:", result.error);
+            setError(result.error || "Failed to load timeline data");
+          }
+        } else if (response?.error) {
+          setError(response.error);
         }
         setIsLoading(false);
       })
@@ -120,6 +140,42 @@ export default function MatchDetailPage() {
         setIsLoading(false);
       });
   }, [matchId, region]);
+
+  // Fetch match performance analysis (similar to player-performance)
+  useEffect(() => {
+    if (!matchData || !puuid) return; // Only fetch if we have match data and puuid
+
+    const fetchMatchPerformance = async () => {
+      setIsLoadingPerformance(true);
+      try {
+        const response = await fetch(`/api/riot/match-performance`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            matchId,
+            region,
+            puuid,
+          }),
+        });
+
+        if (response.ok) {
+          const analysis = await response.json();
+          setMatchPerformance(analysis);
+          console.log("Match performance analysis loaded:", analysis);
+        } else {
+          console.error("Failed to fetch match performance:", response.status);
+        }
+      } catch (err) {
+        console.error("Error fetching match performance:", err);
+      } finally {
+        setIsLoadingPerformance(false);
+      }
+    };
+
+    fetchMatchPerformance();
+  }, [matchData, matchId, region, puuid]);
 
   if (isLoading) {
     return (

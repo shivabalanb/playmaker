@@ -27,16 +27,6 @@ export function SummonerHeader({
     ? getChampionSplashUrl(featuredChampion)
     : null;
 
-  // Debug logging
-  if (featuredChampion) {
-    console.log("Featured Champion:", featuredChampion);
-    console.log("Splash URL:", splashUrl);
-  }
-
-  if (splashUrl=== '') {
-    console.log("Splash URL:", splashUrl);
-  }
-
   return (
     <header className="relative py-16 border-b border-[#2a3a4a] overflow-hidden ">
       {/* Champion Splash Art Background */}
