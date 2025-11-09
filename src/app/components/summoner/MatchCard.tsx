@@ -136,6 +136,7 @@ export function MatchCard({
     }
   }, [puuid, match.info.participants, match.info.gameDuration]);
 
+
   // Get summoner spell image URLs
   const summoner1Spell = summonerSpellCache?.get(playerData.summoner1Id);
   const summoner2Spell = summonerSpellCache?.get(playerData.summoner2Id);

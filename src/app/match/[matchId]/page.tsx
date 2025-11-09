@@ -297,6 +297,20 @@ export default function MatchDetailPage() {
               </span>
             </div>
           </div>
+          {/* Column Headers */}
+          <div className="flex items-center gap-1.5 px-1.5 pb-1 text-[10px] text-gray-500 font-semibold">
+            <div className="w-6 flex-shrink-0"></div>
+            <div className="w-[140px] flex-shrink-0"></div>
+            <div className="flex-shrink-0" style={{ width: '16px' }}></div>
+            <div className="flex-shrink-0" style={{ width: '20px' }}></div>
+            <div className="flex-shrink-0 ml-2" style={{ width: '150px' }}></div>
+            <div className="text-center min-w-[63px] flex-shrink-0">KDA</div>
+            <div className="text-center min-w-[25px] flex-shrink-0">KP</div>
+            <div className="text-center min-w-[60px] flex-shrink-0">CS</div>
+            <div className="text-center min-w-[35px] flex-shrink-0">GOLD</div>
+            <div className="text-center min-w-[180px] flex-shrink-0 pl-6">DAMAGE</div>
+            <div className="min-w-[70px] flex-shrink-0 ml-auto"></div>
+          </div>
           <div className="space-y-0.5">
             {sortPlayersByRole(
               allPlayerScores.filter((p) => p.teamId === 100)
@@ -332,6 +346,20 @@ export default function MatchDetailPage() {
                 {formatDuration(matchData.info.gameDuration)}
               </span>
             </div>
+          </div>
+          {/* Column Headers */}
+          <div className="flex items-center gap-1.5 px-1.5 pb-1 text-[10px] text-gray-500 font-semibold">
+            <div className="w-6 flex-shrink-0"></div>
+            <div className="w-[140px] flex-shrink-0"></div>
+            <div className="flex-shrink-0" style={{ width: '16px' }}></div>
+            <div className="flex-shrink-0" style={{ width: '20px' }}></div>
+            <div className="flex-shrink-0 ml-2" style={{ width: '150px' }}></div>
+            <div className="text-center min-w-[63px] flex-shrink-0">KDA</div>
+            <div className="text-center min-w-[25px] flex-shrink-0">KP</div>
+            <div className="text-center min-w-[60px] flex-shrink-0">CS</div>
+            <div className="text-center min-w-[35px] flex-shrink-0">GOLD</div>
+            <div className="text-center min-w-[180px] flex-shrink-0 pl-6">DAMAGE</div>
+            <div className="min-w-[70px] flex-shrink-0 ml-auto"></div>
           </div>
           <div className="space-y-0.5">
             {sortPlayersByRole(
@@ -1125,6 +1153,13 @@ function PlayerRow({
   // Get damage dealt (if available)
   const damageDealt = player.totalDamageDealtToChampions || 0;
   const damageK = (damageDealt / 1000).toFixed(1);
+  const damagePerMin = Math.round(damageDealt / (matchData.info.gameDuration / 60));
+  
+  // Calculate max damage for bar chart normalization
+  const maxDamage = Math.max(
+    ...matchData.info.participants.map(p => p.totalDamageDealtToChampions || 0)
+  );
+  const damageBarPercent = maxDamage > 0 ? (damageDealt / maxDamage) * 100 : 0;
 
   // Calculate vision score per minute
   const visionScore = player.visionScore || 0;
@@ -1312,21 +1347,32 @@ function PlayerRow({
           </div>
         ) : (
           <div className="text-center min-w-[45px] flex-shrink-0">
-            <div className="text-xs font-semibold text-white">{csPerMin}</div>
-            <div className="text-[8px] text-gray-400">CS/min</div>
+            <div className="text-xs font-semibold text-white">{cs}</div>
+            <div className="text-[8px] text-gray-400">{csPerMin}/min</div>
           </div>
         )}
 
-        {/* Damage */}
-        <div className="text-center min-w-[50px] flex-shrink-0">
-          <div className="text-xs font-semibold text-white">{damageK}K</div>
-          <div className="text-[8px] text-gray-400">Dmg</div>
-        </div>
-
         {/* Gold */}
         <div className="text-center min-w-[50px] flex-shrink-0">
-          <div className="text-xs font-semibold text-white">{goldPerMin}</div>
-          <div className="text-[8px] text-gray-400">G/min</div>
+          <div className="text-xs font-semibold text-white">{goldK}K</div>
+          <div className="text-[8px] text-gray-400">{goldPerMin}/min</div>
+        </div>
+
+        {/* Damage Bar Chart */}
+        <div className="flex items-center min-w-[180px] flex-shrink-0 gap-2 pl-6">
+          <div className="flex-1">
+            <div className="h-2 bg-[#1a2332] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-slate-500 via-slate-400 to-slate-300 rounded-full transition-all duration-300"
+                style={{ width: `${damageBarPercent}%` }}
+              />
+            </div>
+          </div>
+          <div className="text-right min-w-[85px]">
+            <div className="text-xs font-semibold text-white">
+              {damageK}K <span className="text-[9px] text-gray-400">({damagePerMin}/min)</span>
+            </div>
+          </div>
         </div>
 
         {/* Performance Score */}

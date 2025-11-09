@@ -1,15 +1,12 @@
 """
-League of Legends Match Analyst Agent using Strands SDK
-WebSocket implementation for real-time match analysis
+League of Legends Match Analyst - Simplified with RetrieveAndGenerate
+Uses Bedrock's integrated RAG for streamlined architecture
 """
 
 import os
 import boto3
 import json
-import re
-from typing import Dict, Any, Optional, List
-from strands import Agent, tool
-from strands.models import BedrockModel
+from typing import Dict, Any, List
 
 # -----------------------------
 # Configuration
@@ -25,90 +22,22 @@ KB_MODEL_ARN = (
 )
 
 bedrock_client = boto3.client('bedrock-agent-runtime', region_name=REGION)
-bedrock_runtime = boto3.client('bedrock-runtime', region_name=REGION)
-model = BedrockModel(model_id=AGENT_MODEL_ID, region_name=REGION)
-
-
-# -----------------------------
-# System Prompt
-# -----------------------------
-SYSTEM_PROMPT = """
-You are a League of Legends match analyst expert. You have access to detailed parsed match
-timeline data through a knowledge base. The timeline data includes:
-
-- Frame-by-frame participant status (gold, level, HP, CS, XP)
-- Lane differentials (TOP, MIDDLE, BOTTOM, JUNGLE) for gold and level
-- Team differentials (gold, level, turrets, objectives)
-- Game phase markers (EARLY_GAME 0-15min, MID_GAME 15-25min, LATE_GAME 25+min)
-- Event logs (kills, objectives, item purchases, etc.)
-- Claimed feats and objectives (dragons, baron, turrets, etc.)
-- Change in last minute metrics
-
-IMPORTANT: 
-- You are analyzing a SPECIFIC match. All data returned is automatically filtered to that match.
-- Always provide specific, data-driven insights with timestamps.
-- Reference concrete events, gold differentials, and objective timings.
-- Use multiple tools if needed to get a complete picture.
-- Only answer the question of the user. 
-- Level differentials are ONLY important when greater than 5. Refer to level differential by 
-  average across all 5 players.
-- Purchasing items faster within the first 1:00 of the game is irrelevant.
-
-When analyzing:
-- Early game = 0-15 minutes
-- Mid game = 15-25 minutes  
-- Late game = 25+ minutes
-"""
 
 
 # -----------------------------
 # Helper Functions
 # -----------------------------
-def extract_match_id_from_uri(uri: str) -> Optional[str]:
-    """
-    Extract match ID from S3 URI.
-    Example: s3://bucket/parsed-timelines/NA1_5342051812-parsed.txt -> NA1_5342051812
-    """
-    match = re.search(r'/([A-Z0-9]+_\d+)-parsed\.txt$', uri)
-    return match.group(1) if match else None
-
-
-def filter_results_by_match(results: list, target_match_id: str) -> list:
-    """
-    Filter retrieval results to only include those from the target match.
-    """
-    filtered = []
-    for result in results:
-        metadata = result.get('metadata', {})
-        source_uri = metadata.get('x-amz-bedrock-kb-source-uri', '')
-        match_id = extract_match_id_from_uri(source_uri)
-        
-        if match_id == target_match_id:
-            filtered.append(result)
-    
-    return filtered
-
-
 def send_response(connection_id, domain_name, stage, data):
     """
     Send a message back to the client through the WebSocket connection.
-    
-    This function uses the API Gateway Management API to post messages back
-    to connected WebSocket clients.
     """
-    
-    # Construct the API Gateway Management API endpoint
-    # Format: https://{domain}/{stage}
     endpoint = f'https://{domain_name}/{stage}'
-    
-    # Initialize the API Gateway Management API client
     client = boto3.client('apigatewaymanagementapi', endpoint_url=endpoint)
     
     try:
         print(f"Sending message to connection {connection_id}")
         print(f"   Message type: {data.get('type')}, Content length: {len(data.get('content', ''))}")
         
-        # Send the message to the connected client
         client.post_to_connection(
             ConnectionId=connection_id,
             Data=json.dumps(data).encode('utf-8')
@@ -117,7 +46,6 @@ def send_response(connection_id, domain_name, stage, data):
         print(f"Message sent successfully")
         
     except client.exceptions.GoneException:
-        # Connection no longer exists (client disconnected)
         print(f"Connection {connection_id} is no longer available")
         raise
         
@@ -127,172 +55,119 @@ def send_response(connection_id, domain_name, stage, data):
 
 
 # -----------------------------
-# Tool Factory - Creates tools bound to a specific match
+# Core RAG Logic
 # -----------------------------
-def create_match_tools(match_id: str):
+def analyze_match(user_message: str, match_id: str, conversation_history: List[Dict[str, str]]) -> str:
     """
-    Factory function that creates tool instances bound to a specific match_id.
-    This eliminates the need for global variables.
-    """
-    
-    @tool
-    def query_match_timeline(query: str, max_results: int = 10) -> str:
-        """
-        Query the parsed match timeline data for specific information about a match.
-        Retrieves more results than needed, then filters to current match.
-        """
-        try:
-            # Retrieve MORE results since we'll filter afterwards
-            retrieval_config = {
-                'vectorSearchConfiguration': {
-                    'numberOfResults': min(max_results * 3, 30)
-                }
-            }
-
-            # Enhance query with match context for better semantic matching
-            enhanced_query = f"Match {match_id}: {query}"
-
-            # Use retrieve (not retrieve_and_generate) so we can filter before generation
-            response = bedrock_client.retrieve(
-                knowledgeBaseId=KNOWLEDGE_BASE_ID,
-                retrievalQuery={'text': enhanced_query},
-                retrievalConfiguration=retrieval_config
-            )
-
-            # Get all results
-            all_results = response.get('retrievalResults', [])
-            
-            # Filter to only results from current match
-            filtered_results = filter_results_by_match(all_results, match_id)
-            print(f"Filtered {len(all_results)} results down to {len(filtered_results)} for match {match_id}")
-            
-            if not filtered_results:
-                return f"No data found for match {match_id}. The match may not be in the knowledge base."
-            
-            # Take top N after filtering
-            filtered_results = filtered_results[:max_results]
-            
-            # Build context from filtered results for generation
-            context_parts = []
-            for i, result in enumerate(filtered_results):
-                content = result.get('content', {}).get('text', '')
-                context_parts.append(f"[Source {i+1}]\n{content}")
-            
-            combined_context = "\n\n".join(context_parts)
-            
-            # Create a custom prompt that includes our filtered context
-            generation_prompt = f"""Based on the following match timeline data for match {match_id}, answer this question: {query}
-
-Timeline Data:
-{combined_context}
-
-Provide a specific, data-driven analysis with timestamps and concrete details from the timeline."""
-            
-            # Use bedrock directly for generation with our filtered context
-            generation_response = bedrock_runtime.invoke_model(
-                modelId=AGENT_MODEL_ID,
-                body=json.dumps({
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 2000,
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": generation_prompt
-                        }
-                    ]
-                })
-            )
-            
-            response_body = json.loads(generation_response['body'].read())
-            answer = response_body['content'][0]['text']
-            
-            result = f"Analysis: {answer}\n\nSources: {len(filtered_results)} timeline chunks from match {match_id}"
-            return result
-            
-        except Exception as e:
-            import traceback
-            print(traceback.format_exc())
-            return f"Error querying match timeline: {str(e)}"
-
-    @tool
-    def analyze_game_phase(phase: str, query: str = "") -> str:
-        """Analyze a specific game phase (EARLY_GAME, MID_GAME, LATE_GAME)"""
-        phase_query = f"Analyze {phase} phase data. {query}".strip()
-        return query_match_timeline(phase_query, max_results=8)
-
-    @tool
-    def analyze_lane_performance(lane: str, query: str = "") -> str:
-        """Analyze performance in a specific lane (TOP, MIDDLE, BOTTOM, JUNGLE)"""
-        lane_query = f"Analyze {lane} lane performance, gold differentials, level differentials. {query}".strip()
-        return query_match_timeline(lane_query, max_results=8)
-
-    @tool
-    def analyze_objectives_and_feats(query: str = "") -> str:
-        """Analyze objectives like dragons, baron, turrets, and other feats"""
-        objective_query = f"Analyze objectives, dragons, baron, turrets, and claimed feats. {query}".strip()
-        return query_match_timeline(objective_query, max_results=10)
-
-    @tool
-    def analyze_team_differentials(query: str = "") -> str:
-        """Analyze team-level differentials in gold, level, turrets, objectives"""
-        diff_query = f"Analyze team differentials including gold, level, turret, and objective differentials. {query}".strip()
-        return query_match_timeline(diff_query, max_results=8)
-
-    @tool
-    def get_match_summary(query: str = "") -> str:
-        """Get overall match summary and key moments"""
-        summary_query = f"Provide match summary, key events, turning points. {query}".strip()
-        return query_match_timeline(summary_query, max_results=12)
-    
-    return [
-        query_match_timeline,
-        analyze_game_phase,
-        analyze_lane_performance,
-        analyze_objectives_and_feats,
-        analyze_team_differentials,
-        get_match_summary
-    ]
-
-
-# -----------------------------
-# Message Handler
-# -----------------------------
-def handle_message(event: Dict[str, Any], messages: List[Dict[str, str]], match_id: str) -> str:
-    """
-    Process user messages using the Strands AI agent for match analysis.
-    
-    This function initializes a Strands agent with match-specific tools
-    and the configured system prompt, then processes the user's message 
-    to generate a response.
+    Perform RAG analysis using Bedrock's retrieve_and_generate for streamlined processing.
     """
     try:
-        # Create tools bound to the specific match ID
-        tools = create_match_tools(match_id)
+        # Build conversation history for context
+        history_text = ""
+        if len(conversation_history) > 1:  # More than just current message
+            history_text = "\nConversation History:\n"
+            for msg in conversation_history[:-1]:  # Exclude current message
+                role = msg.get('role', 'user')
+                content = msg.get('content', '')
+                history_text += f"{role.upper()}: {content}\n"
+            history_text += "\n"
         
-        # Initialize the Strands agent with system prompt and match-specific tools
-        # The agent is created fresh for each invocation to ensure clean state
-        agent = Agent(
-            model=model,
-            system_prompt=SYSTEM_PROMPT,
-            tools=tools
+        # Enhance query with match context and history
+        enhanced_query = f"{history_text}Match {match_id}: {user_message}"
+        
+        print(f"Processing query for match {match_id}: {user_message[:100]}...")
+        
+        # Configure retrieval with match-specific filtering
+        retrieval_config = {
+            'vectorSearchConfiguration': {
+                'numberOfResults': 30,
+                'filter': {
+                    'equals': {
+                        'key': 'x-amz-bedrock-kb-source-uri',
+                        'value': f's3://playmaker-adwaith66/parsed-timelines/{match_id}-parsed.txt'
+                    }
+                }
+            }
+        }
+        
+        # System prompt for the generation
+        system_prompt = """You are a League of Legends match analyst expert. You have access to detailed parsed match timeline data that includes:
+
+- Frame-by-frame participant status (gold, level, HP, CS, XP)
+- Lane differentials (TOP, MIDDLE, BOTTOM, JUNGLE) for gold and level
+- Team differentials (gold, level, turrets, objectives)
+- Game phase markers (EARLY_GAME 0-15min, MID_GAME 15-25min, LATE_GAME 25+min)
+- Event logs (kills, objectives, item purchases, etc.)
+- Claimed feats and objectives (dragons, baron, turrets, etc.)
+- Change in last minute metrics
+
+IMPORTANT ANALYSIS GUIDELINES:
+- Always provide specific, data-driven insights with timestamps
+- Reference concrete events, gold differentials, and objective timings
+- Level differentials are ONLY important when greater than 5
+- Refer to level differential by average across all 5 players
+- Purchasing items faster within the first 1:00 of the game is irrelevant
+- Only answer the user's specific question - don't over-explain
+
+Game Phases:
+- Early game = 0-15 minutes
+- Mid game = 15-25 minutes  
+- Late game = 25+ minutes
+
+Provide comprehensive but concise analysis based on the data provided."""
+
+        # Use retrieve_and_generate for integrated RAG
+        response = bedrock_client.retrieve_and_generate(
+            input={
+                'text': enhanced_query
+            },
+            retrieveAndGenerateConfiguration={
+                'type': 'KNOWLEDGE_BASE',
+                'knowledgeBaseConfiguration': {
+                    'knowledgeBaseId': KNOWLEDGE_BASE_ID,
+                    'modelArn': KB_MODEL_ARN,
+                    'retrievalConfiguration': retrieval_config,
+                    'generationConfiguration': {
+                        'promptTemplate': {
+                            'textPromptTemplate': f"""{system_prompt}
+
+Based on the following match timeline data, answer this question: $query$
+
+Timeline Data:
+$search_results$
+
+Provide a specific, data-driven analysis with timestamps and concrete details from the timeline. Be comprehensive but concise."""
+                        },
+                        'inferenceConfig': {
+                            'textInferenceConfig': {
+                                'maxTokens': 4000,
+                                'temperature': 0.7
+                            }
+                        }
+                    }
+                }
+            }
         )
         
-        # Extract the most recent user message from the conversation
-        # Messages array contains full conversation history for context
-        user_message = messages[-1]['content'] if messages else ''
+        # Extract the generated response
+        answer = response['output']['text']
         
-        print(f"Processing match {match_id} message: {user_message[:100]}...")
+        # Log citation information if available
+        citations = response.get('citations', [])
+        if citations:
+            print(f"Response used {len(citations)} citation(s)")
+            for i, citation in enumerate(citations[:3]):  # Log first 3
+                retrieved_refs = citation.get('retrievedReferences', [])
+                print(f"  Citation {i+1}: {len(retrieved_refs)} references")
         
-        # Invoke the agent to generate a response
-        # The agent will use its match-specific tools and reasoning to formulate an answer
-        response = agent(user_message)
+        print(f"Generated response: {len(answer)} characters")
         
-        print(f"Agent response generated: {len(str(response))} characters")
-        
-        return str(response)
+        return answer
         
     except Exception as e:
-        print(f"Error in handle_message: {str(e)}")
+        import traceback
+        print(f"Error in analyze_match: {str(e)}")
+        print(traceback.format_exc())
         raise
 
 
@@ -349,31 +224,29 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             print(f"Processing {len(messages)} message(s) for match {match_id}")
             
             try:
-                # Generate response using the Strands agent with match-specific context
-                response_text = handle_message(event, messages, match_id)
+                # Get the current user message
+                user_message = messages[-1]['content'] if messages else ''
+                
+                # Generate response using retrieve_and_generate
+                response_text = analyze_match(user_message, match_id, messages)
                 
                 # Send the response content back to the client
-                # Using 'chunk' type to support potential streaming in the future
                 send_response(connection_id, domain_name, stage, {
                     'type': 'chunk',
                     'content': response_text
                 })
                 
                 # Send end signal to indicate response is complete
-                # Client can use this to stop showing loading indicators
                 send_response(connection_id, domain_name, stage, {
                     'type': 'end',
                     'content': ''
                 })
                 
-                # Return success response
-                # Note: The client receives messages via WebSocket, not this HTTP response
+                # Return success response (just for API Gateway, not sent to client)
                 return {
                     'statusCode': 200,
                     'body': json.dumps({
-                        'type': 'chunk',
-                        'content': response_text,
-                        'matchId': match_id
+                        'message': 'Response sent successfully'
                     })
                 }
                 
@@ -391,7 +264,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'content': 'Sorry, I encountered an error analyzing the match. Please try again.'
                     })
                 except:
-                    # If we can't send error to client, just log it
                     print("Could not send error message to client")
                 
                 return {
@@ -409,7 +281,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     # Handle unexpected errors at the handler level
     except KeyError as e:
-        # Missing required fields in the event
         error_message = f"Missing required field in event: {str(e)}"
         print(f"{error_message}")
         return {
@@ -418,7 +289,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
         
     except Exception as e:
-        # Catch-all for any other unexpected errors
         error_message = f"Unexpected error in lambda_handler: {str(e)}"
         print(f"{error_message}")
         import traceback
