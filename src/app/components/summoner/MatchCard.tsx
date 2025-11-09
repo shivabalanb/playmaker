@@ -16,7 +16,6 @@ import { PerformanceScore } from "./PerformanceScore";
 interface MatchCardProps {
   match: MatchData;
   puuid: string;
-  isMounted: boolean;
   region?: string;
   getChampionImageUrl: (championName: string) => string;
   getItemImageUrl: (itemId: number) => string;
@@ -39,7 +38,6 @@ let runeStyleCache: Map<number, { icon: string }> | null = null;
 export function MatchCard({
   match,
   puuid,
-  isMounted,
   region = "americas",
   getChampionImageUrl,
   getItemImageUrl,
@@ -204,7 +202,7 @@ export function MatchCard({
         className="absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)`,
-          backgroundSize: '20px 20px',
+          backgroundSize: "20px 20px",
         }}
       />
       {/* Background with color theme - softer */}
@@ -289,7 +287,6 @@ export function MatchCard({
               <span className="text-base font-semibold text-white w-[120px] truncate">
                 {playerData.championName}
               </span>
-              
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-400 min-h-[16px] flex-wrap">
               <span
@@ -302,10 +299,12 @@ export function MatchCard({
                 {getQueueType(match.info.queueId)}
               </span>
               <span className="whitespace-nowrap">•</span>
-              <span className="whitespace-nowrap">{formatDuration(match.info.gameDuration)}</span>
+              <span className="whitespace-nowrap">
+                {formatDuration(match.info.gameDuration)}
+              </span>
               <span className="whitespace-nowrap">•</span>
               <span className="whitespace-nowrap" suppressHydrationWarning>
-                {isMounted ? formatTimeAgo(match.info.gameCreation) : "..."}
+                {formatTimeAgo(match.info.gameCreation)}
               </span>
             </div>
           </div>
@@ -457,7 +456,7 @@ export function MatchCard({
         {/* Review Button */}
         <div className="flex items-center w-[80px] h-16 flex-shrink-0">
           <Link
-            href={`/match/${match.metadata.matchId}?region=${region}`}
+            href={`/match/${match.metadata.matchId}?region=${region}${puuid ? `&puuid=${encodeURIComponent(puuid)}` : ""}`}
             className="cursor-pointer px-3 py-1.5 bg-black hover:bg-gray-900 text-white text-xs rounded transition-colors whitespace-nowrap text-center"
           >
             Review
@@ -467,4 +466,3 @@ export function MatchCard({
     </div>
   );
 }
-

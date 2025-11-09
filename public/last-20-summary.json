@@ -1,0 +1,514 @@
+{
+  "summary": {
+    "totalGames": 20,
+    "wins": 12,
+    "losses": 8,
+    "winRate": 0.6
+  },
+  "performance": {
+    "kda": {
+      "average": 2.933333333333333,
+      "kills": 4.45,
+      "deaths": 3.75,
+      "assists": 6.55
+    },
+    "gold": {
+      "perMinute": 444.51879620222115,
+      "total": 10573.25
+    },
+    "cs": {
+      "perMinute": 6.76873489121676,
+      "total": 161.0
+    },
+    "damage": {
+      "dealtPerMinute": 955.3648880636232,
+      "dealtTotal": 22724.15,
+      "takenTotal": 20823.7,
+      "efficiency": 2.14921145343201
+    },
+    "killParticipation": 43.81616729060303,
+    "damageShare": 22.64373188689018
+  },
+  "earlyGame": {
+    "csAt10Minutes": 65.76250000596046,
+    "takedownsAt10Minutes": 4.85,
+    "firstTurretParticipation": 0.05
+  },
+  "combat": {
+    "multikills": 0.4,
+    "outnumberedKills": 0.5,
+    "turretKills": 1.15,
+    "inhibitorKills": 0.1
+  },
+  "objectives": {
+    "firstBlood": {
+      "kills": 3,
+      "assists": 1,
+      "participation": 0.2
+    },
+    "dragon": {
+      "kills": 0.15,
+      "takedowns": 0.35
+    },
+    "baron": {
+      "kills": 0.0,
+      "takedowns": 0.1
+    },
+    "riftHerald": {
+      "takedowns": 0.1
+    },
+    "turrets": {
+      "kills": 1.15,
+      "takedowns": 2.1
+    },
+    "inhibitors": {
+      "kills": 0.1,
+      "takedowns": 0.3
+    },
+    "soloKills": 0.0
+  },
+  "survivability": {
+    "avgTimeDead": 296.65,
+    "avgLongestLiving": 391.4
+  },
+  "utility": {
+    "healsOnTeammates": 238.8,
+    "shieldsOnTeammates": 109.9,
+    "effectiveHealAndShield": 348.8123046875,
+    "ccTime": 28.6
+  },
+  "vision": {
+    "scorePerMinute": 0.8933889219773674,
+    "scoreTotal": 21.25,
+    "wardsPlaced": 9.2,
+    "wardsDestroyed": 3.8,
+    "controlWardsPlaced": 2.65,
+    "earlyWardKills": 2.4
+  },
+  "champions": {
+    "mostPlayed": [
+      {
+        "champion": "Jayce",
+        "games": 3,
+        "winRate": 0.6666666666666666,
+        "avgKDA": 2.058823529411765,
+        "avgGold": 9772.666666666666,
+        "avgCS": 181.33333333333334,
+        "avgDamage": 20028.0
+      },
+      {
+        "champion": "Azir",
+        "games": 3,
+        "winRate": 0.6666666666666666,
+        "avgKDA": 3.0833333333333335,
+        "avgGold": 13761.666666666666,
+        "avgCS": 247.0,
+        "avgDamage": 31913.333333333332
+      }
+    ],
+    "bestPerforming": {
+      "champion": "Jayce",
+      "games": 3,
+      "winRate": 0.6666666666666666,
+      "avgKDA": 2.058823529411765,
+      "avgGold": 9772.666666666666,
+      "avgCS": 181.33333333333334,
+      "avgDamage": 20028.0
+    },
+    "all": [
+      {
+        "champion": "Jayce",
+        "games": 3,
+        "winRate": 0.6666666666666666,
+        "avgKDA": 2.058823529411765,
+        "avgGold": 9772.666666666666,
+        "avgCS": 181.33333333333334,
+        "avgDamage": 20028.0
+      },
+      {
+        "champion": "Azir",
+        "games": 3,
+        "winRate": 0.6666666666666666,
+        "avgKDA": 3.0833333333333335,
+        "avgGold": 13761.666666666666,
+        "avgCS": 247.0,
+        "avgDamage": 31913.333333333332
+      }
+    ],
+    "diversity": 14
+  },
+  "roles": [
+    {
+      "role": "MIDDLE",
+      "games": 13,
+      "winRate": 0.5384615384615384
+    },
+    {
+      "role": "",
+      "games": 3,
+      "winRate": 0.3333333333333333
+    },
+    {
+      "role": "TOP",
+      "games": 2,
+      "winRate": 1.0
+    },
+    {
+      "role": "UTILITY",
+      "games": 1,
+      "winRate": 1.0
+    },
+    {
+      "role": "JUNGLE",
+      "games": 1,
+      "winRate": 1.0
+    }
+  ],
+  "matches": [
+    {
+      "matchId": "KR_7858254806",
+      "champion": "Jayce",
+      "role": "MIDDLE",
+      "win": true,
+      "kills": 6,
+      "deaths": 4,
+      "assists": 7,
+      "kda": 3.25,
+      "gold": 9400,
+      "cs": 165,
+      "damageDealt": 17487,
+      "damageTaken": 14202,
+      "visionScore": 20,
+      "gameDuration": 1291,
+      "firstBlood": true
+    },
+    {
+      "matchId": "KR_7858151244",
+      "champion": "Lissandra",
+      "role": "MIDDLE",
+      "win": true,
+      "kills": 3,
+      "deaths": 0,
+      "assists": 12,
+      "kda": 15.0,
+      "gold": 13012,
+      "cs": 278,
+      "damageDealt": 25527,
+      "damageTaken": 18644,
+      "visionScore": 29,
+      "gameDuration": 1873,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7858019563",
+      "champion": "Leblanc",
+      "role": "MIDDLE",
+      "win": false,
+      "kills": 6,
+      "deaths": 5,
+      "assists": 2,
+      "kda": 1.6,
+      "gold": 12124,
+      "cs": 244,
+      "damageDealt": 25770,
+      "damageTaken": 23137,
+      "visionScore": 42,
+      "gameDuration": 1689,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7857352690",
+      "champion": "Taliyah",
+      "role": "",
+      "win": false,
+      "kills": 9,
+      "deaths": 6,
+      "assists": 3,
+      "kda": 2.0,
+      "gold": 11350,
+      "cs": 1,
+      "damageDealt": 28621,
+      "damageTaken": 21018,
+      "visionScore": 0,
+      "gameDuration": 1445,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7856448015",
+      "champion": "Azir",
+      "role": "TOP",
+      "win": true,
+      "kills": 5,
+      "deaths": 1,
+      "assists": 16,
+      "kda": 21.0,
+      "gold": 14645,
+      "cs": 230,
+      "damageDealt": 37487,
+      "damageTaken": 18426,
+      "visionScore": 20,
+      "gameDuration": 1676,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7856357576",
+      "champion": "Azir",
+      "role": "MIDDLE",
+      "win": true,
+      "kills": 4,
+      "deaths": 6,
+      "assists": 6,
+      "kda": 1.6666666666666667,
+      "gold": 11569,
+      "cs": 220,
+      "damageDealt": 28240,
+      "damageTaken": 22027,
+      "visionScore": 16,
+      "gameDuration": 1630,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7856281659",
+      "champion": "Aurora",
+      "role": "MIDDLE",
+      "win": false,
+      "kills": 7,
+      "deaths": 9,
+      "assists": 6,
+      "kda": 1.4444444444444444,
+      "gold": 10815,
+      "cs": 171,
+      "damageDealt": 24454,
+      "damageTaken": 25515,
+      "visionScore": 22,
+      "gameDuration": 1422,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7856196441",
+      "champion": "Yone",
+      "role": "MIDDLE",
+      "win": true,
+      "kills": 1,
+      "deaths": 1,
+      "assists": 3,
+      "kda": 4.0,
+      "gold": 5769,
+      "cs": 130,
+      "damageDealt": 8064,
+      "damageTaken": 13931,
+      "visionScore": 13,
+      "gameDuration": 915,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7855895357",
+      "champion": "Darius",
+      "role": "",
+      "win": true,
+      "kills": 17,
+      "deaths": 2,
+      "assists": 3,
+      "kda": 10.0,
+      "gold": 17156,
+      "cs": 0,
+      "damageDealt": 58209,
+      "damageTaken": 45121,
+      "visionScore": 0,
+      "gameDuration": 1309,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7855800422",
+      "champion": "Jayce",
+      "role": "TOP",
+      "win": true,
+      "kills": 2,
+      "deaths": 7,
+      "assists": 13,
+      "kda": 2.142857142857143,
+      "gold": 10843,
+      "cs": 182,
+      "damageDealt": 22354,
+      "damageTaken": 19819,
+      "visionScore": 36,
+      "gameDuration": 1582,
+      "firstBlood": true
+    },
+    {
+      "matchId": "KR_7854217940",
+      "champion": "Jayce",
+      "role": "MIDDLE",
+      "win": false,
+      "kills": 2,
+      "deaths": 6,
+      "assists": 5,
+      "kda": 1.1666666666666667,
+      "gold": 9075,
+      "cs": 197,
+      "damageDealt": 20243,
+      "damageTaken": 17561,
+      "visionScore": 27,
+      "gameDuration": 1349,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7854155054",
+      "champion": "Azir",
+      "role": "MIDDLE",
+      "win": false,
+      "kills": 3,
+      "deaths": 5,
+      "assists": 3,
+      "kda": 1.2,
+      "gold": 15071,
+      "cs": 291,
+      "damageDealt": 30013,
+      "damageTaken": 22752,
+      "visionScore": 29,
+      "gameDuration": 1956,
+      "firstBlood": true
+    },
+    {
+      "matchId": "KR_7854091325",
+      "champion": "Annie",
+      "role": "MIDDLE",
+      "win": true,
+      "kills": 2,
+      "deaths": 1,
+      "assists": 4,
+      "kda": 6.0,
+      "gold": 7360,
+      "cs": 154,
+      "damageDealt": 12286,
+      "damageTaken": 6453,
+      "visionScore": 17,
+      "gameDuration": 1034,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7853949039",
+      "champion": "TahmKench",
+      "role": "UTILITY",
+      "win": true,
+      "kills": 0,
+      "deaths": 3,
+      "assists": 12,
+      "kda": 4.0,
+      "gold": 5465,
+      "cs": 19,
+      "damageDealt": 7506,
+      "damageTaken": 14744,
+      "visionScore": 44,
+      "gameDuration": 1136,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7852025214",
+      "champion": "Bard",
+      "role": "",
+      "win": false,
+      "kills": 4,
+      "deaths": 6,
+      "assists": 2,
+      "kda": 1.0,
+      "gold": 10455,
+      "cs": 0,
+      "damageDealt": 18917,
+      "damageTaken": 23555,
+      "visionScore": 0,
+      "gameDuration": 1391,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7851903870",
+      "champion": "Yone",
+      "role": "MIDDLE",
+      "win": true,
+      "kills": 3,
+      "deaths": 6,
+      "assists": 9,
+      "kda": 2.0,
+      "gold": 13945,
+      "cs": 283,
+      "damageDealt": 30997,
+      "damageTaken": 40583,
+      "visionScore": 37,
+      "gameDuration": 2137,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7851809754",
+      "champion": "Ryze",
+      "role": "MIDDLE",
+      "win": true,
+      "kills": 12,
+      "deaths": 1,
+      "assists": 4,
+      "kda": 16.0,
+      "gold": 14007,
+      "cs": 239,
+      "damageDealt": 26413,
+      "damageTaken": 17346,
+      "visionScore": 29,
+      "gameDuration": 1427,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7851300813",
+      "champion": "LeeSin",
+      "role": "JUNGLE",
+      "win": true,
+      "kills": 1,
+      "deaths": 1,
+      "assists": 17,
+      "kda": 18.0,
+      "gold": 8971,
+      "cs": 175,
+      "damageDealt": 14597,
+      "damageTaken": 28765,
+      "visionScore": 24,
+      "gameDuration": 1340,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7851225074",
+      "champion": "Yasuo",
+      "role": "MIDDLE",
+      "win": false,
+      "kills": 1,
+      "deaths": 2,
+      "assists": 1,
+      "kda": 1.0,
+      "gold": 5570,
+      "cs": 140,
+      "damageDealt": 7111,
+      "damageTaken": 10434,
+      "visionScore": 12,
+      "gameDuration": 969,
+      "firstBlood": false
+    },
+    {
+      "matchId": "KR_7851145201",
+      "champion": "Leblanc",
+      "role": "MIDDLE",
+      "win": false,
+      "kills": 1,
+      "deaths": 3,
+      "assists": 3,
+      "kda": 1.3333333333333333,
+      "gold": 4863,
+      "cs": 101,
+      "damageDealt": 10187,
+      "damageTaken": 12441,
+      "visionScore": 8,
+      "gameDuration": 972,
+      "firstBlood": true
+    }
+  ],
+  "metadata": {
+    "latestMatchId": "KR_7858254806",
+    "computedAt": 1762644656,
+    "numMatches": 20
+  }
+}
