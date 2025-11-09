@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -383,6 +383,11 @@ function MapTimeline({
   // Get current frame
   const frame = frames[currentFrame] || null;
 
+  // Draggable marker state
+  const [markerPosition, setMarkerPosition] = useState({ x: 50, y: 50 }); // Start at center in percentage
+  const [isDragging, setIsDragging] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+
   // Create a map of participant ID to champion name and team
   // Timeline uses participant IDs 1-10, which correspond to participants array indices
   const participantMap = new Map<number, string>();
@@ -439,6 +444,80 @@ function MapTimeline({
   const mapMaxY = 14980;
   const mapWidth = mapMaxX - mapMinX;
   const mapHeight = mapMaxY - mapMinY;
+
+  // Convert percentage position to game coordinates
+  const convertPercentToGameCoords = (xPercent: number, yPercent: number) => {
+    // Account for the same offsets used for champion icons
+    const xOffset = -5;
+    const yOffset = 3;
+    const adjustedXPercent = xPercent - xOffset;
+    const adjustedYPercent = yPercent - yOffset;
+
+    // Convert percentage back to game coordinates
+    // xPercent = ((x - mapMinX) / mapWidth) * 100
+    // So: x = (xPercent / 100) * mapWidth + mapMinX
+    const gameX = (adjustedXPercent / 100) * mapWidth + mapMinX;
+    // yPercent = 100 - ((y - mapMinY) / mapHeight) * 100
+    // So: y = mapMinY + mapHeight - (yPercent / 100) * mapHeight
+    const gameY = mapMinY + mapHeight - (adjustedYPercent / 100) * mapHeight;
+
+    return { x: Math.round(gameX), y: Math.round(gameY) };
+  };
+
+  // Handle marker drag start
+  const handleMarkerMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  // Handle marker drag end
+  const handleMarkerMouseUp = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    // Log position when drag ends
+    const gameCoords = convertPercentToGameCoords(markerPosition.x, markerPosition.y);
+    console.log(
+      `\n[MARKER] Position: game(${gameCoords.x}, ${gameCoords.y}) → screen(${markerPosition.x.toFixed(2)}%, ${markerPosition.y.toFixed(2)}%)`
+    );
+  };
+
+  // Handle global mouse events for dragging
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!mapContainerRef.current) return;
+      const rect = mapContainerRef.current.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+      const clampedX = Math.max(0, Math.min(100, x));
+      const clampedY = Math.max(0, Math.min(100, y));
+
+      setMarkerPosition({ x: clampedX, y: clampedY });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      // Log position when drag ends
+      const gameCoords = convertPercentToGameCoords(markerPosition.x, markerPosition.y);
+      console.log(
+        `\n[MARKER] Position: game(${gameCoords.x}, ${gameCoords.y}) → screen(${markerPosition.x.toFixed(2)}%, ${markerPosition.y.toFixed(2)}%)`
+      );
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, markerPosition]);
 
   // Format time for display
   const formatTime = (timestamp: number) => {
@@ -557,7 +636,10 @@ function MapTimeline({
       </div>
 
       {/* Map with Champion Positions */}
-      <div className="relative w-full bg-[#0a1428] rounded-lg overflow-hidden">
+      <div
+        ref={mapContainerRef}
+        className="relative w-full bg-[#0a1428] rounded-lg overflow-hidden"
+      >
         <Image
           src="/Base.png"
           alt="League of Legends Map"
@@ -616,6 +698,30 @@ function MapTimeline({
               </div>
             );
           })}
+
+          {/* Draggable Marker */}
+          <div
+            className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-move pointer-events-auto z-10"
+            style={{
+              left: `${markerPosition.x}%`,
+              top: `${markerPosition.y}%`,
+            }}
+            onMouseDown={handleMarkerMouseDown}
+          >
+            <div className="w-6 h-6 rounded-full bg-yellow-400 border-2 border-yellow-600 shadow-lg flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-yellow-600"></div>
+            </div>
+            {/* Tooltip showing coordinates */}
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 text-white text-xs rounded whitespace-nowrap pointer-events-none">
+              {(() => {
+                const gameCoords = convertPercentToGameCoords(
+                  markerPosition.x,
+                  markerPosition.y
+                );
+                return `game(${gameCoords.x}, ${gameCoords.y})`;
+              })()}
+            </div>
+          </div>
         </div>
       </div>
     </div>
