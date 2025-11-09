@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const LAMBDA_FUNCTION_URL = process.env.LAMBDA_MATCH_PERFORMANCE_FUNCTION_URL;
+const LAMBDA_FUNCTION_URL = process.env.LAMBDA_MATCH_ANALYSIS_FUNCTION_URL;
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,10 +62,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.error("Error fetching match performance:", error);
+    console.error("Error fetching match analysis:", error);
     return NextResponse.json(
       {
-        error: "Failed to fetch match performance",
+        error: "Failed to fetch match analysis",
         details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }

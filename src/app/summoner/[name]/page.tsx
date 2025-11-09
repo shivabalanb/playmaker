@@ -215,7 +215,7 @@ export default function SummonerPage({
 
       setIsLoadingStats(true);
       try {
-        const response = await fetch(`/api/riot/player-performance`, {
+        const response = await fetch(`/api/riot/player-analysis`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -227,9 +227,9 @@ export default function SummonerPage({
         });
 
         if (response.ok) {
-          const stats = await response.json();
-          setMatchStats(stats);
-          console.log("Match stats loaded:", stats);
+          const analysis = await response.json();
+          setMatchStats(analysis);
+          console.log("Player analysis loaded:", analysis);
         } else {
           console.error("Failed to fetch match stats:", response.status);
         }

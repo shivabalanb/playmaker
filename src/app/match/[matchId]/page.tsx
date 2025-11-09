@@ -32,12 +32,12 @@ export default function MatchDetailPage() {
   const puuid = searchParams.get("puuid"); // Optional - for analyzing specific player
   const [matchData, setMatchData] = useState<MatchData | null>(null);
   const [timelineData, setTimelineData] = useState<any>(null);
-  // Match performance analysis for AI insights (will be used for LLM context)
+  // Match analysis for AI insights (will be used for LLM context)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [matchPerformance, setMatchPerformance] = useState<any>(null);
+  const [matchAnalysis, setMatchAnalysis] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [isLoadingPerformance, setIsLoadingPerformance] = useState(false);
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
   const [error, setError] = useState("");
   const [currentFrame, setCurrentFrame] = useState(0);
 
@@ -141,14 +141,14 @@ export default function MatchDetailPage() {
       });
   }, [matchId, region]);
 
-  // Fetch match performance analysis (similar to player-performance)
+  // Fetch match analysis (similar to player-analysis)
   useEffect(() => {
     if (!matchData || !puuid) return; // Only fetch if we have match data and puuid
 
-    const fetchMatchPerformance = async () => {
-      setIsLoadingPerformance(true);
+    const fetchMatchAnalysis = async () => {
+      setIsLoadingAnalysis(true);
       try {
-        const response = await fetch(`/api/riot/match-performance`, {
+        const response = await fetch(`/api/riot/match-analysis`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -162,19 +162,19 @@ export default function MatchDetailPage() {
 
         if (response.ok) {
           const analysis = await response.json();
-          setMatchPerformance(analysis);
-          console.log("Match performance analysis loaded:", analysis);
+          setMatchAnalysis(analysis);
+          console.log("Match analysis loaded:", analysis);
         } else {
-          console.error("Failed to fetch match performance:", response.status);
+          console.error("Failed to fetch match analysis:", response.status);
         }
       } catch (err) {
-        console.error("Error fetching match performance:", err);
+        console.error("Error fetching match analysis:", err);
       } finally {
-        setIsLoadingPerformance(false);
+        setIsLoadingAnalysis(false);
       }
     };
 
-    fetchMatchPerformance();
+    fetchMatchAnalysis();
   }, [matchData, matchId, region, puuid]);
 
   if (isLoading) {
@@ -358,6 +358,9 @@ export default function MatchDetailPage() {
             setCurrentFrame={setCurrentFrame}
           />
         )}
+
+        {/* Chatbot */}
+        {matchData && <MatchChatbot matchId={matchId} />}
       </div>
     </div>
   );
@@ -479,10 +482,13 @@ function MapTimeline({
     setIsDragging(false);
 
     // Log position when drag ends
-    const gameCoords = convertPercentToGameCoords(markerPosition.x, markerPosition.y);
-    console.log(
-      `\n[MARKER] Position: game(${gameCoords.x}, ${gameCoords.y}) → screen(${markerPosition.x.toFixed(2)}%, ${markerPosition.y.toFixed(2)}%)`
+    const gameCoords = convertPercentToGameCoords(
+      markerPosition.x,
+      markerPosition.y
     );
+    // console.log(
+    //   `\n[MARKER] Position: game(${gameCoords.x}, ${gameCoords.y}) → screen(${markerPosition.x.toFixed(2)}%, ${markerPosition.y.toFixed(2)}%)`
+    // );
   };
 
   // Handle global mouse events for dragging
@@ -504,10 +510,13 @@ function MapTimeline({
     const handleMouseUp = () => {
       setIsDragging(false);
       // Log position when drag ends
-      const gameCoords = convertPercentToGameCoords(markerPosition.x, markerPosition.y);
-      console.log(
-        `\n[MARKER] Position: game(${gameCoords.x}, ${gameCoords.y}) → screen(${markerPosition.x.toFixed(2)}%, ${markerPosition.y.toFixed(2)}%)`
+      const gameCoords = convertPercentToGameCoords(
+        markerPosition.x,
+        markerPosition.y
       );
+      // console.log(
+      //   `\n[MARKER] Position: game(${gameCoords.x}, ${gameCoords.y}) → screen(${markerPosition.x.toFixed(2)}%, ${markerPosition.y.toFixed(2)}%)`
+      // );
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -529,19 +538,19 @@ function MapTimeline({
   // Console log champion positions on frame change
   useEffect(() => {
     if (championPositions.length > 0) {
-      console.log(`\n=== Frame ${currentFrame + 1} / ${totalFrames} ===`);
-      console.log(`Timestamp: ${frame ? formatTime(frame.timestamp) : "N/A"}`);
-      console.log(`Champion Positions (${championPositions.length}):`);
+      // console.log(`\n=== Frame ${currentFrame + 1} / ${totalFrames} ===`);
+      // console.log(`Timestamp: ${frame ? formatTime(frame.timestamp) : "N/A"}`);
+      // console.log(`Champion Positions (${championPositions.length}):`);
       championPositions.forEach((pos) => {
         const normalizedX = (pos.x - mapMinX) / mapWidth;
         const normalizedY = 1 - (pos.y - mapMinY) / mapHeight;
         const xPercent = normalizedX * 100;
         const yPercent = normalizedY * 100;
-        console.log(
-          `  ${pos.championName} (ID: ${pos.participantId}): ` +
-            `game(${pos.x}, ${pos.y}) → screen(${xPercent.toFixed(2)}%, ${yPercent.toFixed(2)}%) ` +
-            `${pos.isDead ? "[DEAD]" : "[ALIVE]"}`
-        );
+        // console.log(
+        //   `  ${pos.championName} (ID: ${pos.participantId}): ` +
+        //     `game(${pos.x}, ${pos.y}) → screen(${xPercent.toFixed(2)}%, ${yPercent.toFixed(2)}%) ` +
+        //     `${pos.isDead ? "[DEAD]" : "[ALIVE]"}`
+        // );
       });
     }
   }, [
@@ -656,12 +665,12 @@ function MapTimeline({
             // Game coordinate system: (0, 0) is bottom-left, Y increases upward
             // CSS coordinate system: (0, 0) is top-left, Y increases downward
             // So we need to invert the Y-axis
-            
+
             // Normalize X coordinate: map from [mapMinX, mapMaxX] to [0, 1]
             const normalizedX = (pos.x - mapMinX) / mapWidth;
             // Normalize Y coordinate and invert: map from [mapMinY, mapMaxY] to [1, 0]
             const normalizedY = 1 - (pos.y - mapMinY) / mapHeight;
-            
+
             // Convert to percentage
             const xPercent = normalizedX * 100;
             const yPercent = normalizedY * 100;
@@ -673,10 +682,10 @@ function MapTimeline({
                 style={{
                   left: `${xPercent}%`,
                   top: `${yPercent}%`,
-                  width: '64px',
-                  height: '64px',
-                  minWidth: '64px',
-                  minHeight: '64px',
+                  width: "64px",
+                  height: "64px",
+                  minWidth: "64px",
+                  minHeight: "64px",
                 }}
               >
                 <div
@@ -722,6 +731,295 @@ function MapTimeline({
               })()}
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface MatchChatbotProps {
+  matchId: string;
+}
+
+function MatchChatbot({ matchId }: MatchChatbotProps) {
+  const [messages, setMessages] = useState<
+    Array<{ role: string; content: string }>
+  >([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Establish WebSocket connection on mount
+  useEffect(() => {
+    const wsUrl = "wss://ot204y8uvd.execute-api.us-east-2.amazonaws.com/test/";
+
+    console.log(`[WebSocket] Attempting to connect to: ${wsUrl}`);
+
+    try {
+      const ws = new WebSocket(wsUrl);
+
+      // Set connection timeout (10 seconds)
+      connectionTimeoutRef.current = setTimeout(() => {
+        if (ws.readyState === WebSocket.CONNECTING) {
+          console.error("[WebSocket] Connection timeout after 10 seconds");
+          setConnectionError("Connection timeout - server may be unreachable");
+          ws.close();
+          setIsConnected(false);
+        }
+      }, 10000);
+
+      ws.onopen = () => {
+        console.log("[WebSocket] ✅ Connected successfully");
+        if (connectionTimeoutRef.current) {
+          clearTimeout(connectionTimeoutRef.current);
+          connectionTimeoutRef.current = null;
+        }
+        setIsConnected(true);
+        setConnectionError(null);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const messageText = event.data;
+          console.log("[WebSocket] 📨 Received raw message:", messageText);
+
+          // Parse the message - can be in format: < {"type": "chunk", "content": "..."} or just {"type": "chunk", "content": "..."}
+          const trimmed = messageText.trim();
+          let parsed;
+
+          if (trimmed.startsWith("<")) {
+            // Extract JSON part after < (handle both "< " and "<" cases)
+            const jsonPart = trimmed.substring(1).trim();
+            parsed = JSON.parse(jsonPart);
+          } else {
+            // Try parsing directly as JSON
+            parsed = JSON.parse(trimmed);
+          }
+
+          console.log("[WebSocket] 📦 Parsed message:", parsed);
+
+          // Handle different message types
+          if (parsed.type === "chunk" && typeof parsed.content === "string") {
+            console.log("[WebSocket] ✅ Processing chunk message");
+            setMessages((prev) => {
+              // Check if there's already an assistant message being streamed
+              const lastMessage = prev[prev.length - 1];
+              if (lastMessage && lastMessage.role === "assistant") {
+                // Append to existing assistant message
+                return [
+                  ...prev.slice(0, -1),
+                  {
+                    role: "assistant",
+                    content: lastMessage.content + parsed.content,
+                  },
+                ];
+              } else {
+                // Create new assistant message
+                return [
+                  ...prev,
+                  { role: "assistant", content: parsed.content },
+                ];
+              }
+            });
+            // Don't set isLoading to false yet - wait for "end" message
+          } else if (parsed.type === "end") {
+            console.log(
+              "[WebSocket] ✅ Received end message - stopping loading"
+            );
+            setIsLoading(false);
+          } else {
+            console.log("[WebSocket] ⚠️ Unknown message type:", parsed);
+          }
+        } catch (error) {
+          console.error("[WebSocket] ❌ Error parsing message:", error);
+          console.error("[WebSocket] Raw data:", event.data);
+        }
+      };
+
+      ws.onerror = () => {
+        // WebSocket error events don't always have detailed info
+        const readyState = ws.readyState;
+        const stateNames = ["CONNECTING", "OPEN", "CLOSING", "CLOSED"];
+        console.error("[WebSocket] ❌ Error occurred", {
+          readyState: `${readyState} (${stateNames[readyState]})`,
+          url: wsUrl,
+        });
+        setConnectionError(
+          `Connection error (state: ${stateNames[readyState]})`
+        );
+        setIsConnected(false);
+      };
+
+      ws.onclose = (event) => {
+        if (connectionTimeoutRef.current) {
+          clearTimeout(connectionTimeoutRef.current);
+          connectionTimeoutRef.current = null;
+        }
+
+        setIsConnected(false);
+
+        // Log close code and reason if available
+        const closeInfo = {
+          code: event.code,
+          reason: event.reason || "No reason provided",
+          wasClean: event.wasClean,
+        };
+
+        if (event.code !== 1000) {
+          console.error("[WebSocket] ❌ Closed unexpectedly:", closeInfo);
+          setConnectionError(`Connection closed (code: ${event.code})`);
+        } else {
+          console.log("[WebSocket] ✅ Disconnected normally:", closeInfo);
+          setConnectionError(null);
+        }
+      };
+
+      wsRef.current = ws;
+
+      return () => {
+        if (connectionTimeoutRef.current) {
+          clearTimeout(connectionTimeoutRef.current);
+        }
+        if (
+          ws.readyState === WebSocket.OPEN ||
+          ws.readyState === WebSocket.CONNECTING
+        ) {
+          ws.close(1000, "Component unmounting");
+        }
+      };
+    } catch (error) {
+      console.error("[WebSocket] ❌ Failed to create WebSocket:", error);
+      setTimeout(() => {
+        setConnectionError("Failed to create WebSocket connection");
+        setIsConnected(false);
+      }, 0);
+    }
+  }, []);
+
+  const handleSendMessage = () => {
+    if (!inputMessage.trim() || !isConnected || isLoading) return;
+
+    const userMessage = { role: "user", content: inputMessage.trim() };
+
+    // Add user message to UI
+    setMessages((prev) => [...prev, userMessage]);
+    setInputMessage("");
+    setIsLoading(true);
+
+    // Send message to WebSocket
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      const payload = {
+        matchId: matchId,
+        messages: [userMessage],
+      };
+      const payloadStr = JSON.stringify(payload);
+      console.log("[WebSocket] 📤 Sending message:", payloadStr);
+      wsRef.current.send(payloadStr);
+    } else {
+      console.error(
+        "[WebSocket] ❌ Cannot send - WebSocket not open. State:",
+        wsRef.current?.readyState
+      );
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  return (
+    <div className="mt-4 bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+      <div className="p-4 border-b border-gray-700">
+        <h3 className="text-lg font-semibold text-white">
+          Match Analysis Chat
+        </h3>
+        <div className="flex items-center gap-2 mt-1">
+          <div
+            className={`w-2 h-2 rounded-full ${
+              isConnected ? "bg-green-500" : "bg-red-500"
+            }`}
+          />
+          <span className="text-xs text-gray-400">
+            {isConnected ? "Connected" : "Disconnected"}
+          </span>
+          {connectionError && (
+            <span className="text-xs text-red-400 ml-2">{connectionError}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="h-96 overflow-y-auto p-4 space-y-3 bg-gray-950">
+        {messages.length === 0 && (
+          <div className="text-center text-gray-500 text-sm py-8">
+            Ask questions about this match. For example: &quot;What happened in
+            the early game?&quot;
+          </div>
+        )}
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`flex ${
+              msg.role === "user" ? "justify-end" : "justify-start"
+            }`}
+          >
+            <div
+              className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                msg.role === "user"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-800 text-gray-100"
+              }`}
+            >
+              <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
+            </div>
+          </div>
+        ))}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-800 text-gray-100 rounded-lg px-4 py-2">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75" />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150" />
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div className="p-4 border-t border-gray-700">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Ask about this match..."
+            disabled={!isConnected || isLoading}
+            className="flex-1 bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          <button
+            onClick={handleSendMessage}
+            disabled={!isConnected || isLoading || !inputMessage.trim()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Send
+          </button>
         </div>
       </div>
     </div>

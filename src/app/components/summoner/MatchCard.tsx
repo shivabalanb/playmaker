@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { MatchData } from "./types";
 import {
@@ -47,6 +48,7 @@ export function MatchCard({
   formatTimeAgo,
   reorderItemsWithBootsFirst,
 }: MatchCardProps) {
+  const router = useRouter();
   const playerData = match.info.participants.find((p) => p.puuid === puuid);
   if (!playerData) return null;
 
@@ -455,12 +457,52 @@ export function MatchCard({
 
         {/* Review Button */}
         <div className="flex items-center w-[80px] h-16 flex-shrink-0">
-          <Link
-            href={`/match/${match.metadata.matchId}?region=${region}${puuid ? `&puuid=${encodeURIComponent(puuid)}` : ""}`}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+
+              // Make POST request to parse endpoint (fire-and-forget)
+              // Don't await - let it run in background without blocking navigation
+              fetch(
+                "https://kxx5nci6i0.execute-api.us-east-2.amazonaws.com/test/parse",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    matchId: match.metadata.matchId,
+                    region: region,
+                  }),
+                }
+              )
+                .then((response) => {
+                  if (!response.ok) {
+                    console.warn(
+                      `Parse endpoint returned ${response.status}:`,
+                      response.statusText
+                    );
+                  } else {
+                    console.log("Parse endpoint called successfully");
+                  }
+                })
+                .catch((error) => {
+                  // Log error but don't block navigation
+                  // This is expected if CORS is not configured or endpoint is unreachable
+                  console.warn(
+                    "Parse endpoint call failed (non-blocking):",
+                    error.message
+                  );
+                });
+
+              // Navigate to match detail page
+              const url = `/match/${match.metadata.matchId}?region=${region}${puuid ? `&puuid=${encodeURIComponent(puuid)}` : ""}`;
+              router.push(url);
+            }}
             className="cursor-pointer px-3 py-1.5 bg-black hover:bg-gray-900 text-white text-xs rounded transition-colors whitespace-nowrap text-center"
           >
             Review
-          </Link>
+          </button>
         </div>
       </div>
     </div>

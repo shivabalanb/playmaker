@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const LAMBDA_FUNCTION_URL =
-  process.env.LAMBDA_PLAYER_PERFORMANCE_FUNCTION_URL;
+const LAMBDA_FUNCTION_URL = process.env.LAMBDA_PLAYER_ANALYSIS_FUNCTION_URL;
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +9,25 @@ export async function POST(request: NextRequest) {
     if (!body.puuid) {
       return NextResponse.json(
         { error: "puuid is required in request body" },
+        { status: 400 }
+      );
+    }
+
+    // Validate and sanitize PUUID
+    const puuid = String(body.puuid).trim();
+    if (!puuid || puuid.length === 0) {
+      return NextResponse.json(
+        { error: "puuid cannot be empty" },
+        { status: 400 }
+      );
+    }
+
+    // Validate PUUID format (Riot PUUIDs are typically 78 characters, base64-like with dashes)
+    // Format: alphanumeric, dashes, underscores, typically 70-80 characters
+    const puuidPattern = /^[A-Za-z0-9_-]{70,80}$/;
+    if (!puuidPattern.test(puuid)) {
+      return NextResponse.json(
+        { error: "Invalid PUUID format" },
         { status: 400 }
       );
     }
@@ -28,7 +46,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        puuid: body.puuid,
+        puuid: puuid,
         region: body.region || "americas",
       }),
     });
@@ -55,10 +73,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.error("Error fetching match stats:", error);
+    console.error("Error fetching player analysis:", error);
     return NextResponse.json(
       {
-        error: "Failed to fetch match stats",
+        error: "Failed to fetch player analysis",
         details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }

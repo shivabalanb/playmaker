@@ -80,13 +80,6 @@ def fetch_with_retry(
 
 def fetch_timeline_data(match_id: str, region: str) -> Dict[str, Any]:
     """Fetch timeline data from S3 cache or Riot API."""
-    bucket_name = os.environ.get("S3_BUCKET_NAME")
-    safe_match_id = match_id.replace("/", "_").replace(":", "_")
-    key = f"riot/match-timelines/{safe_match_id}-timeline.json"
-
-    # Check S3 cache first
-    if bucket_name and s3_object_exists(bucket_name, key):
-        return get_from_s3(bucket_name, key)
 
     # Fetch from Riot API
     api_key = get_riot_api_key()
@@ -99,29 +92,14 @@ def fetch_timeline_data(match_id: str, region: str) -> Dict[str, Any]:
     return fetch_with_retry(timeline_url, headers)
 
 
-def fetch_match_data(match_id: str, region: str, puuid: Optional[str] = None) -> Dict[str, Any]:
-    """Fetch match data from S3 cache or Riot API."""
-    bucket_name = os.environ.get("S3_BUCKET_NAME")
-    safe_match_id = match_id.replace("/", "_").replace(":", "_")
-    
-    # Try to find in S3 cache (organized by PUUID if available)
-    if bucket_name and puuid:
-        key = f"riot/match-histories/{puuid}/{safe_match_id}-match.json"
-        if s3_object_exists(bucket_name, key):
-            return get_from_s3(bucket_name, key)
-    
-    # Fallback: try old structure or fetch from API
-    if bucket_name:
-        key = f"riot/match-histories/{safe_match_id}-match.json"
-        if s3_object_exists(bucket_name, key):
-            return get_from_s3(bucket_name, key)
-
+def fetch_match_data(
+    match_id: str, region: str, puuid: Optional[str] = None
+) -> Dict[str, Any]:
     # Fetch from Riot API
     api_key = get_riot_api_key()
     headers = {"X-Riot-Token": api_key}
     match_url = (
-        f"https://{region}.api.riotgames.com/"
-        f"lol/match/v5/matches/{match_id}"
+        f"https://{region}.api.riotgames.com/" f"lol/match/v5/matches/{match_id}"
     )
 
     return fetch_with_retry(match_url, headers)
@@ -157,26 +135,26 @@ def extract_draft_info(match_data: Dict[str, Any]) -> Dict[str, Any]:
     """Extract draft phase information (bans and picks)."""
     info = match_data.get("info", {})
     participants = info.get("teams", [])
-    
+
     # Extract bans
     blue_bans = []
     red_bans = []
-    
+
     for team in participants:
         bans = team.get("bans", [])
         team_id = team.get("teamId", 100)
-        
+
         for ban in bans:
             champion_id = ban.get("championId", 0)
             if team_id == 100:
                 blue_bans.append(champion_id)
             else:
                 red_bans.append(champion_id)
-    
+
     # Extract picks with runes
     blue_picks = []
     red_picks = []
-    
+
     match_participants = info.get("participants", [])
     for participant in match_participants:
         team_id = participant.get("teamId", 100)
@@ -184,22 +162,22 @@ def extract_draft_info(match_data: Dict[str, Any]) -> Dict[str, Any]:
         champion_name = participant.get("championName", get_champion_name(champion_id))
         team_position = participant.get("teamPosition", "")
         puuid = participant.get("puuid", "")
-        
+
         # Extract runes
         perks = participant.get("perks", {})
         stat_perks = perks.get("statPerks", {})
         styles = perks.get("styles", [])
-        
+
         primary_style = None
         secondary_style = None
-        
+
         for style in styles:
             style_id = style.get("style", 0)
             if primary_style is None:
                 primary_style = style_id
             elif secondary_style is None:
                 secondary_style = style_id
-        
+
         pick_info = {
             "championId": champion_id,
             "championName": champion_name,
@@ -208,12 +186,12 @@ def extract_draft_info(match_data: Dict[str, Any]) -> Dict[str, Any]:
             "primaryRuneStyle": primary_style,
             "secondaryRuneStyle": secondary_style,
         }
-        
+
         if team_id == 100:
             blue_picks.append(pick_info)
         else:
             red_picks.append(pick_info)
-    
+
     return {
         "blueBans": blue_bans,
         "redBans": red_bans,
@@ -222,20 +200,22 @@ def extract_draft_info(match_data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def extract_final_stats(match_data: Dict[str, Any], target_puuid: str) -> Dict[str, Any]:
+def extract_final_stats(
+    match_data: Dict[str, Any], target_puuid: str
+) -> Dict[str, Any]:
     """Extract final stats for all players, highlighting target player."""
     info = match_data.get("info", {})
     participants = info.get("participants", [])
-    
+
     players = []
     target_player = None
-    
+
     for participant in participants:
         puuid = participant.get("puuid", "")
         champion_name = participant.get("championName", "Unknown")
         team_position = participant.get("teamPosition", "")
         team_id = participant.get("teamId", 100)
-        
+
         # Extract items (non-zero only)
         items = [
             participant.get("item0", 0),
@@ -246,19 +226,19 @@ def extract_final_stats(match_data: Dict[str, Any], target_puuid: str) -> Dict[s
             participant.get("item5", 0),
         ]
         items = [item for item in items if item > 0]
-        
+
         # Extract runes
         perks = participant.get("perks", {})
         styles = perks.get("styles", [])
         runes_info = []
-        
+
         for style in styles:
             style_id = style.get("style", 0)
             selections = style.get("selections", [])
             for selection in selections:
                 perk_id = selection.get("perk", 0)
                 runes_info.append({"style": style_id, "perk": perk_id})
-        
+
         player_info = {
             "puuid": puuid,
             "championName": champion_name,
@@ -275,12 +255,12 @@ def extract_final_stats(match_data: Dict[str, Any], target_puuid: str) -> Dict[s
             "totalDamageToChampions": participant.get("totalDamageDealtToChampions", 0),
             "totalDamageToStructures": participant.get("damageDealtToTurrets", 0),
         }
-        
+
         players.append(player_info)
-        
+
         if puuid == target_puuid:
             target_player = player_info
-    
+
     return {"players": players, "targetPlayer": target_player}
 
 
@@ -290,21 +270,21 @@ def extract_timeline_events(
     """Extract key events from timeline (kills, objectives, turrets)."""
     info = timeline_data.get("info", {})
     frames = info.get("frames", [])
-    
+
     # Create PUUID to participant ID mapping
     metadata = timeline_data.get("metadata", {})
     participant_puuids = metadata.get("participants", [])
-    
+
     puuid_to_participant_id = {}
     participant_id_to_info = {}
-    
+
     match_info = match_data.get("info", {})
     match_participants = match_info.get("participants", [])
-    
+
     for idx, puuid in enumerate(participant_puuids):
         participant_id = idx + 1
         puuid_to_participant_id[puuid] = participant_id
-        
+
         # Find participant info from match data
         for p in match_participants:
             if p.get("puuid") == puuid:
@@ -313,25 +293,25 @@ def extract_timeline_events(
                     "teamId": p.get("teamId", 100),
                 }
                 break
-    
+
     events = []
-    
+
     for frame in frames:
         frame_events = frame.get("events", [])
         participant_frames = frame.get("participantFrames", {})
         timestamp = frame.get("timestamp", 0)
-        
+
         for event in frame_events:
             event_type = event.get("type", "")
-            
+
             # Champion kills
             if event_type == "CHAMPION_KILL":
                 killer_id = event.get("killerId", 0)
                 victim_id = event.get("victimId", 0)
-                
+
                 # Get assists
                 assisting_participant_ids = event.get("assistingParticipantIds", [])
-                
+
                 # Get positions for all participants at this timestamp
                 positions = {}
                 for pid_str, frame_data in participant_frames.items():
@@ -343,30 +323,32 @@ def extract_timeline_events(
                             "x": pos.get("x", 0),
                             "y": pos.get("y", 0),
                         }
-                
+
                 # Find killer and victim names
                 killer_name = "Unknown"
                 victim_name = "Unknown"
                 killer_team = None
                 victim_team = None
-                
+
                 if killer_id in participant_id_to_info:
                     killer_name = participant_id_to_info[killer_id]["championName"]
                     killer_team = participant_id_to_info[killer_id]["teamId"]
-                
+
                 if victim_id in participant_id_to_info:
                     victim_name = participant_id_to_info[victim_id]["championName"]
                     victim_team = participant_id_to_info[victim_id]["teamId"]
-                
+
                 # Get assists
                 assists = []
                 for assist_id in assisting_participant_ids:
                     if assist_id in participant_id_to_info:
-                        assists.append(participant_id_to_info[assist_id]["championName"])
-                
+                        assists.append(
+                            participant_id_to_info[assist_id]["championName"]
+                        )
+
                 # Check if first blood
                 is_first_blood = event.get("killType") == "KILL_FIRST_BLOOD"
-                
+
                 events.append(
                     {
                         "timestamp": timestamp,
@@ -383,13 +365,13 @@ def extract_timeline_events(
                         "positions": positions,
                     }
                 )
-            
+
             # Objectives
             elif event_type in ["ELITE_MONSTER_KILL", "DRAGON_SOUL_GIVEN"]:
                 killer_id = event.get("killerId", 0)
                 monster_type = event.get("monsterType", "")
                 monster_sub_type = event.get("monsterSubType", "")
-                
+
                 # Get positions
                 positions = {}
                 for pid_str, frame_data in participant_frames.items():
@@ -401,13 +383,13 @@ def extract_timeline_events(
                             "x": pos.get("x", 0),
                             "y": pos.get("y", 0),
                         }
-                
+
                 killer_name = "Unknown"
                 killer_team = None
                 if killer_id in participant_id_to_info:
                     killer_name = participant_id_to_info[killer_id]["championName"]
                     killer_team = participant_id_to_info[killer_id]["teamId"]
-                
+
                 # Determine monster name
                 monster_name = monster_sub_type if monster_sub_type else monster_type
                 if not monster_name:
@@ -415,7 +397,7 @@ def extract_timeline_events(
                         monster_name = "Dragon Soul"
                     else:
                         monster_name = "Objective"
-                
+
                 events.append(
                     {
                         "timestamp": timestamp,
@@ -430,13 +412,13 @@ def extract_timeline_events(
                         "positions": positions,
                     }
                 )
-            
+
             # Turret and Inhibitor kills
             elif event_type == "BUILDING_KILL":
                 building_type = event.get("buildingType", "")
                 killer_id = event.get("killerId", 0)
                 team_id = event.get("teamId", 100)
-                
+
                 positions = {}
                 for pid_str, frame_data in participant_frames.items():
                     pid = int(pid_str)
@@ -447,11 +429,11 @@ def extract_timeline_events(
                             "x": pos.get("x", 0),
                             "y": pos.get("y", 0),
                         }
-                
+
                 killer_name = "Unknown"
                 if killer_id in participant_id_to_info:
                     killer_name = participant_id_to_info[killer_id]["championName"]
-                
+
                 if building_type == "TOWER_BUILDING":
                     events.append(
                         {
@@ -479,7 +461,7 @@ def extract_timeline_events(
                             "positions": positions,
                         }
                     )
-    
+
     return sorted(events, key=lambda x: x["timestamp"])
 
 
@@ -490,21 +472,21 @@ def extract_minute_by_minute_stats(
     info = timeline_data.get("info", {})
     frames = info.get("frames", [])
     frame_interval = info.get("frameInterval", 60000)  # Usually 60 seconds
-    
+
     # Create PUUID to participant ID mapping
     metadata = timeline_data.get("metadata", {})
     participant_puuids = metadata.get("participants", [])
-    
+
     puuid_to_participant_id = {}
     participant_id_to_info = {}
-    
+
     match_info = match_data.get("info", {})
     match_participants = match_info.get("participants", [])
-    
+
     for idx, puuid in enumerate(participant_puuids):
         participant_id = idx + 1
         puuid_to_participant_id[puuid] = participant_id
-        
+
         for p in match_participants:
             if p.get("puuid") == puuid:
                 participant_id_to_info[participant_id] = {
@@ -512,35 +494,35 @@ def extract_minute_by_minute_stats(
                     "teamId": p.get("teamId", 100),
                 }
                 break
-    
+
     minute_stats = defaultdict(list)
-    
+
     for frame in frames:
         timestamp = frame.get("timestamp", 0)
         minute = timestamp // frame_interval
-        
+
         participant_frames = frame.get("participantFrames", {})
-        
+
         for pid_str, frame_data in participant_frames.items():
             pid = int(pid_str)
-            
+
             if pid not in participant_id_to_info:
                 continue
-            
+
             champ_name = participant_id_to_info[pid]["championName"]
             team_id = participant_id_to_info[pid]["teamId"]
-            
+
             # Extract stats
             champion_stats = frame_data.get("championStats", {})
             position = frame_data.get("position", {})
-            
+
             # Get items (from current gold and level, we can infer items purchased)
             current_gold = frame_data.get("currentGold", 0)
             total_gold = frame_data.get("totalGold", 0)
-            
+
             # Extract items from events (would need to track item purchases)
             # For now, just show gold
-            
+
             stats = {
                 "championName": champ_name,
                 "team": "Blue" if team_id == 100 else "Red",
@@ -551,9 +533,9 @@ def extract_minute_by_minute_stats(
                 "goldDelta": current_gold,
                 "position": {"x": position.get("x", 0), "y": position.get("y", 0)},
             }
-            
+
             minute_stats[minute].append(stats)
-    
+
     return dict(minute_stats)
 
 
@@ -561,7 +543,7 @@ def format_timeline_event_for_llm(event: Dict[str, Any]) -> str:
     """Format a timeline event as a human-readable string."""
     time_str = event.get("time", "00:00")
     event_type = event.get("type", "")
-    
+
     if event_type == "CHAMPION_KILL":
         killer_name = event.get("killerName", "Unknown")
         victim_name = event.get("victimName", "Unknown")
@@ -569,76 +551,76 @@ def format_timeline_event_for_llm(event: Dict[str, Any]) -> str:
         victim_team = event.get("victimTeam", "")
         assists = event.get("assists", [])
         is_first_blood = event.get("isFirstBlood", False)
-        
+
         assist_str = ""
         if assists:
             assist_str = f" (assists: {', '.join(assists)})"
-        
+
         first_blood_str = " [FIRST BLOOD]" if is_first_blood else ""
-        
+
         # Format positions
         positions = event.get("positions", {})
         pos_strs = []
         for champ_name, pos in positions.items():
             pos_strs.append(f"{champ_name} @({pos['x']},{pos['y']})")
         positions_str = " | ".join(pos_strs) if pos_strs else ""
-        
+
         return f"{time_str} — {killer_team} {killer_name} killed {victim_team} {victim_name}{assist_str}{first_blood_str}\n      positions: {positions_str}"
-    
+
     elif event_type in ["ELITE_MONSTER_KILL", "DRAGON_SOUL_GIVEN"]:
         team = event.get("team", "Unknown")
         killer_name = event.get("killerName", "Unknown")
         monster_type = event.get("monsterType", "")
         monster_sub_type = event.get("monsterSubType", "")
-        
+
         monster_name = monster_sub_type if monster_sub_type else monster_type
         if not monster_name:
             if event_type == "DRAGON_SOUL_GIVEN":
                 monster_name = "Dragon Soul"
             else:
                 monster_name = "Objective"
-        
+
         positions = event.get("positions", {})
         pos_strs = []
         for champ_name, pos in positions.items():
             pos_strs.append(f"{champ_name} @({pos['x']},{pos['y']})")
         positions_str = " | ".join(pos_strs) if pos_strs else ""
-        
+
         return f"{time_str} — {team} team secured {monster_name} (by {team} {killer_name})\n      positions: {positions_str}"
-    
+
     elif event_type == "TURRET_KILL":
         team = event.get("team", "Unknown")
         killer_name = event.get("killerName", "Unknown")
         tower_type = event.get("towerType", "")
         lane_type = event.get("laneType", "")
-        
+
         tower_name = f"{tower_type} Turret" if tower_type else "Turret"
         if lane_type:
             tower_name = f"{lane_type} {tower_name}"
-        
+
         positions = event.get("positions", {})
         pos_strs = []
         for champ_name, pos in positions.items():
             pos_strs.append(f"{champ_name} @({pos['x']},{pos['y']})")
         positions_str = " | ".join(pos_strs) if pos_strs else ""
-        
+
         return f"{time_str} — {team} team destroyed {tower_name} (by {team} {killer_name})\n      positions: {positions_str}"
-    
+
     elif event_type == "INHIBITOR_KILL":
         team = event.get("team", "Unknown")
         killer_name = event.get("killerName", "Unknown")
         lane_type = event.get("laneType", "")
-        
+
         inhibitor_name = f"{lane_type} Inhibitor" if lane_type else "Inhibitor"
-        
+
         positions = event.get("positions", {})
         pos_strs = []
         for champ_name, pos in positions.items():
             pos_strs.append(f"{champ_name} @({pos['x']},{pos['y']})")
         positions_str = " | ".join(pos_strs) if pos_strs else ""
-        
+
         return f"{time_str} — {team} team destroyed {inhibitor_name} (by {team} {killer_name})\n      positions: {positions_str}"
-    
+
     return f"{time_str} — {event_type}"
 
 
@@ -652,24 +634,26 @@ def synthesize_match_analysis(
     info = match_data.get("info", {})
     game_duration = info.get("gameDuration", 0)  # in seconds
     game_duration_minutes = game_duration // 60
-    
+
     # Extract draft info
     draft = extract_draft_info(match_data)
-    
+
     # Extract final stats
     final_stats = extract_final_stats(match_data, target_puuid)
-    
+
     # Extract timeline events
     timeline_events = extract_timeline_events(timeline_data, target_puuid, match_data)
-    
+
     # Format timeline events for LLM
-    formatted_timeline = [format_timeline_event_for_llm(event) for event in timeline_events]
-    
+    formatted_timeline = [
+        format_timeline_event_for_llm(event) for event in timeline_events
+    ]
+
     # Extract minute-by-minute stats
     minute_by_minute = extract_minute_by_minute_stats(
         timeline_data, target_puuid, match_data
     )
-    
+
     # Format minute-by-minute stats
     formatted_minute_stats = {}
     for minute, stats_list in minute_by_minute.items():
@@ -682,15 +666,15 @@ def synthesize_match_analysis(
             gold = stats.get("gold", 0)
             gold_delta = stats.get("goldDelta", 0)
             pos = stats.get("position", {})
-            
+
             # Format items (would need to track item purchases per minute)
             items_str = "[]"  # Placeholder
-            
+
             formatted_stats.append(
                 f"  - {team} {champ_name} — Lvl {level}, CS {cs}, Gold {gold} (+{gold_delta}), Items {items_str} @({pos.get('x', 0)},{pos.get('y', 0)})"
             )
         formatted_minute_stats[minute] = formatted_stats
-    
+
     return {
         "matchId": match_id,
         "gameDuration": game_duration,
@@ -752,7 +736,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         bucket_name = os.environ.get("S3_BUCKET_NAME")
         if bucket_name:
             safe_match_id = match_id.replace("/", "_").replace(":", "_")
-            cache_key = f"riot/match-timelines/{puuid}/{safe_match_id}-analysis.json"
+            cache_key = f"riot/match-analyses/{puuid}/{safe_match_id}-analysis.json"
 
             if s3_object_exists(bucket_name, cache_key):
                 try:
@@ -796,4 +780,3 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "statusCode": 500,
             "body": json.dumps({"error": str(e)}),
         }
-
