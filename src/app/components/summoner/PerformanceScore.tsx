@@ -15,13 +15,40 @@ export function PerformanceScore({
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
 
-  // Get color based on score
+  // Get color based on score - interpolate from red -> orange -> light blue -> solid blue
   const getScoreColor = () => {
-    if (score >= 80) return "#10b981"; // green
-    if (score >= 65) return "#3b82f6"; // blue
-    if (score >= 50) return "#eab308"; // yellow
-    if (score >= 35) return "#f97316"; // orange
-    return "#ef4444"; // red
+    // Clamp score between 0 and 100
+    const normalizedScore = Math.max(0, Math.min(100, score));
+    
+    // Define RGB values for the gradient stops
+    const red = { r: 239, g: 68, b: 68 };        // #ef4444
+    const orange = { r: 249, g: 115, b: 22 };    // #f97316
+    const lightBlue = { r: 56, g: 189, b: 248 }; // #38bdf8
+    const solidBlue = { r: 37, g: 99, b: 235 };  // #2563eb
+    
+    let r, g, b;
+    
+    if (normalizedScore <= 40) {
+      // Red to Orange (0-40)
+      const t = normalizedScore / 40;
+      r = Math.round(red.r + (orange.r - red.r) * t);
+      g = Math.round(red.g + (orange.g - red.g) * t);
+      b = Math.round(red.b + (orange.b - red.b) * t);
+    } else if (normalizedScore <= 70) {
+      // Orange to Light Blue (40-70)
+      const t = (normalizedScore - 40) / 30;
+      r = Math.round(orange.r + (lightBlue.r - orange.r) * t);
+      g = Math.round(orange.g + (lightBlue.g - orange.g) * t);
+      b = Math.round(orange.b + (lightBlue.b - orange.b) * t);
+    } else {
+      // Light Blue to Solid Blue (70-100)
+      const t = (normalizedScore - 70) / 30;
+      r = Math.round(lightBlue.r + (solidBlue.r - lightBlue.r) * t);
+      g = Math.round(lightBlue.g + (solidBlue.g - lightBlue.g) * t);
+      b = Math.round(lightBlue.b + (solidBlue.b - lightBlue.b) * t);
+    }
+    
+    return `rgb(${r}, ${g}, ${b})`;
   };
 
   const color = getScoreColor();

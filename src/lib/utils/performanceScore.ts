@@ -1,46 +1,46 @@
 // Position-specific weights for different metrics
 const roleWeights = {
   TOP: {
-    combat: 0.30,
-    economy: 0.25,
+    combat: 0.35,
+    economy: 0.35,
     earlyLane: 0.15,
     vision: 0.10,
     objectives: 0.00,
-    survivability: 0.15,
+    survivability: 0.00,
     utility: 0.05,
   },
   JUNGLE: {
-    combat: 0.25,
+    combat: 0.30,
     economy: 0.25,
     earlyLane: 0.10,
-    vision: 0.20,
+    vision: 0.10,
     objectives: 0.10,
-    survivability: 0.05,
-    utility: 0.05,
+    survivability: 0.00,
+    utility: 0.15,
   },
   MIDDLE: {
-    combat: 0.25,
-    economy: 0.25,
+    combat: 0.40,
+    economy: 0.30,
     earlyLane: 0.15,
     vision: 0.10,
     objectives: 0.0,
-    survivability: 0.20,
+    survivability: 0.00,
     utility: 0.05,
   },
   BOTTOM: {
-    combat: 0.20,
-    economy: 0.25,
+    combat: 0.45,
+    economy: 0.35,
     earlyLane: 0.15,
     vision: 0.05,
     objectives: 0.0,
-    survivability: 0.35,
+    survivability: 0.00,
     utility: 0.00,
   },
   UTILITY: {
-    combat: 0.15,
+    combat: 0.25,
     economy: 0.10,
     earlyLane: 0.05,
-    vision: 0.25,
+    vision: 0.15,
     objectives: 0.10,
     survivability: 0.20,
     utility: 0.15,
@@ -179,12 +179,23 @@ function calculateCombatScore(
   const teamKDAs = team.map(p => 
     p.deaths > 0 ? (p.kills + p.assists) / p.deaths : p.kills + p.assists
   );
+
+  const teamDMG = team.map(p => 
+    p.totalDamageDealtToChampions || 0
+  );
+
+  const meanDMG = teamDMG.reduce((a, b) => a + b, 0) / teamDMG.length;
+  const stdDevDMG = calculateStdDev(teamDMG, meanDMG);
+
+  const dmgZScore = calculateZScore(totalDamageDealt, meanDMG, stdDevDMG);
+  let baseDScore = zScoreToDistribution(dmgZScore, 30, 10);
+
   const meanKDA = teamKDAs.reduce((a, b) => a + b, 0) / teamKDAs.length;
   const stdDevKDA = calculateStdDev(teamKDAs, meanKDA);
 
   // Base score from KDA relative to team (centered at 70)
   const kdaZScore = calculateZScore(kda, meanKDA, stdDevKDA);
-  let baseScore = zScoreToDistribution(kdaZScore, 70, 15);
+  let baseScore = zScoreToDistribution(kdaZScore, 30, 5);
 
   // Direct comparison to opponent (if available)
   if (opponent) {
@@ -202,8 +213,10 @@ function calculateCombatScore(
 
     const damageDiff = totalDamageDealt - (opponent.totalDamageDealtToChampions || 0);
     const damageOppBonus = damageDiff * 0.001; // ±10 for ±1000 damage difference
+
+    // console.log(baseScore, oppBonus, dmgOppBonus, damageOppBonus, baseDScore)
     
-    baseScore += oppBonus + dmgOppBonus + damageOppBonus;
+    baseScore += oppBonus + dmgOppBonus + damageOppBonus + baseDScore;
   }
 
   // Kill participation bonus/penalty (0-1 scale, centered at 0.6)
@@ -220,8 +233,6 @@ function calculateCombatScore(
   if (kda < 1.0) penalty = (1.0 - kda) * 20; // Penalty for KDA < 1
   if (killPart < 0.3) penalty += (0.3 - killPart) * 30; // Low participation penalty
 
-  console.log(player.teamPosition)
-  console.log("KP BONUS", kpBonus, "DMG BONUS", dmgBonus, "SOLO KILL BONUS", soloKillBonus, "MULTIKILL BONUS", "PENALTY", penalty)
 
   const finalScore = baseScore + kpBonus + dmgBonus + soloKillBonus  - penalty;
   
@@ -234,18 +245,22 @@ function calculateEconomyScore(
   opponent: Participant | null,
   gameDuration: number
 ): number {
+
   const gpm = (player.goldEarned / gameDuration) * 60;
   const cs = player.totalMinionsKilled + player.neutralMinionsKilled;
   const csPerMin = cs / (gameDuration / 60);
 
-  // Calculate team stats
-  const teamGPMs = team.map(p => (p.goldEarned / gameDuration) * 60);
-  const meanGPM = teamGPMs.reduce((a, b) => a + b, 0) / teamGPMs.length;
-  const stdDevGPM = calculateStdDev(teamGPMs, meanGPM);
+  const mid = 400;     // midpoint where score = ~70
+  const scale = 0.03;  // steeper curve (higher = sharper)
+  const minScore = 20;  // lowest possible score
+  const maxScore = 100; // highest possible score
 
-  // Base score from GPM (centered at 70)
-  const gpmZScore = calculateZScore(gpm, meanGPM, stdDevGPM);
-  let baseScore = zScoreToDistribution(gpmZScore, 70, 14);
+  const normalized = 1 / (1 + Math.exp(-scale * (gpm - mid)));
+  let baseScore = minScore + (maxScore - minScore) * normalized;
+
+
+
+
 
   // Direct comparison to opponent (if available)
   if (opponent) {
@@ -585,9 +600,12 @@ export function calculatePlayerScore(
       utility: Math.round(utility),
     }
 
-    console.log (breakdown)
-    console.log(player.teamId, player.teamPosition)
-    console.log("___")
+
+    // console.log(player.teamId, player.teamPosition)
+    // console.log(breakdown)
+    // console.log("------")
+
+
 
   return {
     total: Math.round(finalScore),

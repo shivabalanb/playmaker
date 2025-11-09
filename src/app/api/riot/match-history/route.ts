@@ -56,8 +56,17 @@ async function fetchWithRetry(
 }
 
 export async function POST(request: NextRequest) {
+  const requestTimestamp = new Date().toISOString();
+  console.log(`\n[Match History API] ========== REQUEST START ${requestTimestamp} ==========`);
+  
   try {
     const body = await request.json();
+    console.log("[Match History API] Request params:", {
+      puuid: body.puuid?.substring(0, 20) + "...",
+      region: body.region,
+      start: body.start,
+      count: body.count
+    });
 
     if (!body.puuid) {
       return NextResponse.json(
@@ -111,10 +120,12 @@ export async function POST(request: NextRequest) {
     console.log("[DEBUG] Full URL:", `https://${region}.api.riotgames.com/lol/match/v5/matches/by-puuid/${encodedPuuid}/ids?${queryParams.toString()}`);
     console.log("[DEBUG] Region:", region);
     
+    console.log(`[Match History API] 🔍 Calling Match IDs API: /by-puuid/${encodedPuuid.substring(0, 20)}.../ids`);
     const matchIdsResponse = await fetchWithRetry(
       `https://${region}.api.riotgames.com/lol/match/v5/matches/by-puuid/${encodedPuuid}/ids?${queryParams.toString()}`,
       apiKey
     );
+    console.log(`[Match History API] ✅ Match IDs API returned ${matchIdsResponse.status}`);
 
     if (!matchIdsResponse.ok) {
       const errorText = await matchIdsResponse.text();
@@ -128,6 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     const matchIds: string[] = await matchIdsResponse.json();
+    console.log(`[Match History API] 📋 Found ${matchIds.length} match IDs`);
 
     if (!Array.isArray(matchIds) || matchIds.length === 0) {
       return NextResponse.json({
@@ -137,9 +149,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 2: Fetch match details in parallel for speed
-    const matchPromises = matchIds.map((matchId) => {
+    console.log(`[Match History API] 🚀 Fetching ${matchIds.length} match details in parallel...`);
+    const matchPromises = matchIds.map((matchId, index) => {
       // URL-encode match ID to handle special characters
       const encodedMatchId = encodeURIComponent(matchId);
+      console.log(`[Match History API]   → [${index + 1}/${matchIds.length}] Fetching match: ${matchId}`);
       return fetchWithRetry(
         `https://${region}.api.riotgames.com/lol/match/v5/matches/${encodedMatchId}`,
           apiKey
@@ -164,6 +178,9 @@ export async function POST(request: NextRequest) {
 
     // Filter out any failed matches (null values)
     const validMatches = matches.filter((match) => match !== null);
+    
+    console.log(`[Match History API] ✅ Successfully fetched ${validMatches.length}/${matchIds.length} matches`);
+    console.log(`[Match History API] ========== REQUEST END ${new Date().toISOString()} ==========\n`);
 
     return NextResponse.json({
       matches: validMatches,

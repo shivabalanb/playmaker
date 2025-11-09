@@ -780,6 +780,8 @@ function MatchChatbot({ matchId }: MatchChatbotProps) {
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchParams = useSearchParams();
+  const puuid = searchParams.get("puuid");
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -943,11 +945,14 @@ function MatchChatbot({ matchId }: MatchChatbotProps) {
     setInputMessage("");
     setIsLoading(true);
 
+    console.log(puuid, "TEST")
+
     // Send message to WebSocket
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       const payload = {
-        matchId: matchId,
+        matchIds: [matchId],
         messages: [userMessage],
+        pid: [puuid],
       };
       const payloadStr = JSON.stringify(payload);
       console.log("[WebSocket] 📤 Sending message:", payloadStr);

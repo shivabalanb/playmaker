@@ -45,8 +45,6 @@ export default function SummonerPage({
   const [error, setError] = useState("");
   const [hasMoreMatches, setHasMoreMatches] = useState(true);
   const [currentStart, setCurrentStart] = useState(0);
-  const lastLoadMoreTimeRef = useRef<number>(0);
-  const MIN_LOAD_MORE_DELAY_MS = 1000; // Minimum 1 second between load more calls
   // Match stats for AI insights (will be used for LLM context)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [matchStats, setMatchStats] = useState<Record<string, unknown> | null>(
@@ -85,9 +83,6 @@ export default function SummonerPage({
     setCurrentStart(0);
     setHasMoreMatches(true);
     setIsLoading(true);
-    // Note: lastLoadMoreTimeRef will reset automatically on component unmount
-    // For navigation between summoners, we reset it here to allow immediate loading
-    lastLoadMoreTimeRef.current = 0;
 
     const fetchSummonerData = async () => {
       try {
@@ -206,7 +201,9 @@ export default function SummonerPage({
       }
     };
 
+    console.log(`[Summoner Page] 🔄 Loading initial data for ${decodedName}`);
     fetchSummonerData();
+    console.log(`[Summoner Page] 📥 Fetching initial 10 matches...`);
     fetchMatchHistory(0, false);
 
     // Fetch match stats for last 20 games
@@ -241,170 +238,50 @@ export default function SummonerPage({
     fetchPlayerAnalysis();
   }, [puuid, region]);
 
-  // Infinite scroll handler using Intersection Observer
-  useEffect(() => {
-    if (!hasMoreMatches || isLoadingMore || !puuid || matches.length === 0)
-      return;
+  // Manual load more handler
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMoreMatches || !puuid) return;
+    
+    console.log(`[Summoner Page] 📥 User clicked Load More - fetching from ${currentStart}`);
+    setIsLoadingMore(true);
 
-    const loadMoreMatches = async () => {
-      // Lock: prevent multiple simultaneous requests
-      if (isLoadingMore || !hasMoreMatches) return;
+    try {
+      const response = await fetch(`/api/riot/match-history`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          puuid,
+          region,
+          start: currentStart.toString(),
+          count: COUNT.toString(),
+        }),
+      });
 
-      // Throttle: prevent load more from being called too frequently
-      const now = Date.now();
-      const timeSinceLastLoad = now - lastLoadMoreTimeRef.current;
-
-      // If ref is 0 (initial state) or enough time has passed, allow the request
-      if (
-        lastLoadMoreTimeRef.current !== 0 &&
-        timeSinceLastLoad < MIN_LOAD_MORE_DELAY_MS
-      ) {
-        const remainingDelay = MIN_LOAD_MORE_DELAY_MS - timeSinceLastLoad;
-        console.log(
-          `[Infinite Scroll] Throttled: waiting ${remainingDelay}ms before next load`
-        );
-        return;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch match history");
       }
 
-      lastLoadMoreTimeRef.current = now;
-      setIsLoadingMore(true);
+      const { matches: newMatches } = await response.json();
+      const validMatches = filterValidMatches(newMatches);
+      
+      console.log(`[Summoner Page] ✅ Loaded ${validMatches.length} more matches`);
 
-      try {
-        const response = await fetch(`/api/riot/match-history`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            puuid,
-            region,
-            start: currentStart.toString(),
-            count: COUNT.toString(),
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Failed to fetch match history");
-        }
-
-        const { matches: newMatches } = await response.json();
-        const validMatches = filterValidMatches(newMatches);
-
-        setMatches((prev) => [...prev, ...validMatches]);
-        setHasMoreMatches(validMatches.length === COUNT);
-        setCurrentStart((prev) => prev + validMatches.length);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load matches");
-      } finally {
-        setIsLoadingMore(false);
-      }
-    };
-
-    // Use Intersection Observer for better reliability
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting) {
-          loadMoreMatches();
-        }
-      },
-      {
-        root: null,
-        rootMargin: "200px", // Start loading 200px before the sentinel is visible
-        threshold: 0.1,
-      }
-    );
-
-    // Find the sentinel element (the loading indicator or end message)
-    const sentinel = document.getElementById("infinite-scroll-sentinel");
-    if (sentinel) {
-      observer.observe(sentinel);
+      setMatches((prev) => [...prev, ...validMatches]);
+      setHasMoreMatches(validMatches.length === COUNT);
+      setCurrentStart((prev) => prev + validMatches.length);
+    } catch (err) {
+      console.error(`[Summoner Page] ❌ Error loading more matches:`, err);
+      setError(err instanceof Error ? err.message : "Failed to load matches");
+    } finally {
+      setIsLoadingMore(false);
     }
+  };
 
-    return () => {
-      if (sentinel) {
-        observer.unobserve(sentinel);
-      }
-    };
-  }, [
-    currentStart,
-    isLoadingMore,
-    hasMoreMatches,
-    puuid,
-    region,
-    matches.length,
-  ]);
-
-  // Check if we need to load more when all matches fit on screen (no scrollbar)
-  useEffect(() => {
-    if (
-      !hasMoreMatches ||
-      isLoadingMore ||
-      !puuid ||
-      matches.length === 0 ||
-      isLoading
-    )
-      return;
-
-    const checkAndLoad = () => {
-      // Small delay to ensure DOM is fully rendered
-      setTimeout(() => {
-        // Check if page is scrollable
-        const isScrollable =
-          document.documentElement.scrollHeight > window.innerHeight;
-
-        // If not scrollable and we have more matches, load more automatically
-        if (!isScrollable && hasMoreMatches && !isLoadingMore) {
-          setIsLoadingMore(true);
-
-          fetch(`/api/riot/match-history`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              puuid,
-              region,
-              start: currentStart.toString(),
-              count: COUNT.toString(),
-            }),
-          })
-            .then((response) => {
-              if (response.ok) {
-                return response.json();
-              }
-              throw new Error("Failed to fetch match history");
-            })
-            .then((data) => {
-              const validMatches = filterValidMatches(data.matches);
-
-              setMatches((prev) => {
-                const existingIds = new Set(
-                  prev.map((m) => m.metadata?.matchId).filter(Boolean)
-                );
-                const uniqueNewMatches = validMatches.filter(
-                  (m) =>
-                    m.metadata?.matchId && !existingIds.has(m.metadata.matchId)
-                );
-                return [...prev, ...uniqueNewMatches];
-              });
-              setHasMoreMatches(validMatches.length === COUNT);
-              setCurrentStart((prev) => prev + validMatches.length);
-            })
-            .catch((err) => {
-              console.error("Failed to load more matches:", err);
-            })
-            .finally(() => {
-              setIsLoadingMore(false);
-            });
-        }
-      }, 300);
-    };
-
-    checkAndLoad();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matches.length]); // Only run when matches change to check if we need to load more
+  // REMOVED: Automatic infinite scroll to prevent excessive API calls
+  // REMOVED: Auto-load more matches when screen is not full
 
   if (isLoading) {
     return (
@@ -470,13 +347,28 @@ export default function SummonerPage({
               ))}
             </div>
 
-            {/* Sentinel element for Intersection Observer */}
-            <div id="infinite-scroll-sentinel" className="h-1" />
-
-            {/* Loading more indicator */}
-            {isLoadingMore && (
+            {/* Show More Button */}
+            {hasMoreMatches && matches.length > 0 && (
               <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      Show More Matches
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </>
+                  )}
+                </button>
               </div>
             )}
 
