@@ -777,11 +777,37 @@ function MatchChatbot({ matchId }: MatchChatbotProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const searchParams = useSearchParams();
   const puuid = searchParams.get("puuid");
+
+  // Handle Command+Space keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === ' ' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsOpen(prev => !prev);
+      }
+      // Close on Escape
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  // Focus input when modal opens
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isOpen]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -973,90 +999,125 @@ function MatchChatbot({ matchId }: MatchChatbotProps) {
     }
   };
 
+  if (!isOpen) {
   return (
-    <div className="mt-4 bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
-      <div className="p-4 border-b border-gray-700">
-        <h3 className="text-lg font-semibold text-white">
-          Match Analysis Chat
-        </h3>
-        <div className="flex items-center gap-2 mt-1">
-          <div
-            className={`w-2 h-2 rounded-full ${
-              isConnected ? "bg-green-500" : "bg-red-500"
-            }`}
-          />
-          <span className="text-xs text-gray-400">
-            {isConnected ? "Connected" : "Disconnected"}
-          </span>
-          {connectionError && (
-            <span className="text-xs text-red-400 ml-2">{connectionError}</span>
-          )}
-        </div>
-      </div>
+    <div className="fixed bottom-4 right-4 z-40">
+      <button
+        onClick={() => setIsOpen(true)}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-colors"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+        <span className="text-sm">Ask AI</span>
+        <kbd className="px-1.5 py-0.5 text-xs bg-blue-800 rounded">⌘Space</kbd>
+      </button>
+    </div>
+  );
+}
 
-      {/* Messages */}
-      <div className="h-96 overflow-y-auto p-4 space-y-3 bg-gray-950">
-        {messages.length === 0 && (
-          <div className="text-center text-gray-500 text-sm py-8">
-            Ask questions about this match. For example: &quot;What happened in
-            the early game?&quot;
-          </div>
-        )}
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex ${
-              msg.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            <div
-              className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                msg.role === "user"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-800 text-gray-100"
-              }`}
+return (
+  <>
+    {/* Modal - No backdrop, page remains interactable */}
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] pointer-events-none">
+      <div 
+        className="w-full max-w-2xl mx-4 pointer-events-auto animate-in fade-in slide-in-from-top-4 duration-200"
+      >
+        <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden overflow-x-hidden">
+          {/* Header */}
+          <div className="bg-gray-800/50 px-6 py-3 border-b border-gray-700/50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-white text-sm font-medium">Match Analysis AI</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                isConnected
+                  ? "bg-green-500/20 text-green-400"
+                  : "bg-red-500/20 text-red-400"
+              }`}>
+                {isConnected ? "Connected" : "Connecting..."}
+              </span>
+            </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-gray-400 hover:text-white transition-colors"
             >
-              <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
-            </div>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
-        ))}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-800 text-gray-100 rounded-lg px-4 py-2">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150" />
-              </div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {/* Input */}
-      <div className="p-4 border-t border-gray-700">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask about this match..."
-            disabled={!isConnected || isLoading}
-            className="flex-1 bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!isConnected || isLoading || !inputMessage.trim()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Send
-          </button>
+          {/* Messages - Dynamic height */}
+          <div className="max-h-[60vh] overflow-y-auto overflow-x-hidden p-6 space-y-4">
+            {messages.length === 0 && (
+              <div className="text-center text-gray-400 text-sm py-12">
+                <div className="mb-2">💬</div>
+                <div>Ask questions about this match</div>
+                <div className="text-xs text-gray-500 mt-2">
+                  Try: &quot;What happened in the early game?&quot;
+                </div>
+              </div>
+            )}
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-xl px-4 py-3 ${
+                    msg.role === "user"
+                      ? "bg-blue-600 text-white shadow-lg"
+                      : "bg-gray-800 text-gray-100 shadow-md"
+                  }`}
+                >
+                  <div className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-800 text-gray-100 rounded-xl px-4 py-3 shadow-md">
+                  <div className="flex gap-1.5">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="p-4 border-t border-gray-700/50 bg-gray-800/30">
+            <div className="flex gap-3">
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask about this match..."
+                disabled={!isConnected || isLoading}
+                className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-500 transition-all"
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!isConnected || isLoading || !inputMessage.trim()}
+                className="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium shadow-lg hover:shadow-xl disabled:shadow-none flex items-center gap-2"
+              >
+                <span>Send</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  );
+  </>
+);
 }
 
 interface PlayerRowProps {
