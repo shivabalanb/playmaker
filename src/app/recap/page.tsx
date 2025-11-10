@@ -4,18 +4,20 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { TitleSlide } from "./components/TitleSlide";
-import { FavoriteChampionSlide } from "./components/FavoriteChampionSlide";
-import { Top5ChampionsSlide } from "./components/Top5ChampionsSlide";
-import { SeasonSummarySlide } from "./components/SeasonSummarySlide";
-import { GloryMomentsSlide } from "./components/GloryMomentsSlide";
-import { PersonalRecordsSlide } from "./components/PersonalRecordsSlide";
+import { ChampionRoleStatsSlide } from "./components/ChampionRoleStatsSlide";
+import { VisionObjectivesSlide } from "./components/VisionObjectivesSlide";
+import { RecordsMomentsSlide } from "./components/RecordsMomentsSlide";
 import { PlaystyleSlide } from "./components/PlaystyleSlide";
 import { FinalSlide } from "./components/FinalSlide";
 import { LoadingState } from "./components/LoadingState";
 import { ErrorState } from "./components/ErrorState";
 import { SlideNavigation } from "./components/SlideNavigation";
+import { CorePerformanceSlide } from "./components/CorePerformanceSlide";
+import { CorePerformanceEconomySlide } from "./components/CorePerformanceEconomySlide";
+import { FunFactsSlide } from "./components/FunFactsSlide";
+import { PoemSlide } from "./components/PoemSlide";
 
-const SLIDE_DURATION = 5000; // 5 seconds per slide
+const SLIDE_DURATION = 6000; // 6 seconds per slide
 
 interface RecapData {
   stats?: {
@@ -25,34 +27,180 @@ interface RecapData {
       losses?: number;
       winRate?: number;
     };
-    favoriteChampion?: {
-      champion?: string;
-      games?: number;
+    corePerformance?: {
+      totalGames?: number;
+      wins?: number;
+      losses?: number;
       winRate?: number;
-      avgKDA?: number;
+      totalGameTime?: number;
+      averageGameDuration?: number;
+      totalKills?: number;
+      totalDeaths?: number;
+      totalAssists?: number;
+      averageKDA?: number;
+      killParticipation?: number;
+      totalDamageDealt?: number;
+      totalDamageToChampions?: number;
+      averageDamagePerGame?: number;
+      highestDamageGame?: {
+        matchId: string;
+        damage: number;
+        champion: string;
+      };
+      totalGoldEarned?: number;
+      totalGoldSpent?: number;
+      averageGoldPerMinute?: number;
+      totalBountyGold?: number;
+    };
+    favoriteChampion?: {
+      champion: string;
+      championId: number;
+      gamesPlayed: number;
+      wins: number;
+      losses: number;
+      winRate: number;
+      averageKDA: number;
+      averageDamage: number;
+      averageGoldPerMin: number;
+      favoriteRole: string;
+      bestGame: {
+        matchId: string;
+        kda: number;
+        damage: number;
+        win: boolean;
+      };
     };
     top5Champions?: Array<{
       champion: string;
-      games: number;
+      championId: number;
+      gamesPlayed: number;
+      wins: number;
+      losses: number;
       winRate: number;
+      averageKDA: number;
+      averageDamage: number;
+      averageGoldPerMin: number;
+      favoriteRole: string;
+      bestGame: {
+        matchId: string;
+        kda: number;
+        damage: number;
+        win: boolean;
+      };
     }>;
+    favoriteRole?: {
+      role: string;
+    };
+    roleDistribution?: Array<{
+      role: string;
+      games: number;
+      wins: number;
+      losses: number;
+      winRate: number;
+      avgKDA: number;
+    }>;
+    achievements?: {
+      pentakills?: number;
+      quadrakills?: number;
+      tripleKills?: number;
+      soloKills?: number;
+      firstBloods?: number;
+      perfectGames?: number;
+      flawlessAces?: number;
+      epicMonsterSteals?: number;
+    };
     gloryMoments?: {
       pentakills?: number;
       quadrakills?: number;
       tripleKills?: number;
     };
     personalRecords?: {
-      mostKills?: { value: number };
-      mostAssists?: { value: number };
-      mostDeaths?: { value: number };
+      mostKills?: { value: number; matchId?: string };
+      mostAssists?: { value: number; matchId?: string };
+      mostDeaths?: { value: number; matchId?: string };
+    };
+    clutchMoments?: {
+      outnumberedKills?: number;
+      killsUnderOwnTurret?: number;
+      savesAllyFromDeath?: number;
+      survivedThreeImmobilizes?: number;
+    };
+    trends?: {
+      longestWinStreak?: { length: number; start?: string };
+      longestLossStreak?: { length: number; start?: string };
+      currentStreak?: { type: boolean; length: number };
+      performanceOverTime?: {
+        recent10Games?: { winRate: number; avgKDA: number };
+        recent20Games?: { winRate: number; avgKDA: number };
+      };
+    };
+    vision?: {
+      totalVisionScore?: number;
+      averageVisionScore?: number;
+      totalWardsPlaced?: number;
+      totalWardsDestroyed?: number;
+      totalControlWardsPlaced?: number;
+      visionScorePerMinute?: number;
+    };
+    objectives?: {
+      totalDragonTakedowns?: number;
+      totalBaronTakedowns?: number;
+      totalTurretTakedowns?: number;
+      firstTurretRate?: number;
+      epicMonsterSteals?: number;
+      riftHeraldTakedowns?: number;
+    };
+    communication?: {
+      totalPings?: number;
+      averagePingsPerGame?: number;
+      pingBreakdown?: {
+        assistMe?: number;
+        danger?: number;
+        onMyWay?: number;
+        enemyMissing?: number;
+        enemyVision?: number;
+        getBack?: number;
+        retreat?: number;
+        command?: number;
+        allIn?: number;
+      };
     };
     performance?: Record<string, unknown>;
-    champions?: { totalUnique?: number };
+    champions?: {
+      totalUnique?: number;
+      all?: Array<{
+        champion: string;
+        championId: number;
+        gamesPlayed: number;
+        wins: number;
+        losses: number;
+        winRate: number;
+        averageKDA: number;
+        averageDamage: number;
+        averageGoldPerMin: number;
+        favoriteRole: string;
+        bestGame: {
+          matchId: string;
+          kda: number;
+          damage: number;
+          win: boolean;
+        };
+        totalKills?: number;
+        totalDeaths?: number;
+        totalAssists?: number;
+        totalGameTime?: number;
+      }>;
+    };
   };
   insights?: {
-    playstyle?: { type?: string; description?: string };
+    overview?: string;
     strengths?: string[];
+    weaknesses?: string[];
+    funFacts?: string[];
+    clutchMomentsInsight?: string;
+    playstyle?: string;
     recommendations?: string[];
+    poem?: string;
   };
 }
 
@@ -67,6 +215,7 @@ export default function SeasonRecapPage() {
   const [recapData, setRecapData] = useState<RecapData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const slideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -150,9 +299,9 @@ export default function SeasonRecapPage() {
     };
   }, [puuid, region]);
 
-  // Auto-advance slides
+  // Auto-advance slides (only when not paused)
   useEffect(() => {
-    if (status !== "complete" || !recapData) return;
+    if (status !== "complete" || !recapData || isPaused) return;
 
     const totalSlides = getTotalSlides(recapData);
 
@@ -167,7 +316,7 @@ export default function SeasonRecapPage() {
         clearTimeout(slideTimeoutRef.current);
       }
     };
-  }, [currentSlide, status, recapData]);
+  }, [currentSlide, status, recapData, isPaused]);
 
   const handleSlideChange = (index: number) => {
     if (slideTimeoutRef.current) {
@@ -181,6 +330,13 @@ export default function SeasonRecapPage() {
       clearTimeout(slideTimeoutRef.current);
     }
     setCurrentSlide((prev) => prev + 1);
+  };
+
+  const handleTogglePause = () => {
+    setIsPaused((prev) => !prev);
+    if (slideTimeoutRef.current) {
+      clearTimeout(slideTimeoutRef.current);
+    }
   };
 
   // Loading state
@@ -201,7 +357,7 @@ export default function SeasonRecapPage() {
   const totalSlides = slides.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a1428] via-[#1a2332] to-[#0f1923] text-white overflow-hidden relative">
+    <div className="min-h-screen bg-black text-white overflow-hidden relative">
       <AnimatePresence mode="wait">
         {slides[currentSlide] && (
           <motion.div
@@ -223,6 +379,8 @@ export default function SeasonRecapPage() {
         onSlideChange={handleSlideChange}
         onSkip={handleSkip}
         canSkip={currentSlide < totalSlides - 1}
+        isPaused={isPaused}
+        onTogglePause={handleTogglePause}
       />
     </div>
   );
@@ -230,12 +388,29 @@ export default function SeasonRecapPage() {
 
 function getTotalSlides(recapData: RecapData): number {
   let count = 1; // Title slide
-  if (recapData.stats?.favoriteChampion) count++;
-  if (recapData.stats?.top5Champions?.length) count++;
-  if (recapData.stats?.summary) count++;
-  if (recapData.stats?.gloryMoments) count++;
-  if (recapData.stats?.personalRecords) count++;
-  if (recapData.insights) count++;
+  if (recapData.stats?.corePerformance) count += 2; // Core Performance (2 slides)
+  if (
+    recapData.stats?.favoriteChampion ||
+    recapData.stats?.top5Champions ||
+    recapData.stats?.favoriteRole ||
+    recapData.stats?.roleDistribution
+  )
+    count++; // Champion & Role Stats
+  if (
+    recapData.stats?.vision ||
+    recapData.stats?.objectives ||
+    recapData.stats?.communication
+  )
+    count++; // Vision & Objectives
+  if (
+    recapData.stats?.personalRecords ||
+    recapData.stats?.clutchMoments ||
+    recapData.stats?.gloryMoments
+  )
+    count++; // Records & Moments (combined)
+  if (recapData.insights?.funFacts) count++; // Fun Facts
+  if (recapData.insights?.playstyle) count++; // Playstyle
+  if (recapData.insights?.poem) count++; // Poem
   count++; // Final slide
   return count;
 }
@@ -249,86 +424,142 @@ function buildSlides(
   const stats = recapData.stats || {};
   const insights = recapData.insights || {};
   const summary = stats.summary || {};
-  const favoriteChampion = stats.favoriteChampion;
-  const top5Champions = stats.top5Champions || [];
-  const gloryMoments = stats.gloryMoments || {};
+  const corePerformance = stats.corePerformance || {};
+  const achievements = stats.achievements || {};
   const personalRecords = stats.personalRecords || {};
+  const clutchMoments = stats.clutchMoments || {};
 
   // Slide 1: Title
-  slides.push(<TitleSlide key="title" totalGames={summary.totalGames || 0} />);
+  slides.push(
+    <TitleSlide
+      key="title"
+      totalGames={summary.totalGames || corePerformance.totalGames || 0}
+    />
+  );
 
-  // Slide 2: Favorite Champion
-  if (favoriteChampion?.champion) {
+  // Slide 2 & 3: Core Performance (2 slides)
+  if (corePerformance && Object.keys(corePerformance).length > 0) {
+    // Determine most active hour of day from time patterns, if present
+    const gamesByTime = (stats as any)?.timePatterns?.gamesByTimeOfDay as
+      | Record<string, number>
+      | undefined;
+    let mostActiveHour: number | undefined = undefined;
+    if (gamesByTime && Object.keys(gamesByTime).length > 0) {
+      const top = Object.entries(gamesByTime).sort(
+        (a, b) => (b[1] as number) - (a[1] as number)
+      )[0];
+      if (top) mostActiveHour = Number(top[0]);
+    }
     slides.push(
-      <FavoriteChampionSlide
-        key="favorite"
-        champion={favoriteChampion.champion}
-        games={favoriteChampion.games || 0}
-        winRate={favoriteChampion.winRate || 0}
-        avgKDA={favoriteChampion.avgKDA || 0}
+      <CorePerformanceSlide
+        key="core-performance-1"
+        totalGames={corePerformance.totalGames || 0}
+        wins={corePerformance.wins || 0}
+        losses={corePerformance.losses || 0}
+        winRate={corePerformance.winRate || 0}
+        totalKills={corePerformance.totalKills || 0}
+        totalDeaths={corePerformance.totalDeaths || 0}
+        totalAssists={corePerformance.totalAssists || 0}
+        averageKDA={corePerformance.averageKDA || 0}
+        killParticipation={corePerformance.killParticipation || 0}
+        totalGameTime={corePerformance.totalGameTime || 0}
+        averageGameDuration={corePerformance.averageGameDuration || 0}
+        totalGoldSpent={corePerformance.totalGoldSpent || 0}
+        totalDamageDealt={corePerformance.totalDamageDealt || 0}
+      />
+    );
+    slides.push(
+      <CorePerformanceEconomySlide
+        key="core-performance-2"
+        totalDamageToChampions={corePerformance.totalDamageToChampions || 0}
+        averageDamagePerGame={corePerformance.averageDamagePerGame || 0}
+        totalGoldEarned={corePerformance.totalGoldEarned || 0}
+        averageGoldPerMinute={corePerformance.averageGoldPerMinute || 0}
+        totalBountyGold={corePerformance.totalBountyGold || 0}
+        averageGameDuration={corePerformance.averageGameDuration || 0}
+        totalGameTime={corePerformance.totalGameTime || 0}
+        mostActiveHour={mostActiveHour}
       />
     );
   }
 
-  // Slide 3: Top 5 Champions
-  if (top5Champions.length > 0) {
-    slides.push(<Top5ChampionsSlide key="top5" champions={top5Champions} />);
-  }
-
-  // Slide 4: Season Summary
-  if (summary) {
+  // Slide 4: Champion & Role Stats
+  if (
+    stats.favoriteChampion ||
+    stats.top5Champions ||
+    stats.favoriteRole ||
+    stats.roleDistribution ||
+    stats.champions
+  ) {
     slides.push(
-      <SeasonSummarySlide
-        key="summary"
-        totalGames={summary.totalGames || 0}
-        wins={summary.wins || 0}
-        winRate={summary.winRate || 0}
-        totalChampions={
-          (stats as { champions?: { totalUnique?: number } }).champions
-            ?.totalUnique || 0
-        }
+      <ChampionRoleStatsSlide
+        key="champion-role"
+        favoriteChampion={stats.favoriteChampion}
+        top5Champions={stats.top5Champions}
+        favoriteRole={stats.favoriteRole}
+        roleDistribution={stats.roleDistribution}
+        allChampions={stats.champions?.all}
+        totalUniqueChampions={stats.champions?.totalUnique}
       />
     );
   }
 
-  // Slide 5: Glory Moments
-  if (gloryMoments) {
+  // Slide 6: Vision & Objectives
+  if (stats.vision || stats.objectives || stats.communication) {
     slides.push(
-      <GloryMomentsSlide
-        key="glory"
-        pentakills={gloryMoments.pentakills || 0}
-        quadrakills={gloryMoments.quadrakills || 0}
-        tripleKills={gloryMoments.tripleKills || 0}
+      <VisionObjectivesSlide
+        key="vision-objectives"
+        vision={stats.vision}
+        objectives={stats.objectives}
+        communication={stats.communication}
       />
     );
   }
 
-  // Slide 6: Personal Records
-  if (personalRecords) {
+  // Slide 8: Records & Moments (Combined)
+  if (personalRecords || clutchMoments || achievements) {
     slides.push(
-      <PersonalRecordsSlide
-        key="records"
-        mostKills={personalRecords.mostKills?.value || 0}
-        mostAssists={personalRecords.mostAssists?.value || 0}
-        mostDeaths={personalRecords.mostDeaths?.value || 0}
+      <RecordsMomentsSlide
+        key="records-moments"
+        personalRecords={personalRecords}
+        clutchMoments={clutchMoments}
+        achievements={achievements}
+        clutchMomentsInsight={insights.clutchMomentsInsight}
       />
     );
   }
 
-  // Slide 7: Playstyle & Insights
-  if (insights) {
+  // Slide 13: Fun Facts
+  if (insights.funFacts && insights.funFacts.length > 0) {
+    slides.push(<FunFactsSlide key="funfacts" funFacts={insights.funFacts} />);
+  }
+
+  // Slide 14: Playstyle
+  if (insights.playstyle) {
     slides.push(
       <PlaystyleSlide
-        key="insights"
-        playstyle={insights.playstyle}
+        key="playstyle"
+        playstyle={{ description: insights.playstyle }}
         strengths={insights.strengths}
-        recommendations={insights.recommendations}
+        improvements={insights.improvements || insights.recommendations}
       />
     );
+  }
+
+  // Slide 15: Poem
+  if (insights.poem) {
+    slides.push(<PoemSlide key="poem" poem={insights.poem} />);
   }
 
   // Final slide
-  slides.push(<FinalSlide key="final" puuid={puuid} region={region} />);
+  slides.push(
+    <FinalSlide
+      key="final"
+      puuid={puuid}
+      region={region}
+      recapData={recapData}
+    />
+  );
 
   return slides;
 }

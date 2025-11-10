@@ -7,30 +7,33 @@ interface TitleSlideProps {
 
 export function TitleSlide({ totalGames }: TitleSlideProps) {
   return (
-    <div className="relative w-full h-full">
-      <BackgroundAnimation variant="stars" intensity="high" />
-      <div className="relative z-10 text-center px-8">
+    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/splash1.png')",
+        }}
+      />
+      {/* Dark overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/50" />
+      <BackgroundAnimation variant="stars" intensity="low" />
+      <div className="relative z-10 text-center px-8 max-w-6xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: "easeOut" }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          className="space-y-8"
         >
           <motion.h1
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-7xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
-          >
-            YOUR 2025 SEASON RECAP
-          </motion.h1>
-          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7, duration: 0.8 }}
-            className="text-2xl text-gray-300"
+            transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="text-[10rem] md:text-[14rem] font-medium tracking-tight leading-none text-white"
+            
           >
-            {totalGames} games played
-          </motion.p>
+            JOURNEY
+          </motion.h1>
         </motion.div>
       </div>
     </div>

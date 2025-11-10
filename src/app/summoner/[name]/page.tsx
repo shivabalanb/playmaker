@@ -242,7 +242,7 @@ export default function SummonerPage({
       }
     };
 
-    fetchPlayerAnalysis();
+    // fetchPlayerAnalysis();
   }, [puuid, region]);
 
   // Check recap status on page load
