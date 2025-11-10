@@ -6,6 +6,10 @@ import { DD_VERSION } from "../constants";
  * @returns URL to champion square image
  */
 export function getChampionImageUrl(championName: string): string {
+  // Special case for Fiddlesticks - use tile image
+  if (championName === "FiddleSticks") {
+    return "https://ddragon.leagueoflegends.com/cdn/img/champion/tiles/FiddleSticks_0.jpg";
+  }
   return `https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/champion/${championName}.png`;
 }
 

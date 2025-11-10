@@ -17,6 +17,7 @@ import {
   getRankEmblemUrl,
   getQueueType,
   isRankedQueue,
+  isReviewableQueue,
   isSwarmQueue,
   getPlatformRegion,
   reorderItemsWithBootsFirst,
@@ -24,6 +25,8 @@ import {
   formatTimeAgo,
   getChampionNameById,
 } from "@/lib";
+import { useDisplayedMatches } from "@/contexts/DisplayedMatchesContext";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 
 export default function SummonerPage({
   params,
@@ -50,12 +53,89 @@ export default function SummonerPage({
   const [error, setError] = useState("");
   const [hasMoreMatches, setHasMoreMatches] = useState(true);
   const [currentStart, setCurrentStart] = useState(0);
+  const [resolvedPuuid, setResolvedPuuid] = useState<string | null>(puuid);
   const lastLoadMoreTimeRef = useRef<number>(0);
   const MIN_LOAD_MORE_DELAY_MS = 1000; // Minimum 1 second between load more calls
+  
+  const { displayedMatchIds, setDisplayedMatchIds } = useDisplayedMatches();
+  const { startIngestionPolling, setIngesting } = useWebSocket();
   
   // Cache key for localStorage
   const CACHE_KEY = `match-history-${puuid}-${region}`;
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  
+  // Update displayed match IDs whenever matches change
+  useEffect(() => {
+    const matchIds = matches.map((match) => match.metadata.matchId);
+    setDisplayedMatchIds(matchIds);
+  }, [matches, setDisplayedMatchIds]);
+
+  // Automatically fetch timeline data for all loaded matches
+  useEffect(() => {
+    if (matches.length === 0) return;
+
+    const fetchTimelinesForMatches = async () => {
+      // Get current timestamp for polling (subtract 5 seconds to account for processing delay)
+      const uploadTime = new Date(Date.now() - 5000).toISOString();
+      console.log('Upload time for polling:', uploadTime);
+      let needsPolling = false;
+      
+      // Fetch timeline data for each match with a small delay between requests
+      for (let i = 0; i < matches.length; i++) {
+        const match = matches[i];
+        
+        // Add a small delay between requests to avoid rate limiting (100ms)
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        try {
+          const response = await fetch(process.env.NEXT_PUBLIC_PARSE_ENDPOINT!, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              matchId: match.metadata.matchId,
+              region: region,
+            }),
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            // Check if data was already cached
+            const summary = data.summary || {};
+            const allCached = summary.cached > 0 && summary.processed === 0;
+            
+            if (!allCached) {
+              needsPolling = true;
+              // Set ingesting as soon as we detect processing is needed
+              setIngesting(true);
+            }
+            
+            console.log(`Timeline parse response for ${match.metadata.matchId}:`, {
+              cached: summary.cached || 0,
+              processed: summary.processed || 0,
+              needsPolling: !allCached
+            });
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch timeline for ${match.metadata.matchId}:`, error);
+        }
+      }
+      
+      // Only start polling if at least one match needs processing
+      if (needsPolling) {
+        console.log('Starting ingestion polling - matches need processing');
+        startIngestionPolling(uploadTime);
+      } else {
+        console.log('All matches cached - chat ready immediately');
+      }
+    };
+
+    fetchTimelinesForMatches();
+  }, [matches, region, startIngestionPolling, setIngesting]);
   // Match stats for AI insights (will be used for LLM context)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [matchStats, setMatchStats] = useState<Record<string, unknown> | null>(
@@ -82,12 +162,7 @@ export default function SummonerPage({
   useEffect(() => {
     console.log("PUUID from URL:", puuid);
     console.log("Region from URL:", region);
-
-    if (!puuid) {
-      setError("No PUUID provided");
-      setIsLoading(false);
-      return;
-    }
+    console.log("Decoded Name:", decodedName);
 
     // Reset pagination state when summoner changes
     setMatches([]);
@@ -96,12 +171,64 @@ export default function SummonerPage({
     setIsLoading(true);
 
     const fetchSummonerData = async () => {
+      let actualPuuid = puuid;
+      
+      // If no PUUID provided, look it up from Riot ID (name#tag)
+      if (!puuid) {
+        try {
+          const [gameName, tagLine] = decodedName.split('#');
+          if (!gameName || !tagLine) {
+            setError("Invalid Riot ID format. Expected: GameName#TAG");
+            setIsLoading(false);
+            return;
+          }
+          
+          console.log(`Looking up PUUID for ${gameName}#${tagLine}`);
+          
+          // Fetch PUUID from Riot ID
+          const accountResponse = await fetch(
+            `/api/riot/account?gameName=${encodeURIComponent(gameName)}&tagLine=${encodeURIComponent(tagLine)}&region=${region}`
+          );
+          
+          if (!accountResponse.ok) {
+            setError("Summoner not found");
+            setIsLoading(false);
+            return;
+          }
+          
+          const accountData = await accountResponse.json();
+          actualPuuid = accountData.puuid;
+          console.log("Found PUUID:", actualPuuid);
+          
+          // Store resolved PUUID in state
+          setResolvedPuuid(actualPuuid);
+          
+          // Update URL with PUUID to maintain consistency
+          const url = new URL(window.location.href);
+          url.searchParams.set('puuid', actualPuuid);
+          window.history.replaceState({}, '', url.toString());
+        } catch (err) {
+          console.error("Error looking up PUUID:", err);
+          setError("Failed to look up summoner");
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        // Store the PUUID from URL in state
+        setResolvedPuuid(actualPuuid);
+      }
+      
+      if (!actualPuuid) {
+        setError("No summoner information available");
+        setIsLoading(false);
+        return;
+      }
       try {
         const platform = getPlatformRegion(region);
 
         // Fetch summoner data (profile icon, level)
         const response = await fetch(
-          `/api/riot/summoner?puuid=${puuid}&platform=${platform}`
+          `/api/riot/summoner?puuid=${actualPuuid}&platform=${platform}`
         );
 
         if (response.ok) {
@@ -115,7 +242,7 @@ export default function SummonerPage({
 
         // Fetch rank data using PUUID (better rate limits: 20,000 req/10s)
         const rankResponse = await fetch(
-          `/api/riot/league?puuid=${puuid}&platform=${platform}`
+          `/api/riot/league?puuid=${actualPuuid}&platform=${platform}`
         );
         if (rankResponse.ok) {
           const rankData = await rankResponse.json();
@@ -143,7 +270,7 @@ export default function SummonerPage({
 
         // Fetch highest mastery champion (best indicator of favorite champion)
         const masteryResponse = await fetch(
-          `/api/riot/mastery?puuid=${puuid}&platform=${platform}`
+          `/api/riot/mastery?puuid=${actualPuuid}&platform=${platform}`
         );
         if (masteryResponse.ok) {
           const masteryData = await masteryResponse.json();
@@ -167,7 +294,7 @@ export default function SummonerPage({
       start: number = 0,
       append: boolean = false
     ) => {
-      if (!puuid) return;
+      if (!resolvedPuuid) return;
 
       try {
         if (append) {
@@ -181,7 +308,7 @@ export default function SummonerPage({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            puuid,
+            puuid: resolvedPuuid,
             region,
             start: start.toString(),
             count: COUNT.toString(),
@@ -200,27 +327,49 @@ export default function SummonerPage({
           const updatedMatches = [...matches, ...validMatches];
           setMatches(updatedMatches);
           
-          // Update cache with appended matches
-          localStorage.setItem(
-            CACHE_KEY,
-            JSON.stringify({
-              matches: updatedMatches,
-              timestamp: Date.now(),
-              start: start + validMatches.length,
-            })
-          );
+          // Update cache with appended matches (limit to first 20 matches to avoid quota)
+          try {
+            const matchesToCache = updatedMatches.slice(0, 20);
+            localStorage.setItem(
+              CACHE_KEY,
+              JSON.stringify({
+                matches: matchesToCache,
+                timestamp: Date.now(),
+                start: start + validMatches.length,
+              })
+            );
+          } catch (cacheError) {
+            console.warn('[Summoner Page] Failed to cache matches (quota exceeded):', cacheError);
+            // Clear cache if quota exceeded
+            try {
+              localStorage.removeItem(CACHE_KEY);
+            } catch (e) {
+              // Ignore cleanup errors
+            }
+          }
         } else {
           setMatches(validMatches);
           
-          // Cache initial load
-          localStorage.setItem(
-            CACHE_KEY,
-            JSON.stringify({
-              matches: validMatches,
-              timestamp: Date.now(),
-              start: start + validMatches.length,
-            })
-          );
+          // Cache initial load (limit to first 20 matches to avoid quota)
+          try {
+            const matchesToCache = validMatches.slice(0, 20);
+            localStorage.setItem(
+              CACHE_KEY,
+              JSON.stringify({
+                matches: matchesToCache,
+                timestamp: Date.now(),
+                start: start + validMatches.length,
+              })
+            );
+          } catch (cacheError) {
+            console.warn('[Summoner Page] Failed to cache matches (quota exceeded):', cacheError);
+            // Clear cache if quota exceeded
+            try {
+              localStorage.removeItem(CACHE_KEY);
+            } catch (e) {
+              // Ignore cleanup errors
+            }
+          }
         }
 
         setHasMoreMatches(validMatches.length === COUNT);
@@ -302,7 +451,7 @@ export default function SummonerPage({
 
   // Check recap status on page load
   useEffect(() => {
-    if (!puuid) {
+    if (!resolvedPuuid) {
       setRecapStatus("loading");
       return;
     }
@@ -310,7 +459,7 @@ export default function SummonerPage({
     const checkRecapStatus = async () => {
       try {
         const statusRes = await fetch(
-          `/api/riot/recap/status?puuid=${puuid}&region=${region}`
+          `/api/riot/recap/status?puuid=${resolvedPuuid}&region=${region}`
         );
         const statusData = await statusRes.json();
 
@@ -332,14 +481,14 @@ export default function SummonerPage({
     };
 
     checkRecapStatus();
-  }, [puuid, region]);
+  }, [resolvedPuuid, region]);
 
   // REMOVED: Infinite scroll to prevent excessive API calls
   // REMOVED: Auto-load when screen not full to prevent excessive API calls
 
   // Force refresh - clears cache and fetches fresh data
   const handleForceRefresh = async () => {
-    if (isLoading || !puuid) return;
+    if (isLoading || !resolvedPuuid) return;
     
     console.log('[Summoner Page] 🔄 Force refresh - clearing cache and fetching fresh data');
     
@@ -360,7 +509,7 @@ export default function SummonerPage({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          puuid,
+          puuid: resolvedPuuid,
           region,
           start: "0",
           count: COUNT.toString(),
@@ -379,15 +528,25 @@ export default function SummonerPage({
       setHasMoreMatches(validMatches.length === COUNT);
       setCurrentStart(validMatches.length);
       
-      // Cache fresh data
-      localStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({
-          matches: validMatches,
-          timestamp: Date.now(),
-          start: validMatches.length,
-        })
-      );
+      // Cache fresh data (limit to 20 matches)
+      try {
+        const matchesToCache = validMatches.slice(0, 20);
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({
+            matches: matchesToCache,
+            timestamp: Date.now(),
+            start: validMatches.length,
+          })
+        );
+      } catch (cacheError) {
+        console.warn('[Summoner Page] Failed to cache refreshed matches (quota exceeded):', cacheError);
+        try {
+          localStorage.removeItem(CACHE_KEY);
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      }
       
       console.log(`[Summoner Page] ✅ Refreshed with ${validMatches.length} matches`);
     } catch (err) {
@@ -400,7 +559,7 @@ export default function SummonerPage({
 
   // Manual load more - ONLY triggered by button click
   const handleLoadMore = async () => {
-    if (isLoadingMore || !hasMoreMatches || !puuid) return;
+    if (isLoadingMore || !hasMoreMatches || !resolvedPuuid) return;
 
     const now = Date.now();
     const timeSinceLastLoad = now - lastLoadMoreTimeRef.current;
@@ -540,7 +699,7 @@ export default function SummonerPage({
               <button
                 onClick={async () => {
                   if (
-                    !puuid ||
+                    !resolvedPuuid ||
                     isGeneratingRecap ||
                     recapStatus === "not_eligible"
                   )
@@ -548,13 +707,13 @@ export default function SummonerPage({
 
                   if (recapStatus === "available") {
                     // Recap already exists, redirect to view it
-                    router.push(`/recap?puuid=${puuid}&region=${region}`);
+                    router.push(`/recap?puuid=${resolvedPuuid}&region=${region}`);
                     return;
                   }
 
                   if (recapStatus === "processing") {
                     // Already processing - redirect to recap page to see progress
-                    router.push(`/recap?puuid=${puuid}&region=${region}`);
+                    router.push(`/recap?puuid=${resolvedPuuid}&region=${region}`);
                     return;
                   }
 
@@ -566,13 +725,13 @@ export default function SummonerPage({
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          puuid,
+                          puuid: resolvedPuuid,
                           region,
                         }),
                       });
                       await response.json();
                       // Redirect to recap page - it will poll for status
-                      router.push(`/recap?puuid=${puuid}&region=${region}`);
+                      router.push(`/recap?puuid=${resolvedPuuid}&region=${region}`);
                     } catch (error) {
                       console.error("Failed to generate recap:", error);
                       setIsGeneratingRecap(false);
@@ -581,7 +740,7 @@ export default function SummonerPage({
                 }}
                 disabled={
                   isGeneratingRecap ||
-                  !puuid ||
+                  !resolvedPuuid ||
                   recapStatus === "not_eligible" ||
                   recapStatus === "loading" ||
                   recapStatus === "processing"
@@ -681,12 +840,13 @@ export default function SummonerPage({
                 <MatchCard
                   key={match.metadata.matchId}
                   match={match}
-                  puuid={puuid!}
+                  puuid={resolvedPuuid!}
                   region={region}
                   getChampionImageUrl={getChampionImageUrl}
                   getItemImageUrl={getItemImageUrl}
                   getQueueType={getQueueType}
                   isRankedQueue={isRankedQueue}
+                  isReviewableQueue={isReviewableQueue}
                   formatDuration={formatDuration}
                   formatTimeAgo={formatTimeAgo}
                   reorderItemsWithBootsFirst={reorderItemsWithBootsFirst}

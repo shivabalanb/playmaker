@@ -40,6 +40,9 @@ export default function MatchDetailPage() {
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
   const [error, setError] = useState("");
   const [currentFrame, setCurrentFrame] = useState(0);
+  const [selectedPlayerPuuid, setSelectedPlayerPuuid] = useState<string | null>(
+    puuid || null
+  );
 
   // Fetch summoner spells and runes data
   useEffect(() => {
@@ -319,9 +322,12 @@ export default function MatchDetailPage() {
                 key={player.puuid}
                 player={player}
                 matchData={matchData}
+                region={region}
                 summonerSpellCache={summonerSpellCache}
                 runeCache={runeCache}
                 runeStyleCache={runeStyleCache}
+                isSelected={selectedPlayerPuuid === player.puuid}
+                onClick={() => setSelectedPlayerPuuid(player.puuid)}
               />
             ))}
           </div>
@@ -369,13 +375,25 @@ export default function MatchDetailPage() {
                 key={player.puuid}
                 player={player}
                 matchData={matchData}
+                region={region}
                 summonerSpellCache={summonerSpellCache}
                 runeCache={runeCache}
                 runeStyleCache={runeStyleCache}
+                isSelected={selectedPlayerPuuid === player.puuid}
+                onClick={() => setSelectedPlayerPuuid(player.puuid)}
               />
             ))}
           </div>
         </div>
+
+        {/* Player Purchase Timeline */}
+        {selectedPlayerPuuid && timelineData && matchData && (
+          <PlayerPurchaseTimeline
+            selectedPlayerPuuid={selectedPlayerPuuid}
+            timelineData={timelineData}
+            matchData={matchData}
+          />
+        )}
 
         {/* Map Timeline */}
         {timelineData && matchData && (
@@ -386,10 +404,239 @@ export default function MatchDetailPage() {
             setCurrentFrame={setCurrentFrame}
           />
         )}
-
-        {/* Chatbot */}
-        {matchData && <MatchChatbot matchId={matchId} />}
       </div>
+    </div>
+  );
+}
+
+interface PlayerPurchaseTimelineProps {
+  selectedPlayerPuuid: string;
+  timelineData: any;
+  matchData: MatchData;
+}
+
+function PlayerPurchaseTimeline({
+  selectedPlayerPuuid,
+  timelineData,
+  matchData,
+}: PlayerPurchaseTimelineProps) {
+  // Find selected player data
+  const selectedPlayer = matchData.info.participants.find(
+    (p) => p.puuid === selectedPlayerPuuid
+  );
+
+  if (!selectedPlayer) return null;
+
+  // Get participantId (1-indexed in timeline data)
+  const participantId =
+    matchData.info.participants.findIndex((p) => p.puuid === selectedPlayerPuuid) + 1;
+
+  // Track item purchases, sales, and undos
+  const itemEvents: Array<{ 
+    timestamp: number; 
+    itemId: number;
+    participantId: number;
+    type: 'PURCHASE' | 'SELL' | 'UNDO';
+  }> = [];
+  
+  if (timelineData && timelineData.info && timelineData.info.frames) {
+    timelineData.info.frames.forEach((frame: any) => {
+      if (frame.events) {
+        frame.events.forEach((event: any) => {
+          if (event.participantId === participantId) {
+            if (event.type === "ITEM_PURCHASED") {
+              itemEvents.push({
+                timestamp: event.timestamp,
+                itemId: event.itemId,
+                participantId: event.participantId,
+                type: 'PURCHASE'
+              });
+            } else if (event.type === "ITEM_SOLD") {
+              itemEvents.push({
+                timestamp: event.timestamp,
+                itemId: event.itemId,
+                participantId: event.participantId,
+                type: 'SELL'
+              });
+            } else if (event.type === "ITEM_UNDO") {
+              itemEvents.push({
+                timestamp: event.timestamp,
+                itemId: event.beforeId, // Use beforeId for undo events
+                participantId: event.participantId,
+                type: 'UNDO'
+              });
+            }
+          }
+        });
+      }
+    });
+  }
+
+  // Process events to get final item purchases
+  const finalPurchases: Array<{ timestamp: number; itemId: number; participantId: number }> = [];
+  
+  // Keep track of all events for proper undo handling
+  const eventStack: Array<{
+    type: 'PURCHASE' | 'SELL';
+    timestamp: number;
+    itemId: number;
+    participantId: number;
+  }> = [];
+
+  // Debug log for events
+  console.log('Item Events:', itemEvents.map(event => ({
+    ...event,
+    time: Math.floor(event.timestamp / 60000) + ':' + String(Math.floor((event.timestamp % 60000) / 1000)).padStart(2, '0'),
+  })));
+
+  itemEvents.forEach((event) => {
+    if (event.type === 'PURCHASE') {
+      console.log(`Purchase at ${Math.floor(event.timestamp / 60000)}:${String(Math.floor((event.timestamp % 60000) / 1000)).padStart(2, '0')} - Item ${event.itemId}`);
+      finalPurchases.push({
+        timestamp: event.timestamp,
+        itemId: event.itemId,
+        participantId: event.participantId
+      });
+      eventStack.push({
+        type: 'PURCHASE',
+        timestamp: event.timestamp,
+        itemId: event.itemId,
+        participantId: event.participantId
+      });
+    } else if (event.type === 'SELL') {
+      // Find and remove the purchase from finalPurchases
+      const purchaseIndex = finalPurchases.findIndex(p => p.itemId === event.itemId);
+      if (purchaseIndex !== -1) {
+        finalPurchases.splice(purchaseIndex, 1);
+      }
+      eventStack.push({
+        type: 'SELL',
+        timestamp: event.timestamp,
+        itemId: event.itemId,
+        participantId: event.participantId
+      });
+    } else if (event.type === 'UNDO') {
+      // Find the most recent event for this participant, regardless of item
+      const lastEventIndex = [...eventStack].reverse().findIndex(e => e.participantId === event.participantId);
+      if (lastEventIndex !== -1) {
+        const actualIndex = eventStack.length - 1 - lastEventIndex;
+        const lastEvent = eventStack[actualIndex];
+        
+        // Remove the event from the stack
+        eventStack.splice(actualIndex, 1);
+        
+        // Reverse the last action
+        if (lastEvent.type === 'PURCHASE') {
+          // Undo a purchase - remove from finalPurchases
+          const purchaseIndex = finalPurchases.findIndex(p => 
+            p.timestamp === lastEvent.timestamp && p.itemId === lastEvent.itemId
+          );
+          if (purchaseIndex !== -1) {
+            finalPurchases.splice(purchaseIndex, 1);
+          }
+        } else if (lastEvent.type === 'SELL') {
+          // Undo a sell - add back to finalPurchases
+          // Find the most recent purchase of this item before the sell
+          const originalPurchase = [...eventStack]
+            .slice(0, actualIndex)
+            .reverse()
+            .find(e => 
+              e.type === 'PURCHASE' && 
+              e.itemId === lastEvent.itemId &&
+              e.participantId === event.participantId
+            );
+          if (originalPurchase) {
+            finalPurchases.push({
+              timestamp: originalPurchase.timestamp,
+              itemId: originalPurchase.itemId,
+              participantId: originalPurchase.participantId
+            });
+          }
+        }
+      }
+    }
+  });
+
+  // Group purchases within 5 seconds together
+  const groupedPurchases: Array<{ timestamp: number; items: number[] }> = [];
+
+  // Debug log for final purchases
+  console.log('Final Purchases:', finalPurchases.map(purchase => ({
+    ...purchase,
+    time: Math.floor(purchase.timestamp / 60000) + ':' + String(Math.floor((purchase.timestamp % 60000) / 1000)).padStart(2, '0'),
+  })));
+
+  finalPurchases
+    .sort((a, b) => a.timestamp - b.timestamp) // Ensure chronological order
+    .forEach((purchase) => {
+      const lastGroup = groupedPurchases[groupedPurchases.length - 1];
+      
+      // Log the current purchase and time gap with last group
+      if (lastGroup) {
+        console.log(
+          `Purchase at ${Math.floor(purchase.timestamp / 60000)}:${String(Math.floor((purchase.timestamp % 60000) / 1000)).padStart(2, '0')} - ` +
+          `Item ${purchase.itemId}, Time gap: ${(purchase.timestamp - lastGroup.timestamp) / 1000}s`
+        );
+      }
+
+      // If no groups or timestamp difference > 5000ms, create new group
+      if (!lastGroup || purchase.timestamp - lastGroup.timestamp > 5000) {
+        groupedPurchases.push({
+          timestamp: purchase.timestamp,
+          items: [purchase.itemId],
+        });
+      } else {
+        // Add to existing group
+        lastGroup.items.push(purchase.itemId);
+      }
+    });
+
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  return (
+    <div className="bg-[#1a2332] rounded-lg p-4 border border-[#2a3a4a]">
+
+
+      {groupedPurchases.length === 0 ? (
+        <p className="text-sm text-gray-400">No purchases recorded</p>
+      ) : (
+        <div className="flex items-center gap-y-4 gap-x-0 flex-wrap">
+          {groupedPurchases.map((group, idx) => (
+            <div key={idx} className="flex items-center gap-0">
+              <div className="flex items-center gap-2 bg-[#0f1821] p-2 rounded">
+                <div className="text-xs font-mono text-gray-400 flex-shrink-0">
+                  {formatTime(group.timestamp)}
+                </div>
+                <div className="flex items-center gap-1">
+                  {group.items.map((itemId, itemIdx) => (
+                    <div
+                      key={itemIdx}
+                      className="relative w-8 h-8 bg-[#0a0e14] rounded border border-[#3a4a5a] flex-shrink-0"
+                    >
+                      <Image
+                        src={getItemImageUrl(itemId)}
+                        alt={`Item ${itemId}`}
+                        width={32}
+                        height={32}
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {idx < groupedPurchases.length - 1 && (
+                <div className="w-8 h-0.5 bg-gradient-to-r from-blue-500/50 to-transparent flex-shrink-0" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -414,10 +661,63 @@ function MapTimeline({
   // Get current frame
   const frame = frames[currentFrame] || null;
 
-  // Draggable marker state
-  const [markerPosition, setMarkerPosition] = useState({ x: 50, y: 50 }); // Start at center in percentage
-  const [isDragging, setIsDragging] = useState(false);
+  const [hoveredChampion, setHoveredChampion] = useState<number | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Tower coordinates
+  const towerPositions = {
+    BLUE_TOP_LANE_OUTER_TURRET: { x: 981, y: 10641, team: 100, isNexus: false },
+    BLUE_TOP_LANE_INNER_TURRET: { x: 1512, y: 6899, team: 100, isNexus: false },
+    BLUE_TOP_LANE_BASE_TURRET: { x: 1169, y: 4487, team: 100, isNexus: false },
+    BLUE_MID_LANE_OUTER_TURRET: { x: 5846, y: 6596, team: 100, isNexus: false },
+    BLUE_MID_LANE_INNER_TURRET: { x: 5048, y: 5012, team: 100, isNexus: false },
+    BLUE_MID_LANE_BASE_TURRET: { x: 3651, y: 3896, team: 100, isNexus: false },
+    BLUE_BOT_LANE_OUTER_TURRET: { x: 10504, y: 1229, team: 100, isNexus: false },
+    BLUE_BOT_LANE_INNER_TURRET: { x: 6919, y: 1683, team: 100, isNexus: false },
+    BLUE_BOT_LANE_BASE_TURRET: { x: 4281, y: 1453, team: 100, isNexus: false },
+    BLUE_TOP_LANE_NEXUS_TURRET: { x: 1748, y: 2470, team: 100, isNexus: true },
+    BLUE_BOT_LANE_NEXUS_TURRET: { x: 2177, y: 2007, team: 100, isNexus: true },
+    RED_TOP_LANE_OUTER_TURRET: { x: 4318, y: 14075, team: 200, isNexus: false },
+    RED_TOP_LANE_INNER_TURRET: { x: 7943, y: 13611, team: 200, isNexus: false },
+    RED_TOP_LANE_BASE_TURRET: { x: 10481, y: 13850, team: 200, isNexus: false },
+    RED_MID_LANE_OUTER_TURRET: { x: 8955, y: 8710, team: 200, isNexus: false },
+    RED_MID_LANE_INNER_TURRET: { x: 9767, y: 10313, team: 200, isNexus: false },
+    RED_MID_LANE_BASE_TURRET: { x: 11134, y: 11407, team: 200, isNexus: false },
+    RED_BOT_LANE_OUTER_TURRET: { x: 13866, y: 4705, team: 200, isNexus: false },
+    RED_BOT_LANE_INNER_TURRET: { x: 13327, y: 8426, team: 200, isNexus: false },
+    RED_BOT_LANE_BASE_TURRET: { x: 13624, y: 10772, team: 200, isNexus: false },
+    RED_TOP_LANE_NEXUS_TURRET: { x: 12611, y: 13284, team: 200, isNexus: true },
+    RED_BOT_LANE_NEXUS_TURRET: { x: 13052, y: 12812, team: 200, isNexus: true },
+  };
+
+  // Track tower destruction times
+  const towerDestructions = useRef<Map<string, number>>(new Map());
+  
+  // Parse tower destruction events from timeline
+  useEffect(() => {
+    if (!timelineData) return;
+    
+    towerDestructions.current.clear();
+    
+    timelineData.info.frames.forEach((frame: any) => {
+      if (frame.events) {
+        frame.events.forEach((event: any) => {
+          if (event.type === "BUILDING_KILL" && event.buildingType === "TOWER_BUILDING") {
+            // Build tower name from event data
+            const teamPrefix = event.teamId === 100 ? "BLUE" : "RED";
+            const laneType = event.laneType; // TOP_LANE, MID_LANE, BOT_LANE
+            const towerTier = event.towerType; // OUTER_TURRET, INNER_TURRET, BASE_TURRET, NEXUS_TURRET
+            
+            const towerName = `${teamPrefix}_${laneType}_${towerTier}`;
+            console.log(`Tower destroyed: ${towerName} at ${event.timestamp}ms`, event);
+            towerDestructions.current.set(towerName, event.timestamp);
+          }
+        });
+      }
+    });
+    
+    console.log("All tower destructions:", Array.from(towerDestructions.current.entries()));
+  }, [timelineData]);
 
   // Create a map of participant ID to champion name and team
   // Timeline uses participant IDs 1-10, which correspond to participants array indices
@@ -493,66 +793,7 @@ function MapTimeline({
     return { x: Math.round(gameX), y: Math.round(gameY) };
   };
 
-  // Handle marker drag start
-  const handleMarkerMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
 
-  // Handle marker drag end
-  const handleMarkerMouseUp = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    // Log position when drag ends
-    const gameCoords = convertPercentToGameCoords(
-      markerPosition.x,
-      markerPosition.y
-    );
-    // console.log(
-    //   `\n[MARKER] Position: game(${gameCoords.x}, ${gameCoords.y}) → screen(${markerPosition.x.toFixed(2)}%, ${markerPosition.y.toFixed(2)}%)`
-    // );
-  };
-
-  // Handle global mouse events for dragging
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!mapContainerRef.current) return;
-      const rect = mapContainerRef.current.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-      const clampedX = Math.max(0, Math.min(100, x));
-      const clampedY = Math.max(0, Math.min(100, y));
-
-      setMarkerPosition({ x: clampedX, y: clampedY });
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      // Log position when drag ends
-      const gameCoords = convertPercentToGameCoords(
-        markerPosition.x,
-        markerPosition.y
-      );
-      // console.log(
-      //   `\n[MARKER] Position: game(${gameCoords.x}, ${gameCoords.y}) → screen(${markerPosition.x.toFixed(2)}%, ${markerPosition.y.toFixed(2)}%)`
-      // );
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDragging, markerPosition]);
 
   // Format time for display
   const formatTime = (timestamp: number) => {
@@ -670,11 +911,12 @@ function MapTimeline({
         </div>
       </div>
 
-      {/* Map with Champion Positions */}
-      <div
-        ref={mapContainerRef}
-        className="relative w-full bg-[#0a1428] rounded-lg overflow-hidden"
-      >
+      {/* Map with Champion Positions - Hidden for ARAM */}
+      {matchData.info.queueId !== 450 && (
+        <div
+          ref={mapContainerRef}
+          className="relative w-full bg-[#0a1428] rounded-lg overflow-hidden"
+        >
         <Image
           src="/Base.png"
           alt="League of Legends Map"
@@ -700,11 +942,14 @@ function MapTimeline({
             // Convert to percentage
             const xPercent = normalizedX * 100;
             const yPercent = normalizedY * 100;
+            
+            // Get participant frame data
+            const participantFrame = frame?.participantFrames?.[pos.participantId];
 
             return (
               <div
                 key={pos.participantId}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
                 style={{
                   left: `${xPercent}%`,
                   top: `${yPercent}%`,
@@ -712,431 +957,260 @@ function MapTimeline({
                   height: "64px",
                   minWidth: "64px",
                   minHeight: "64px",
+                  zIndex: 20,
                 }}
+                onMouseEnter={() => setHoveredChampion(pos.participantId)}
+                onMouseLeave={() => setHoveredChampion(null)}
               >
                 <div
-                  className={`w-full h-full rounded-full border-4 shadow-lg ${
+                  className={`w-full h-full rounded-full border-4 shadow-lg cursor-pointer transition-transform ${
                     pos.teamId === 100 ? "border-blue-400" : "border-red-400"
-                  } ${pos.isDead ? "opacity-60" : ""}`}
-              >
-                <Image
-                  src={getChampionImageUrl(pos.championName)}
-                  alt={pos.championName}
+                  } ${pos.isDead ? "opacity-60" : ""} ${
+                    hoveredChampion === pos.participantId ? "scale-110" : ""
+                  }`}
+                >
+                  <Image
+                    src={getChampionImageUrl(pos.championName)}
+                    alt={pos.championName}
                     width={64}
                     height={64}
                     className={`w-full h-full rounded-full object-cover ${
                       pos.isDead ? "grayscale" : ""
                     }`}
-                  unoptimized
-                />
+                    unoptimized
+                  />
                 </div>
+                
+                {/* Hover Card */}
+                {hoveredChampion === pos.participantId && participantFrame && (
+                  <div
+                    ref={(el) => {
+                      if (el && mapContainerRef.current) {
+                        // Get the map container boundaries
+                        const mapRect = mapContainerRef.current.getBoundingClientRect();
+                        const championRect = el.parentElement?.getBoundingClientRect();
+                        const cardRect = el.getBoundingClientRect();
+                        
+                        if (!championRect) return;
+
+                        // Calculate available space on each side
+                        const spaceRight = mapRect.right - championRect.right;
+                        const spaceLeft = championRect.left - mapRect.left;
+                        const spaceTop = championRect.top - mapRect.top;
+                        const spaceBottom = mapRect.bottom - championRect.bottom;
+
+                        // Reset positions
+                        el.style.left = '';
+                        el.style.right = '';
+                        el.style.top = '';
+                        el.style.bottom = '';
+                        
+                        // Horizontal positioning
+                        if (spaceRight < cardRect.width + 8) {
+                          // Not enough space on right, try left
+                          el.style.right = 'calc(100% + 8px)';
+                          el.style.left = 'auto';
+                        } else {
+                          // Default to right side
+                          el.style.left = 'calc(100% + 8px)';
+                          el.style.right = 'auto';
+                        }
+
+                        // Vertical positioning
+                        // Get updated card position after horizontal positioning
+                        const updatedCardRect = el.getBoundingClientRect();
+                        const cardHeight = updatedCardRect.height;
+                        
+                        if (championRect.top + cardHeight > mapRect.bottom) {
+                          // Not enough space below, move up
+                          const bottomSpace = mapRect.bottom - championRect.top;
+                          el.style.bottom = '0px';
+                          el.style.top = 'auto';
+                        } else if (championRect.top - cardHeight < mapRect.top) {
+                          // Not enough space above, move down
+                          el.style.top = '0px';
+                          el.style.bottom = 'auto';
+                        } else {
+                          // Center vertically
+                          el.style.top = '50%';
+                          el.style.transform = 'translateY(-50%)';
+                        }
+                      }
+                    }}
+                    className="absolute bg-[#1a2332] rounded p-2 border border-[#2a3a4a] shadow-xl z-50 w-[140px]"
+                  >
+                    {/* Health Bar */}
+                    <div className="mb-1">
+                      <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-500 transition-all"
+                          style={{
+                            width: `${((participantFrame.championStats?.health || 0) / (participantFrame.championStats?.healthMax || 1)) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Mana Bar */}
+                    <div className="mb-1.5">
+                      <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 transition-all"
+                          style={{
+                            width: `${((participantFrame.championStats?.power || 0) / (participantFrame.championStats?.powerMax || 1)) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Gold */}
+                    <div className="text-[9px] text-yellow-400 mb-1.5">
+                      💰 {participantFrame.currentGold || 0}g
+                    </div>
+                    
+                    {/* Items */}
+                    <div className="flex items-center gap-0.5">
+                      {(() => {
+                        // Get participant data from match data for final items
+                        const participant = matchData.info.participants[pos.participantId - 1];
+                        const rawItems = [
+                          participant?.item0 || 0,
+                          participant?.item1 || 0,
+                          participant?.item2 || 0,
+                          participant?.item3 || 0,
+                          participant?.item4 || 0,
+                          participant?.item5 || 0,
+                        ];
+                        const trinket = participant?.item6 || 0;
+                        
+                        // Filter out empty slots and add them back at the end
+                        const filledItems = rawItems.filter(item => item > 0);
+                        const emptySlots = 6 - filledItems.length;
+                        const sortedItems = [...filledItems, ...Array(emptySlots).fill(0), trinket];
+                        
+                        return sortedItems.map((itemId, slot) => {
+                          return itemId > 0 ? (
+                          <div
+                            key={slot}
+                            className="relative w-4 h-4 bg-[#0a0e14] rounded border border-[#3a4a5a] flex-shrink-0"
+                          >
+                            <Image
+                              src={getItemImageUrl(itemId)}
+                              alt={`Item ${itemId}`}
+                              width={16}
+                              height={16}
+                              className="object-cover"
+                              unoptimized
+                            />
+                          </div>
+                        ) : (
+                          <div
+                            key={slot}
+                            className="w-4 h-4 bg-[#0a0e14] rounded border border-[#2a3a4a] flex-shrink-0"
+                          />
+                        );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
 
-          {/* Draggable Marker */}
-          <div
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-move pointer-events-auto z-10"
-            style={{
-              left: `${markerPosition.x}%`,
-              top: `${markerPosition.y}%`,
-            }}
-            onMouseDown={handleMarkerMouseDown}
-          >
-            <div className="w-6 h-6 rounded-full bg-yellow-400 border-2 border-yellow-600 shadow-lg flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-yellow-600"></div>
-            </div>
-            {/* Tooltip showing coordinates */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 text-white text-xs rounded whitespace-nowrap pointer-events-none">
-              {(() => {
-                const gameCoords = convertPercentToGameCoords(
-                  markerPosition.x,
-                  markerPosition.y
-                );
-                return `game(${gameCoords.x}, ${gameCoords.y})`;
-              })()}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface MatchChatbotProps {
-  matchId: string;
-}
-
-function MatchChatbot({ matchId }: MatchChatbotProps) {
-  const [messages, setMessages] = useState<
-    Array<{ role: string; content: string }>
-  >([]);
-  const [inputMessage, setInputMessage] = useState("");
-  const [isConnected, setIsConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const searchParams = useSearchParams();
-  const puuid = searchParams.get("puuid");
-
-  // Handle Command+Space keyboard shortcut
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === ' ' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setIsOpen(prev => !prev);
-      }
-      // Close on Escape
-      if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
-
-  // Focus input when modal opens
-  useEffect(() => {
-    if (isOpen && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, [isOpen]);
-
-  // Scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Establish WebSocket connection on mount
-  useEffect(() => {
-    const wsUrl = "wss://ot204y8uvd.execute-api.us-east-2.amazonaws.com/test/";
-
-    console.log(`[WebSocket] Attempting to connect to: ${wsUrl}`);
-
-    try {
-      const ws = new WebSocket(wsUrl);
-
-      // Set connection timeout (10 seconds)
-      connectionTimeoutRef.current = setTimeout(() => {
-        if (ws.readyState === WebSocket.CONNECTING) {
-          console.error("[WebSocket] Connection timeout after 10 seconds");
-          setConnectionError("Connection timeout - server may be unreachable");
-          ws.close();
-          setIsConnected(false);
-        }
-      }, 10000);
-
-      ws.onopen = () => {
-        console.log("[WebSocket] ✅ Connected successfully");
-        if (connectionTimeoutRef.current) {
-          clearTimeout(connectionTimeoutRef.current);
-          connectionTimeoutRef.current = null;
-        }
-        setIsConnected(true);
-        setConnectionError(null);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const messageText = event.data;
-          console.log("[WebSocket] 📨 Received raw message:", messageText);
-
-          // Parse the message - can be in format: < {"type": "chunk", "content": "..."} or just {"type": "chunk", "content": "..."}
-          const trimmed = messageText.trim();
-          let parsed;
-
-          if (trimmed.startsWith("<")) {
-            // Extract JSON part after < (handle both "< " and "<" cases)
-            const jsonPart = trimmed.substring(1).trim();
-            parsed = JSON.parse(jsonPart);
-          } else {
-            // Try parsing directly as JSON
-            parsed = JSON.parse(trimmed);
-          }
-
-          console.log("[WebSocket] 📦 Parsed message:", parsed);
-
-          // Handle different message types
-          if (parsed.type === "chunk" && typeof parsed.content === "string") {
-            console.log("[WebSocket] ✅ Processing chunk message");
-            setMessages((prev) => {
-              // Check if there's already an assistant message being streamed
-              const lastMessage = prev[prev.length - 1];
-              if (lastMessage && lastMessage.role === "assistant") {
-                // Append to existing assistant message
-                return [
-                  ...prev.slice(0, -1),
-                  {
-                    role: "assistant",
-                    content: lastMessage.content + parsed.content,
-                  },
-                ];
+          {/* Towers */}
+          {Object.entries(towerPositions).map(([towerName, tower]) => {
+            const currentTimestamp = frame?.timestamp || 0;
+            const destroyedAt = towerDestructions.current.get(towerName);
+            
+            // Debug: log tower status
+            if (destroyedAt !== undefined) {
+              console.log(`Tower ${towerName}: destroyed at ${destroyedAt}ms, current: ${currentTimestamp}ms`);
+            }
+            
+            // Check if tower should be visible
+            let isVisible = true;
+            
+            if (destroyedAt !== undefined) {
+              if (tower.isNexus) {
+                // Nexus towers respawn after 3 minutes (180000ms)
+                const timeSinceDestruction = currentTimestamp - destroyedAt;
+                isVisible = timeSinceDestruction >= 180000;
+                console.log(`Nexus tower ${towerName}: time since destruction ${timeSinceDestruction}ms, visible: ${isVisible}`);
               } else {
-                // Create new assistant message
-                return [
-                  ...prev,
-                  { role: "assistant", content: parsed.content },
-                ];
+                // Regular towers don't respawn
+                isVisible = currentTimestamp < destroyedAt;
+                console.log(`Regular tower ${towerName}: visible before destruction: ${isVisible}`);
               }
-            });
-            // Don't set isLoading to false yet - wait for "end" message
-          } else if (parsed.type === "end") {
-            console.log(
-              "[WebSocket] ✅ Received end message - stopping loading"
+            }
+            
+            if (!isVisible) return null;
+            
+            // Convert game coordinates to percentage
+            const normalizedX = (tower.x - mapMinX) / mapWidth;
+            const normalizedY = 1 - (tower.y - mapMinY) / mapHeight;
+            const xPercent = normalizedX * 100;
+            const yPercent = normalizedY * 100;
+            
+            return (
+              <div
+                key={towerName}
+                className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                style={{
+                  left: `${xPercent}%`,
+                  top: `${yPercent}%`,
+                  width: "48px",
+                  height: "48px",
+                  zIndex: 10,
+                }}
+              >
+                <Image
+                  src={tower.team === 100 ? "/blue.png" : "/red.png"}
+                  alt={`${tower.team === 100 ? "Blue" : "Red"} Tower`}
+                  width={160}
+                  height={160}
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
             );
-            setIsLoading(false);
-          } else {
-            console.log("[WebSocket] ⚠️ Unknown message type:", parsed);
-          }
-        } catch (error) {
-          console.error("[WebSocket] ❌ Error parsing message:", error);
-          console.error("[WebSocket] Raw data:", event.data);
-        }
-      };
+          })}
 
-      ws.onerror = () => {
-        // WebSocket error events don't always have detailed info
-        const readyState = ws.readyState;
-        const stateNames = ["CONNECTING", "OPEN", "CLOSING", "CLOSED"];
-        console.error("[WebSocket] ❌ Error occurred", {
-          readyState: `${readyState} (${stateNames[readyState]})`,
-          url: wsUrl,
-        });
-        setConnectionError(
-          `Connection error (state: ${stateNames[readyState]})`
-        );
-        setIsConnected(false);
-      };
 
-      ws.onclose = (event) => {
-        if (connectionTimeoutRef.current) {
-          clearTimeout(connectionTimeoutRef.current);
-          connectionTimeoutRef.current = null;
-        }
-
-        setIsConnected(false);
-
-        // Log close code and reason if available
-        const closeInfo = {
-          code: event.code,
-          reason: event.reason || "No reason provided",
-          wasClean: event.wasClean,
-        };
-
-        if (event.code !== 1000) {
-          console.error("[WebSocket] ❌ Closed unexpectedly:", closeInfo);
-          setConnectionError(`Connection closed (code: ${event.code})`);
-        } else {
-          console.log("[WebSocket] ✅ Disconnected normally:", closeInfo);
-          setConnectionError(null);
-        }
-      };
-
-      wsRef.current = ws;
-
-      return () => {
-        if (connectionTimeoutRef.current) {
-          clearTimeout(connectionTimeoutRef.current);
-        }
-        if (
-          ws.readyState === WebSocket.OPEN ||
-          ws.readyState === WebSocket.CONNECTING
-        ) {
-          ws.close(1000, "Component unmounting");
-        }
-      };
-    } catch (error) {
-      console.error("[WebSocket] ❌ Failed to create WebSocket:", error);
-      setTimeout(() => {
-        setConnectionError("Failed to create WebSocket connection");
-        setIsConnected(false);
-      }, 0);
-    }
-  }, []);
-
-  const handleSendMessage = () => {
-    if (!inputMessage.trim() || !isConnected || isLoading) return;
-
-    const userMessage = { role: "user", content: inputMessage.trim() };
-
-    // Add user message to UI
-    setMessages((prev) => [...prev, userMessage]);
-    setInputMessage("");
-    setIsLoading(true);
-
-    console.log(puuid, "TEST")
-
-    // Send message to WebSocket
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      const payload = {
-        matchIds: [matchId],
-        messages: [userMessage],
-        pid: [puuid],
-      };
-      const payloadStr = JSON.stringify(payload);
-      console.log("[WebSocket] 📤 Sending message:", payloadStr);
-      wsRef.current.send(payloadStr);
-    } else {
-      console.error(
-        "[WebSocket] ❌ Cannot send - WebSocket not open. State:",
-        wsRef.current?.readyState
-      );
-      setIsLoading(false);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  if (!isOpen) {
-  return (
-    <div className="fixed bottom-4 right-4 z-40">
-      <button
-        onClick={() => setIsOpen(true)}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-colors"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-        </svg>
-        <span className="text-sm">Ask AI</span>
-        <kbd className="px-1.5 py-0.5 text-xs bg-blue-800 rounded">⌘Space</kbd>
-      </button>
+        </div>
+      </div>
+      )}
     </div>
   );
 }
 
-return (
-  <>
-    {/* Modal - No backdrop, page remains interactable */}
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] pointer-events-none">
-      <div 
-        className="w-full max-w-2xl mx-4 pointer-events-auto animate-in fade-in slide-in-from-top-4 duration-200"
-      >
-        <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden overflow-x-hidden">
-          {/* Header */}
-          <div className="bg-gray-800/50 px-6 py-3 border-b border-gray-700/50 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-white text-sm font-medium">Match Analysis AI</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                isConnected
-                  ? "bg-green-500/20 text-green-400"
-                  : "bg-red-500/20 text-red-400"
-              }`}>
-                {isConnected ? "Connected" : "Connecting..."}
-              </span>
-            </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Messages - Dynamic height */}
-          <div className="max-h-[60vh] overflow-y-auto overflow-x-hidden p-6 space-y-4">
-            {messages.length === 0 && (
-              <div className="text-center text-gray-400 text-sm py-12">
-                <div className="mb-2">💬</div>
-                <div>Ask questions about this match</div>
-                <div className="text-xs text-gray-500 mt-2">
-                  Try: &quot;What happened in the early game?&quot;
-                </div>
-              </div>
-            )}
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-xl px-4 py-3 ${
-                    msg.role === "user"
-                      ? "bg-blue-600 text-white shadow-lg"
-                      : "bg-gray-800 text-gray-100 shadow-md"
-                  }`}
-                >
-                  <div className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</div>
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-800 text-gray-100 rounded-xl px-4 py-3 shadow-md">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input */}
-          <div className="p-4 border-t border-gray-700/50 bg-gray-800/30">
-            <div className="flex gap-3">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask about this match..."
-                disabled={!isConnected || isLoading}
-                className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-500 transition-all"
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!isConnected || isLoading || !inputMessage.trim()}
-                className="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium shadow-lg hover:shadow-xl disabled:shadow-none flex items-center gap-2"
-              >
-                <span>Send</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </>
-);
-}
+// REMOVED: MatchChatbot component
+// The global AI chat is now available via Command+Space (see GlobalAIChat component in layout)
 
 interface PlayerRowProps {
   player: any;
   matchData: MatchData;
+  region: string;
   summonerSpellCache: Map<number, { image: { full: string } }> | null;
   runeCache: Map<number, { icon: string }> | null;
   runeStyleCache: Map<number, { icon: string }> | null;
+  isSelected?: boolean;
+  onClick?: () => void;
 }
 
 function PlayerRow({
   player,
   matchData,
+  region,
   summonerSpellCache,
   runeCache,
   runeStyleCache,
+  isSelected = false,
+  onClick,
 }: PlayerRowProps) {
   // Get rank label
   const getRankLabel = (rank: number) => {
     if (rank === 1) return "MVP";
-    if (rank === 10) return "ACE";
     const suffix = rank === 2 ? "nd" : rank === 3 ? "rd" : "th";
     return `${rank}${suffix}`;
   };
@@ -1233,7 +1307,14 @@ function PlayerRow({
   ).toFixed(1);
 
   return (
-    <div className="bg-[#1e2a3a] rounded p-1.5 border border-[#2a3a4a] hover:bg-[#253040] transition-colors">
+    <div
+      onClick={onClick}
+      className={`bg-[#1e2a3a] rounded p-1.5 border transition-colors ${
+        isSelected
+          ? "border-blue-400 bg-[#2a4060] ring-2 ring-blue-400/50"
+          : "border-[#2a3a4a] hover:bg-[#253040] cursor-pointer"
+      }`}
+    >
       <div className="flex items-center gap-1.5">
         {/* Rank Badge */}
         <div className="w-6 flex-shrink-0">
@@ -1272,9 +1353,18 @@ function PlayerRow({
             </div>
           </div>
           <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="text-[10px] font-semibold text-white truncate">
-              {player.riotIdGameName || player.summonerName || "Unknown"}
-            </div>
+            {player.riotIdGameName && player.riotIdTagline ? (
+              <Link
+                href={`/summoner/${player.riotIdGameName}-${player.riotIdTagline}?region=${region}`}
+                className="text-[10px] font-semibold text-white hover:text-blue-400 truncate block transition-colors"
+              >
+                {player.riotIdGameName}
+              </Link>
+            ) : (
+              <div className="text-[10px] font-semibold text-white truncate">
+                {player.riotIdGameName || player.summonerName || "Unknown"}
+              </div>
+            )}
             <div className="text-[8px] text-gray-400 truncate">
               {player.championName}
             </div>
