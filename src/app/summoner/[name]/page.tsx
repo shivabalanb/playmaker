@@ -64,6 +64,39 @@ export default function SummonerPage({
   const CACHE_KEY = `match-history-${puuid}-${region}`;
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
   
+  // Cleanup old localStorage entries to free up space
+  const cleanupOldCaches = () => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('match-history-')) {
+          try {
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            const age = Date.now() - (data.timestamp || 0);
+            // Remove caches older than 1 hour
+            if (age > 60 * 60 * 1000) {
+              keysToRemove.push(key);
+            }
+          } catch (e) {
+            // If we can't parse it, remove it
+            keysToRemove.push(key);
+          }
+        }
+      }
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+          console.log(`[Cleanup] Removed old cache: ${key}`);
+        } catch (e) {
+          // Ignore errors
+        }
+      });
+    } catch (e) {
+      console.warn('[Cleanup] Failed to cleanup old caches:', e);
+    }
+  };
+  
   // Update displayed match IDs whenever matches change
   useEffect(() => {
     const matchIds = matches.map((match) => match.metadata.matchId);
@@ -340,7 +373,8 @@ export default function SummonerPage({
             );
           } catch (cacheError) {
             console.warn('[Summoner Page] Failed to cache matches (quota exceeded):', cacheError);
-            // Clear cache if quota exceeded
+            // Clear old caches and current cache if quota exceeded
+            cleanupOldCaches();
             try {
               localStorage.removeItem(CACHE_KEY);
             } catch (e) {
@@ -363,7 +397,8 @@ export default function SummonerPage({
             );
           } catch (cacheError) {
             console.warn('[Summoner Page] Failed to cache matches (quota exceeded):', cacheError);
-            // Clear cache if quota exceeded
+            // Clear old caches and current cache if quota exceeded
+            cleanupOldCaches();
             try {
               localStorage.removeItem(CACHE_KEY);
             } catch (e) {
@@ -541,6 +576,8 @@ export default function SummonerPage({
         );
       } catch (cacheError) {
         console.warn('[Summoner Page] Failed to cache refreshed matches (quota exceeded):', cacheError);
+        // Clear old caches and current cache if quota exceeded
+        cleanupOldCaches();
         try {
           localStorage.removeItem(CACHE_KEY);
         } catch (e) {
@@ -607,15 +644,27 @@ export default function SummonerPage({
         );
         const updatedMatches = [...prev, ...uniqueNewMatches];
         
-        // Update cache with new matches
-        localStorage.setItem(
-          CACHE_KEY,
-          JSON.stringify({
-            matches: updatedMatches,
-            timestamp: Date.now(),
-            start: currentStart + uniqueNewMatches.length,
-          })
-        );
+        // Update cache with new matches (limit to 20 to avoid quota)
+        try {
+          const matchesToCache = updatedMatches.slice(0, 20);
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({
+              matches: matchesToCache,
+              timestamp: Date.now(),
+              start: currentStart + uniqueNewMatches.length,
+            })
+          );
+        } catch (cacheError) {
+          console.warn('[Summoner Page] Failed to cache more matches (quota exceeded):', cacheError);
+          // Clear old caches and current cache if quota exceeded
+          cleanupOldCaches();
+          try {
+            localStorage.removeItem(CACHE_KEY);
+          } catch (e) {
+            // Ignore cleanup errors
+          }
+        }
         
         console.log(`[Summoner Page] ✅ Loaded ${uniqueNewMatches.length} more matches (total: ${updatedMatches.length})`);
         return updatedMatches;

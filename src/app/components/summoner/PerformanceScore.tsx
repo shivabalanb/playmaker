@@ -62,40 +62,40 @@ export function PerformanceScore({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {/* Score and Rank Text */}
       <div className="flex flex-col justify-center">
-        <div className="text-xl font-bold leading-none" style={{ color }}>
+        <div className="text-sm font-bold leading-none" style={{ color }}>
           {score}
         </div>
-        <div className="text-[8px] text-gray-400 mt-0.5">
+        <div className="text-[7px] text-gray-400 mt-0.5">
           {rank}
           {getRankSuffix(rank)}
         </div>
       </div>
 
       {/* Circular Progress */}
-      <div className="relative w-10 h-10 flex items-center justify-center">
-        <svg className="transform -rotate-90 w-10 h-10">
+      <div className="relative w-7 h-7 flex items-center justify-center">
+        <svg className="transform -rotate-90 w-7 h-7">
           {/* Background circle */}
           <circle
-            cx="20"
-            cy="20"
-            r={14}
+            cx="14"
+            cy="14"
+            r={10}
             stroke="#2a3a4a"
-            strokeWidth="2.5"
+            strokeWidth="2"
             fill="none"
           />
           {/* Progress circle */}
           <circle
-            cx="20"
-            cy="20"
-            r={14}
+            cx="14"
+            cy="14"
+            r={10}
             stroke={color}
-            strokeWidth="2.5"
+            strokeWidth="2"
             fill="none"
-            strokeDasharray={2 * Math.PI * 14}
-            strokeDashoffset={2 * Math.PI * 14 - (percentage / 100) * 2 * Math.PI * 14}
+            strokeDasharray={2 * Math.PI * 10}
+            strokeDashoffset={2 * Math.PI * 10 - (percentage / 100) * 2 * Math.PI * 10}
             strokeLinecap="round"
             className="transition-all duration-500"
           />

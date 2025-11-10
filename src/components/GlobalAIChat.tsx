@@ -133,12 +133,13 @@ export function GlobalAIChat() {
     return {};
   };
 
-  // Handle Command+Space or Ctrl+Space keyboard shortcut
+  // Handle Ctrl keyboard shortcut
   useEffect(() => {
     if (!showAIChat) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === " " && (e.metaKey || e.ctrlKey)) {
+      // Toggle on Ctrl key press (without any other keys)
+      if (e.key === "Control" && !e.shiftKey && !e.altKey && !e.metaKey) {
         e.preventDefault();
         setIsOpen((prev) => !prev);
       }
@@ -374,28 +375,23 @@ export function GlobalAIChat() {
       <div className="fixed bottom-4 right-4 z-40">
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-colors relative"
+          className="bg-blue-600/90 hover:bg-blue-700 text-white p-2 rounded-lg shadow-lg flex items-center gap-1.5 transition-colors relative"
         >
           {/* Ingestion indicator */}
           {isIngesting && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
           )}
+          {/* AI Diamond Icon */}
           <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
+            className="w-4 h-4"
+            fill="currentColor"
             viewBox="0 0 24 24"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-            />
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
           </svg>
-          <span className="text-sm">Ask AI</span>
-          <kbd className="px-1.5 py-0.5 text-xs bg-blue-800 rounded">
-            ⌘Space
+          {/* Ctrl Icon */}
+          <kbd className="px-1 py-0.5 text-[10px] bg-blue-800 rounded font-mono">
+            ctrl
           </kbd>
         </button>
       </div>
