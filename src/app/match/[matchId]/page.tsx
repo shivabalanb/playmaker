@@ -720,17 +720,17 @@ function MapTimeline({
                   className={`w-full h-full rounded-full border-4 shadow-lg ${
                     pos.teamId === 100 ? "border-blue-400" : "border-red-400"
                   } ${pos.isDead ? "opacity-60" : ""}`}
-                >
-                  <Image
-                    src={getChampionImageUrl(pos.championName)}
-                    alt={pos.championName}
+              >
+                <Image
+                  src={getChampionImageUrl(pos.championName)}
+                  alt={pos.championName}
                     width={64}
                     height={64}
                     className={`w-full h-full rounded-full object-cover ${
                       pos.isDead ? "grayscale" : ""
                     }`}
-                    unoptimized
-                  />
+                  unoptimized
+                />
                 </div>
               </div>
             );
