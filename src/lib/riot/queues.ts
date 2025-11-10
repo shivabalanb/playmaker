@@ -9,6 +9,7 @@ const QUEUE_TYPES: Record<number, string> = {
   430: "Normal Blind",
   440: "Ranked Flex",
   450: "ARAM",
+  480: "Nexus Blitz",
   490: "Quickplay",
   700: "Clash",
   720: "ARAM Clash",
@@ -122,5 +123,21 @@ export function getQueueCategory(
   if (queueId >= 2000 && queueId <= 2020) return "tutorial";
   if (queueId === 0) return "custom";
   return "rotating";
+}
+
+/**
+ * Check if a queue supports match review
+ * @param queueId - Queue ID from match data
+ * @returns True if queue supports review (Ranked Solo/Duo, Ranked Flex, Normals, Quickplay, ARAM)
+ */
+export function isReviewableQueue(queueId: number): boolean {
+  return (
+    queueId === 420 || // Ranked Solo/Duo
+    queueId === 440 || // Ranked Flex
+    queueId === 400 || // Normal Draft
+    queueId === 430 || // Normal Blind
+    queueId === 450 || // ARAM
+    queueId === 490    // Quickplay
+  );
 }
 

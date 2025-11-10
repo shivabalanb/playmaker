@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { MatchData } from "./types";
 import {
   getSummonerSpellImageUrl,
@@ -12,6 +12,7 @@ import {
   DD_VERSION,
 } from "@/lib";
 import { calculatePlayerRank } from "@/lib/utils/performanceScore";
+import { getPerformanceTags } from "@/lib/utils/performanceTags";
 import { PerformanceScore } from "./PerformanceScore";
 
 interface MatchCardProps {
@@ -22,6 +23,7 @@ interface MatchCardProps {
   getItemImageUrl: (itemId: number) => string;
   getQueueType: (queueId: number) => string;
   isRankedQueue: (queueId: number) => boolean;
+  isReviewableQueue: (queueId: number) => boolean;
   formatDuration: (seconds: number) => string;
   formatTimeAgo: (timestamp: number) => string;
   reorderItemsWithBootsFirst: (items: number[]) => number[];
@@ -44,6 +46,7 @@ export function MatchCard({
   getItemImageUrl,
   getQueueType,
   isRankedQueue,
+  isReviewableQueue,
   formatDuration,
   formatTimeAgo,
   reorderItemsWithBootsFirst,
@@ -54,6 +57,7 @@ export function MatchCard({
 
   const [summonerSpellsLoaded, setSummonerSpellsLoaded] = useState(false);
   const [runesLoaded, setRunesLoaded] = useState(false);
+  const championImageRef = useRef<HTMLDivElement>(null);
 
   // Fetch and cache summoner spells data
   useEffect(() => {
@@ -121,6 +125,19 @@ export function MatchCard({
   const isVictory = playerData.win;
   const kda = `${playerData.kills}/${playerData.deaths}/${playerData.assists}`;
   const cs = playerData.totalMinionsKilled + playerData.neutralMinionsKilled;
+  
+  // Calculate per-minute stats
+  const gameDurationMinutes = match.info.gameDuration / 60;
+  const csPerMin = (cs / gameDurationMinutes).toFixed(1);
+  const goldPerMin = (playerData.goldEarned / gameDurationMinutes / 1000).toFixed(1);
+
+  // Get performance tags and randomly select 5
+  const allTags = useMemo(() => getPerformanceTags(playerData, match.info.gameDuration), [playerData, match.info.gameDuration]);
+  const displayedTags = useMemo(() => {
+    if (allTags.length === 0) return [];
+    const shuffled = [...allTags].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(5, allTags.length));
+  }, [allTags]);
 
   // Calculate performance score and rank
   const performanceData = useMemo(() => {
@@ -192,11 +209,31 @@ export function MatchCard({
   const regularItems = reorderItemsWithBootsFirst(sortedItems);
   const trinketItem = playerData.item6;
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.effectAllowed = "copy";
+    e.dataTransfer.setData("matchId", match.metadata.matchId);
+    e.dataTransfer.setData("championName", playerData.championName);
+    e.dataTransfer.setData("championImageUrl", getChampionImageUrl(playerData.championName));
+    
+    // Use champion image as drag preview
+    if (championImageRef.current) {
+      const rect = championImageRef.current.getBoundingClientRect();
+      e.dataTransfer.setDragImage(
+        championImageRef.current,
+        rect.width / 2,
+        rect.height / 2
+      );
+    }
+  };
+
   return (
     <div
+      data-match-id={match.metadata.matchId}
+      draggable
+      onDragStart={handleDragStart}
       className={`relative border-l-4 ${
         isVictory ? "border-green-500" : "border-red-500 "
-      } rounded-lg p-4 transition-colors overflow-hidden `}
+      } rounded-lg py-4 px-[26px] transition-colors overflow-visible cursor-grab active:cursor-grabbing`}
     >
       {/* Base background */}
       <div className="absolute inset-0 bg-[#1e2a3a] -z-10" />
@@ -229,7 +266,10 @@ export function MatchCard({
         <div className="flex items-center gap-4 w-[320px] h-16 flex-shrink-0">
           {/* Champion Icon with Summoner Spells */}
           <div className="flex items-center gap-2 shrink-0 h-full">
-            <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#3a4a5a]">
+            <div 
+              ref={championImageRef}
+              className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#3a4a5a]"
+            >
               <Image
                 src={getChampionImageUrl(playerData.championName)}
                 alt={playerData.championName}
@@ -434,77 +474,82 @@ export function MatchCard({
           </div>
         </div>
 
+        {/* Performance Tags */}
+        {displayedTags.length > 0 && (
+          <div className="flex flex-wrap gap-1 items-center max-w-[240px] h-16 flex-shrink-0 overflow-visible px-2">
+            {displayedTags.map((tag, idx) => (
+              <div
+                key={idx}
+                className={`relative group px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap ${tag.color} cursor-default`}
+              >
+                {tag.name}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-lg border border-gray-700">
+                  {tag.description}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Stats */}
-        <div className="flex items-center gap-4 text-xs text-gray-300 ml-auto h-16">
-          <div className="text-center">
-            <div className="font-semibold">{cs}</div>
-            <div className="text-gray-500">CS</div>
-          </div>
-          <div className="text-center">
-            <div className="font-semibold">
-              {(playerData.goldEarned / 1000).toFixed(1)}k
-            </div>
-            <div className="text-gray-500">Gold</div>
-          </div>
-          {/* Performance Score */}
-          <div className="flex items-center">
-            <PerformanceScore
-              score={performanceData.score}
-              rank={performanceData.rank}
-              totalPlayers={match.info.participants.length}
-            />
-          </div>
+        <div className="flex items-center gap-4 text-xs text-gray-300 h-16">
+          {/* Only show stats for Ranked and Normal queues, but not ARAM */}
+          {isReviewableQueue(match.info.queueId) && match.info.queueId !== 450 && (
+            <>
+              <div className="text-center">
+                <div className="font-semibold">{csPerMin}</div>
+                <div className="text-gray-500">CS/min</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold">
+                  {goldPerMin}k
+                </div>
+                <div className="text-gray-500">Gold/min</div>
+              </div>
+              {/* Performance Score */}
+              <div className="flex items-center">
+                <PerformanceScore
+                  score={performanceData.score}
+                  rank={performanceData.rank}
+                  totalPlayers={match.info.participants.length}
+                />
+              </div>
+            </>
+          )}
+          {/* Empty spacer for ARAM to maintain alignment */}
+          {match.info.queueId === 450 && (
+            <div className="w-[200px]" />
+          )}
         </div>
 
-        {/* Review Button */}
-        <div className="flex items-center w-[80px] h-16 flex-shrink-0">
+        {/* Review Button - Absolutely positioned */}
+        {isReviewableQueue(match.info.queueId) && (
           <button
             onClick={(e) => {
               e.preventDefault();
-
-              // Make POST request to parse endpoint (fire-and-forget)
-              // Don't await - let it run in background without blocking navigation
-              fetch(
-                "https://kxx5nci6i0.execute-api.us-east-2.amazonaws.com/test/parse",
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    matchId: match.metadata.matchId,
-                    region: region,
-                  }),
-                }
-              )
-                .then((response) => {
-                  if (!response.ok) {
-                    console.warn(
-                      `Parse endpoint returned ${response.status}:`,
-                      response.statusText
-                    );
-                  } else {
-                    console.log("Parse endpoint called successfully");
-                  }
-                })
-                .catch((error) => {
-                  // Log error but don't block navigation
-                  // This is expected if CORS is not configured or endpoint is unreachable
-                  console.warn(
-                    "Parse endpoint call failed (non-blocking):",
-                    error.message
-                  );
-                });
-
               // Navigate to match detail page
               const url = `/match/${match.metadata.matchId}?region=${region}${puuid ? `&puuid=${encodeURIComponent(puuid)}` : ""}`;
               router.push(url);
             }}
-            className="cursor-pointer px-3 py-1.5 bg-black hover:bg-gray-900 text-white text-xs rounded transition-colors whitespace-nowrap text-center"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all cursor-pointer bg-gray-700/30 hover:bg-gray-600/40 z-20"
+            aria-label="View match details"
           >
-            Review
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              className="text-gray-400"
+            >
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </button>
-        </div>
+        )}
       </div>
     </div>
   );

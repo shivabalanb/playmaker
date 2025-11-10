@@ -9,6 +9,10 @@ export interface MatchData {
     participants: Array<{
       puuid: string;
       championName: string;
+      champLevel?: number;
+      riotIdGameName?: string;
+      riotIdTagline?: string;
+      summonerName?: string;
       kills: number;
       deaths: number;
       assists: number;
@@ -40,12 +44,56 @@ export interface MatchData {
       totalHealsOnTeammates?: number;
       totalDamageShieldedOnTeammates?: number;
       timeCCingOthers?: number;
+      firstBloodKill?: boolean;
+      firstTowerKill?: boolean;
+      itemsPurchased?: number;
+      inhibitorTakedowns?: number;
+      nexusTakedowns?: number;
+      largestKillingSpree?: number;
+      doubleKills?: number;
+      tripleKills?: number;
+      quadraKills?: number;
+      pentaKills?: number;
       challenges?: {
         soloKills?: number;
         multikills?: number;
         effectiveHealAndShielding?: number;
         killParticipation?: number;
         teamDamagePercentage?: number;
+        earlyLaningPhaseGoldExpAdvantage?: number;
+        laneMinionsFirst10Minutes?: number;
+        goldPerMinute?: number;
+        killsNearEnemyTurret?: number;
+        unseenRecalls?: number;
+        takedownsInAlcove?: number;
+        saveAllyFromDeath?: number;
+        bountyGold?: number;
+        pickKillWithAlly?: number;
+        skillshotsDodged?: number;
+        damagePerMinute?: number;
+        damageSelfMitigated?: number;
+        longestTimeSpentLiving?: number;
+        visionScorePerMinute?: number;
+        wardTakedowns?: number;
+        controlWardTimeCoverageInRiverOrEnemyHalf?: number;
+        doubleKills?: number;
+        tripleKills?: number;
+        quadraKills?: number;
+        pentaKills?: number;
+        largestKillingSpree?: number;
+        outnumberedKills?: number;
+        killsOnOtherLanesEarlyJungleAsLaner?: number;
+        multiKillOneSpell?: number;
+        takedownsInEnemyFountain?: number;
+        epicMonsterSteals?: number;
+        baronTakedowns?: number;
+        dragonTakedowns?: number;
+        riftHeraldTakedowns?: number;
+        damageDealtToBuildings?: number;
+        getTakedownsInAllLanesEarlyJungleAsLaner?: number;
+        immobilizeAndKillWithAlly?: number;
+        knockEnemyIntoTeamAndKill?: number;
+        killingSprees?: number;
       };
       perks: {
         styles: Array<{
