@@ -90,6 +90,8 @@ export async function POST(request: NextRequest) {
 
     // Invoke Lambda asynchronously
     // Lambda will create the processing marker itself (has write access)
+    console.log(`[Generate] Invoking Lambda for PUUID: ${puuid}, Region: ${region || "americas"}`);
+    
     fetch(LAMBDA_FUNCTION_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -97,10 +99,18 @@ export async function POST(request: NextRequest) {
         puuid,
         region: region || "americas",
       }),
-    }).catch((error) => {
-      console.error("Failed to invoke Lambda:", error);
-      // Note: Can't clean up processing marker here - Lambda handles it
-    });
+    })
+      .then((response) => {
+        console.log(`[Generate] Lambda invocation response status: ${response.status}`);
+        return response.text();
+      })
+      .then((text) => {
+        console.log(`[Generate] Lambda response: ${text}`);
+      })
+      .catch((error) => {
+        console.error("[Generate] Failed to invoke Lambda:", error);
+        // Note: Can't clean up processing marker here - Lambda handles it
+      });
 
     return NextResponse.json({ status: "processing" });
   } catch (error) {

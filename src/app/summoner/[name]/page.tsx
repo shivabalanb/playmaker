@@ -476,7 +476,7 @@ export default function SummonerPage({
           
           // Still fetch fresh summoner data and analysis
           fetchSummonerData();
-          fetchPlayerAnalysis();
+          // fetchPlayerAnalysis();
           return;
         } else {
           console.log(`[Summoner Page] 🗑️ Cache expired, fetching fresh data...`);
@@ -493,7 +493,7 @@ export default function SummonerPage({
     fetchSummonerData();
     console.log(`[Summoner Page] 📥 Fetching initial 10 matches...`);
     fetchMatchHistory(0, false);
-    fetchPlayerAnalysis();
+    // fetchPlayerAnalysis();
   }, [puuid, region]);
 
   // Check recap status on page load
@@ -768,13 +768,13 @@ export default function SummonerPage({
 
                   if (recapStatus === "available") {
                     // Recap already exists, redirect to view it
-                    router.push(`/recap?puuid=${resolvedPuuid}&region=${region}`);
+                    router.push(`/recap?puuid=${resolvedPuuid}&region=${region}&name=${encodeURIComponent(resolvedParams.name)}`);
                     return;
                   }
 
                   if (recapStatus === "processing") {
                     // Already processing - redirect to recap page to see progress
-                    router.push(`/recap?puuid=${resolvedPuuid}&region=${region}`);
+                    router.push(`/recap?puuid=${resolvedPuuid}&region=${region}&name=${encodeURIComponent(resolvedParams.name)}`);
                     return;
                   }
 
@@ -792,7 +792,7 @@ export default function SummonerPage({
                       });
                       await response.json();
                       // Redirect to recap page - it will poll for status
-                      router.push(`/recap?puuid=${resolvedPuuid}&region=${region}`);
+                      router.push(`/recap?puuid=${resolvedPuuid}&region=${region}&name=${encodeURIComponent(resolvedParams.name)}`);
                     } catch (error) {
                       console.error("Failed to generate recap:", error);
                       setIsGeneratingRecap(false);
@@ -863,9 +863,9 @@ export default function SummonerPage({
                     <span>Generating...</span>
                   </>
                 ) : recapStatus === "not_eligible" ? (
-                  "Season Recap (Ineligible)"
+                  "Journey (Ineligible)"
                 ) : recapStatus === "available" ? (
-                  "View Season Recap"
+                  "View Journey"
                 ) : isGeneratingRecap ? (
                   <>
                     <svg
@@ -891,7 +891,7 @@ export default function SummonerPage({
                     <span>Generating</span>
                   </>
                 ) : (
-                  "Generate Season Recap"
+                  "Generate Journey"
                 )}
               </button>
             </div>

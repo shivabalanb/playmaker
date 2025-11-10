@@ -8,6 +8,7 @@ import { BackgroundAnimation } from "./BackgroundAnimation";
 interface FinalSlideProps {
   puuid: string | null;
   region: string | null;
+  summonerName: string | null;
   recapData?: RecapData;
 }
 
@@ -67,7 +68,7 @@ interface RecapStats {
   };
 }
 
-export function FinalSlide({ puuid, region, recapData }: FinalSlideProps) {
+export function FinalSlide({ puuid, region, summonerName, recapData }: FinalSlideProps) {
   const router = useRouter();
   const [currentRound, setCurrentRound] = useState(0);
   const [score, setScore] = useState(0);
@@ -75,6 +76,15 @@ export function FinalSlide({ puuid, region, recapData }: FinalSlideProps) {
   const [rightStat, setRightStat] = useState<Stat | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  
+  // Comparison feature states
+  const [showCompareInput, setShowCompareInput] = useState(false);
+  const [yourName, setYourName] = useState("");
+  const [yourRegion, setYourRegion] = useState("na1");
+  const [friendName, setFriendName] = useState("");
+  const [friendRegion, setFriendRegion] = useState("na1");
+  const [isLoadingComparison, setIsLoadingComparison] = useState(false);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
 
   // Extract all available stats from recapData
   const availableStats = useMemo(() => {
@@ -280,12 +290,137 @@ export function FinalSlide({ puuid, region, recapData }: FinalSlideProps) {
   }, [availableStats, startGame]);
 
   const handleBackToProfile = () => {
-    if (puuid && region) {
+    if (puuid && region && summonerName) {
+      // Navigate to /summoner/[name] with query params
       router.push(
-        `/summoner/profile?puuid=${encodeURIComponent(puuid)}&region=${region}`
+        `/summoner/${encodeURIComponent(summonerName)}?puuid=${encodeURIComponent(puuid)}&region=${region}`
       );
+    } else if (puuid && region) {
+      // Fallback without name - go to search page
+      router.push("/");
     } else {
       router.push("/");
+    }
+  };
+
+  const getRoutingRegion = (platform: string): string => {
+    const regionMap: Record<string, string> = {
+      na1: "americas",
+      br1: "americas",
+      la1: "americas",
+      la2: "americas",
+      euw1: "europe",
+      eun1: "europe",
+      tr1: "europe",
+      ru: "europe",
+      kr: "asia",
+      jp1: "asia",
+      oc1: "sea",
+      ph2: "sea",
+      sg2: "sea",
+      th2: "sea",
+      tw2: "sea",
+      vn2: "sea",
+    };
+    return regionMap[platform] || "americas";
+  };
+
+  const handleCompareWithFriend = async () => {
+    if (!yourName.trim()) {
+      setComparisonError("Please enter your summoner name");
+      return;
+    }
+
+    if (!friendName.trim()) {
+      setComparisonError("Please enter friend's summoner name");
+      return;
+    }
+
+    // Parse your name
+    const yourParts = yourName.trim().split("#");
+    if (!yourParts[0] || !yourParts[1]) {
+      setComparisonError("Your name must include tag line (e.g., Player#NA1)");
+      return;
+    }
+
+    // Parse friend's name
+    const friendParts = friendName.trim().split("#");
+    const gameName = friendParts[0];
+    const tagLine = friendParts[1];
+
+    if (!gameName) {
+      setComparisonError("Please enter friend's summoner name");
+      return;
+    }
+
+    if (!tagLine) {
+      setComparisonError("Friend's name must include tag line (e.g., Player#NA1)");
+      return;
+    }
+
+    setIsLoadingComparison(true);
+    setComparisonError(null);
+
+    const routingRegion = getRoutingRegion(friendRegion);
+
+    try {
+      console.log(`[Compare] Current player PUUID: ${puuid}`);
+      console.log(`[Compare] Looking up friend: ${gameName}#${tagLine}`);
+      
+      // Step 1: Resolve summoner name to PUUID
+      const accountRes = await fetch(
+        `/api/riot/account?gameName=${encodeURIComponent(gameName)}&tagLine=${encodeURIComponent(tagLine)}&region=${routingRegion}`
+      );
+
+      if (!accountRes.ok) {
+        throw new Error("Summoner not found");
+      }
+
+      const accountData = await accountRes.json();
+      const friendPuuid = accountData.puuid;
+      
+      console.log(`[Compare] Friend PUUID: ${friendPuuid}`);
+      console.log(`[Compare] Are PUUIDs the same? ${puuid === friendPuuid}`);
+
+      // Step 2: Check if friend's recap exists and eligibility
+      const statusRes = await fetch(
+        `/api/riot/recap/status?puuid=${friendPuuid}&region=${routingRegion}`
+      );
+      const statusData = await statusRes.json();
+
+      // Check eligibility
+      if (statusData.status === "not_eligible") {
+        throw new Error(
+          `${gameName}#${tagLine} needs at least ${statusData.required || 100} games to generate a recap. They have ${statusData.gameCount || 0} games.`
+        );
+      }
+
+      // Step 3: If not exists, trigger generation
+      if (statusData.status === "eligible") {
+        console.log(`[Compare] Triggering recap generation for friend: ${friendPuuid}, region: ${routingRegion}`);
+        const generateRes = await fetch("/api/riot/recap/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ puuid: friendPuuid, region: routingRegion }),
+        });
+        
+        const generateData = await generateRes.json();
+        console.log(`[Compare] Generate response:`, generateData);
+        
+        if (!generateRes.ok) {
+          throw new Error(generateData.error || "Failed to generate friend's recap");
+        }
+      }
+
+      // Step 4: Navigate to comparison page with both names
+      router.push(
+        `/compare?puuid1=${encodeURIComponent(puuid || "")}&puuid2=${encodeURIComponent(friendPuuid)}&region=${routingRegion}&name1=${encodeURIComponent(yourName.trim())}&name2=${encodeURIComponent(`${gameName}#${tagLine}`)}`
+      );
+    } catch (error) {
+      setComparisonError(
+        error instanceof Error ? error.message : "Failed to find summoner"
+      );
+      setIsLoadingComparison(false);
     }
   };
 
@@ -483,26 +618,161 @@ export function FinalSlide({ puuid, region, recapData }: FinalSlideProps) {
             </motion.div>
           )}
 
-          {/* Epic button */}
-          <motion.button
-            initial={{ opacity: 0, y: 30, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleBackToProfile}
-            className="relative px-2 py-2 text-lg font-light rounded-lg tracking-wider text-white  bg-black/50 border border-white/20 shadow-lg backdrop-blur-sm overflow-hidden group"
-          >
-            <span className=" text-sm relative z-10">
-              Back to Profile
-            </span>
+          {/* Action Buttons - Side by Side */}
+          <div className="flex gap-4 w-full max-w-md mb-4">
+            {!showCompareInput ? (
+              <>
+                <motion.button
+                  initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: 1.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowCompareInput(true)}
+                  className="flex-1 px-6 py-3 text-sm font-light rounded-lg tracking-wider text-white bg-teal-900/60 cursor-pointer border border-teal-700 shadow-lg backdrop-blur-sm overflow-hidden group"
+                >
+                  <span className="relative z-10">Compare with Friend</span>
+                </motion.button>
+
+                <motion.button
+                  initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: 1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  
+                  onClick={handleBackToProfile}
+                  className="flex-1 px-6 py-3 text-sm font-light rounded-lg tracking-wider text-white bg-black/60 bg-blur-sm hover:bg-grey-800 border border-grey-700 shadow-lg backdrop-blur-sm overflow-hidden group cursor-pointer "
+                >
+                  <span className="relative z-10">Back to Profile</span>
+                </motion.button>
+              </>
+            ) : null}
+          </div>
+
+          {/* Compare Input Form */}
+          {showCompareInput ? (
             <motion.div
-              className="absolute inset-0 "
-              initial={{ x: "-100%" }}
-              whileHover={{ x: "100%" }}
-              transition={{ duration: 0.6 }}
-            />
-          </motion.button>
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 w-full max-w-md"
+            >
+              <div className="bg-black/50 border border-white/20 rounded-lg p-4 backdrop-blur-sm">
+                <p className="text-xs text-gray-400 mb-3 uppercase tracking-wider">
+                  Enter Summoner Names
+                </p>
+                
+                {/* Your Name + Region */}
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={yourName}
+                    onChange={(e) => setYourName(e.target.value)}
+                    placeholder="Your Name#TAG"
+                    className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-400/50"
+                    disabled={isLoadingComparison}
+                  />
+                  <select
+                    value={yourRegion}
+                    onChange={(e) => setYourRegion(e.target.value)}
+                    disabled={isLoadingComparison}
+                    className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-400/50 disabled:opacity-50"
+                  >
+                    <optgroup label="Americas">
+                      <option value="na1">NA</option>
+                      <option value="br1">BR</option>
+                    </optgroup>
+                    <optgroup label="Europe">
+                      <option value="euw1">EUW</option>
+                      <option value="eun1">EUNE</option>
+                      <option value="tr1">TR</option>
+                      <option value="ru">RU</option>
+                    </optgroup>
+                    <optgroup label="Asia">
+                      <option value="kr">KR</option>
+                      <option value="jp1">JP</option>
+                    </optgroup>
+                    <optgroup label="SEA & OCE">
+                      <option value="oc1">OCE</option>
+                      <option value="ph2">PH</option>
+                      <option value="sg2">SG</option>
+                      <option value="th2">TH</option>
+                      <option value="tw2">TW</option>
+                      <option value="vn2">VN</option>
+                    </optgroup>
+                  </select>
+                </div>
+
+                {/* Friend's Name + Region */}
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={friendName}
+                    onChange={(e) => setFriendName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleCompareWithFriend()}
+                    placeholder="Friend's Name#TAG"
+                    className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-400/50"
+                    disabled={isLoadingComparison}
+                  />
+                  <select
+                    value={friendRegion}
+                    onChange={(e) => setFriendRegion(e.target.value)}
+                    disabled={isLoadingComparison}
+                    className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-400/50 disabled:opacity-50"
+                  >
+                    <optgroup label="Americas">
+                      <option value="na1">NA</option>
+                      <option value="br1">BR</option>
+                    </optgroup>
+                    <optgroup label="Europe">
+                      <option value="euw1">EUW</option>
+                      <option value="eun1">EUNE</option>
+                      <option value="tr1">TR</option>
+                      <option value="ru">RU</option>
+                    </optgroup>
+                    <optgroup label="Asia">
+                      <option value="kr">KR</option>
+                      <option value="jp1">JP</option>
+                    </optgroup>
+                    <optgroup label="SEA & OCE">
+                      <option value="oc1">OCE</option>
+                      <option value="ph2">PH</option>
+                      <option value="sg2">SG</option>
+                      <option value="th2">TH</option>
+                      <option value="tw2">TW</option>
+                      <option value="vn2">VN</option>
+                    </optgroup>
+                  </select>
+                </div>
+                
+                {comparisonError && (
+                  <p className="text-red-400 text-xs mb-3">{comparisonError}</p>
+                )}
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCompareWithFriend}
+                    disabled={isLoadingComparison}
+                    className="flex-1 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/50 rounded-lg text-sm font-light text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoadingComparison ? "Loading..." : "Compare"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCompareInput(false);
+                      setComparisonError(null);
+                      setYourName("");
+                      setYourRegion("na1");
+                      setFriendName("");
+                      setFriendRegion("na1");
+                    }}
+                    disabled={isLoadingComparison}
+                    className="px-4 py-2 bg-white/5  cursor-pointer hover:bg-white/10 border border-white/10 rounded-lg text-sm font-light text-white transition-all disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ) : null}
         </motion.div>
       </div>
     </div>

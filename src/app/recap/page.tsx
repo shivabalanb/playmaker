@@ -202,12 +202,23 @@ interface RecapData {
     recommendations?: string[];
     poem?: string;
   };
+  summonerInfo?: {
+    profileIconId?: number;
+    summonerLevel?: number;
+    name?: string;
+  };
+  platform?: string;
 }
 
 export default function SeasonRecapPage() {
   const searchParams = useSearchParams();
   const puuid = searchParams.get("puuid");
   const region = searchParams.get("region");
+  const summonerName = searchParams.get("name");
+
+  console.log("[RecapPage] Summoner name from URL:", summonerName);
+  console.log("[RecapPage] PUUID:", puuid);
+  console.log("[RecapPage] Region:", region);
 
   const [status, setStatus] = useState<"processing" | "complete" | "error">(
     "processing"
@@ -353,7 +364,7 @@ export default function SeasonRecapPage() {
     return null;
   }
 
-  const slides = buildSlides(recapData, puuid, region);
+  const slides = buildSlides(recapData, puuid, region, summonerName);
   const totalSlides = slides.length;
 
   return (
@@ -418,7 +429,8 @@ function getTotalSlides(recapData: RecapData): number {
 function buildSlides(
   recapData: RecapData,
   puuid: string | null,
-  region: string | null
+  region: string | null,
+  summonerName: string | null
 ): React.ReactElement[] {
   const slides: React.ReactElement[] = [];
   const stats = recapData.stats || {};
@@ -557,6 +569,7 @@ function buildSlides(
       key="final"
       puuid={puuid}
       region={region}
+      summonerName={summonerName}
       recapData={recapData}
     />
   );

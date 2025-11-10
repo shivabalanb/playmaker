@@ -90,6 +90,32 @@ def fetch_with_retry(
     raise Exception("Max retries exceeded")
 
 
+def fetch_summoner_info(puuid: str, platform: str) -> Dict[str, Any]:
+    """Fetch summoner info from Riot API to get profile icon and level."""
+    try:
+        api_key = get_riot_api_key()
+        url = f"https://{platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}"
+
+        print(f"[DEBUG] Fetching summoner info from: {url}")
+
+        headers = {"X-Riot-Token": api_key}
+        response = fetch_with_retry(url, headers)
+
+        return {
+            "profileIconId": response.get("profileIconId", 29),
+            "summonerLevel": response.get("summonerLevel", 0),
+            "name": response.get("name", ""),
+        }
+    except Exception as e:
+        print(f"[WARNING] Failed to fetch summoner info: {str(e)}")
+        # Return default values on error
+        return {
+            "profileIconId": 29,
+            "summonerLevel": 0,
+            "name": "",
+        }
+
+
 def fetch_matches_from_api(
     puuid: str, region: str, count: int = 100
 ) -> List[Dict[str, Any]]:
@@ -98,7 +124,7 @@ def fetch_matches_from_api(
 
     api_key = get_riot_api_key()
     headers = {"X-Riot-Token": api_key}
-    encoded_puuid = quote(puuid, safe="-_.!~*'()")
+    encoded_puuid = quote(puuid, safe="")
 
     # Fetch match IDs
     match_ids_url = (
@@ -719,7 +745,7 @@ def aggregate_season_stats(matches: List[Dict[str, Any]], puuid: str) -> Dict[st
         # Role/position stats
         "roleStats": {
             "roles": {r["role"]: r for r in role_list},
-        "favoriteRole": favorite_role,
+            "favoriteRole": favorite_role,
             "bestRole": best_role,
         },
         # Vision & objectives
@@ -1094,7 +1120,7 @@ Return ONLY valid JSON, no markdown formatting."""
 
         insights = json.loads(ai_content)
         print("[DEBUG] Bedrock insights generated successfully")
-    return insights
+        return insights
 
     except Exception as e:
         print(f"[ERROR] Bedrock failed: {str(e)}")
@@ -1204,9 +1230,17 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         print("[DEBUG] Generating insights with Bedrock...")
         insights = generate_ai_insights_with_bedrock(stats)
 
-        # 6. Combine into recap data
+        # 6. Fetch summoner info (profile icon, level, name)
+        # Extract platform from first match (platformId is in metadata, not info)
+        platform = matches[0].get("metadata", {}).get("platformId", "NA1").lower()
+        print(f"[DEBUG] Fetching summoner info for platform: {platform}")
+        summoner_info = fetch_summoner_info(puuid, platform)
+
+        # 7. Combine into recap data
         recap_data = {
             "puuid": puuid,
+            "platform": platform,  # Add platform for summoner lookups
+            "summonerInfo": summoner_info,  # Add profile icon, level, and name
             "stats": stats,
             "insights": insights,
             "generatedAt": int(time.time()),
@@ -1214,7 +1248,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "latestMatchId": latest_match_id,
         }
 
-        # 7. Save to S3 (only PUUID-based cache, no jobId files)
+        # 8. Save to S3 (only PUUID-based cache, no jobId files)
         if bucket_name:
             # Use encoded PUUID to match Next.js route
             cache_key = f"riot/season-recaps/{encoded_puuid}-latest.json"
