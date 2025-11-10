@@ -52,6 +52,10 @@ export default function SummonerPage({
   const [currentStart, setCurrentStart] = useState(0);
   const lastLoadMoreTimeRef = useRef<number>(0);
   const MIN_LOAD_MORE_DELAY_MS = 1000; // Minimum 1 second between load more calls
+  
+  // Cache key for localStorage
+  const CACHE_KEY = `match-history-${puuid}-${region}`;
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
   // Match stats for AI insights (will be used for LLM context)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [matchStats, setMatchStats] = useState<Record<string, unknown> | null>(
@@ -193,13 +197,36 @@ export default function SummonerPage({
         const validMatches = filterValidMatches(newMatches);
 
         if (append) {
-          setMatches((prev) => [...prev, ...validMatches]);
+          const updatedMatches = [...matches, ...validMatches];
+          setMatches(updatedMatches);
+          
+          // Update cache with appended matches
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({
+              matches: updatedMatches,
+              timestamp: Date.now(),
+              start: start + validMatches.length,
+            })
+          );
         } else {
           setMatches(validMatches);
+          
+          // Cache initial load
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({
+              matches: validMatches,
+              timestamp: Date.now(),
+              start: start + validMatches.length,
+            })
+          );
         }
 
         setHasMoreMatches(validMatches.length === COUNT);
         setCurrentStart(start + validMatches.length);
+        
+        console.log(`[Summoner Page] ✅ Loaded ${validMatches.length} matches (total: ${append ? matches.length + validMatches.length : validMatches.length})`);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load matches");
       } finally {
@@ -207,11 +234,6 @@ export default function SummonerPage({
         setIsLoadingMore(false);
       }
     };
-
-    console.log(`[Summoner Page] 🔄 Loading initial data for ${decodedName}`);
-    fetchSummonerData();
-    console.log(`[Summoner Page] 📥 Fetching initial 10 matches...`);
-    fetchMatchHistory(0, false);
 
     // Fetch match stats for last 20 games
     const fetchPlayerAnalysis = async () => {
@@ -242,7 +264,40 @@ export default function SummonerPage({
       }
     };
 
-    // fetchPlayerAnalysis();
+    // Check cache before making API calls
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    if (cachedData) {
+      try {
+        const { matches: cachedMatches, timestamp, start } = JSON.parse(cachedData);
+        const age = Date.now() - timestamp;
+        
+        if (age < CACHE_DURATION) {
+          console.log(`[Summoner Page] 📦 Using cached match data (${Math.round(age / 1000)}s old)`);
+          setMatches(cachedMatches);
+          setCurrentStart(start);
+          setHasMoreMatches(cachedMatches.length >= COUNT);
+          setIsLoading(false);
+          
+          // Still fetch fresh summoner data and analysis
+          fetchSummonerData();
+          fetchPlayerAnalysis();
+          return;
+        } else {
+          console.log(`[Summoner Page] 🗑️ Cache expired, fetching fresh data...`);
+          localStorage.removeItem(CACHE_KEY);
+        }
+      } catch (err) {
+        console.error("Failed to parse cached data:", err);
+        localStorage.removeItem(CACHE_KEY);
+      }
+    }
+
+    // No cache or expired - fetch everything
+    console.log(`[Summoner Page] 🔄 Loading initial data for ${decodedName}`);
+    fetchSummonerData();
+    console.log(`[Summoner Page] 📥 Fetching initial 10 matches...`);
+    fetchMatchHistory(0, false);
+    fetchPlayerAnalysis();
   }, [puuid, region]);
 
   // Check recap status on page load
@@ -279,172 +334,71 @@ export default function SummonerPage({
     checkRecapStatus();
   }, [puuid, region]);
 
-  // Infinite scroll handler using Intersection Observer
-  useEffect(() => {
-    if (!hasMoreMatches || isLoadingMore || !puuid || matches.length === 0)
-      return;
+  // REMOVED: Infinite scroll to prevent excessive API calls
+  // REMOVED: Auto-load when screen not full to prevent excessive API calls
 
-    const loadMoreMatches = async () => {
-      // Lock: prevent multiple simultaneous requests
-      if (isLoadingMore || !hasMoreMatches) return;
+  // Force refresh - clears cache and fetches fresh data
+  const handleForceRefresh = async () => {
+    if (isLoading || !puuid) return;
+    
+    console.log('[Summoner Page] 🔄 Force refresh - clearing cache and fetching fresh data');
+    
+    // Clear cache
+    localStorage.removeItem(CACHE_KEY);
+    
+    // Reset state
+    setMatches([]);
+    setCurrentStart(0);
+    setHasMoreMatches(true);
+    setIsLoading(true);
+    setError("");
+    
+    try {
+      const response = await fetch(`/api/riot/match-history`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          puuid,
+          region,
+          start: "0",
+          count: COUNT.toString(),
+        }),
+      });
 
-      // Throttle: prevent load more from being called too frequently
-      const now = Date.now();
-      const timeSinceLastLoad = now - lastLoadMoreTimeRef.current;
-
-      // If ref is 0 (initial state) or enough time has passed, allow the request
-      if (
-        lastLoadMoreTimeRef.current !== 0 &&
-        timeSinceLastLoad < MIN_LOAD_MORE_DELAY_MS
-      ) {
-        const remainingDelay = MIN_LOAD_MORE_DELAY_MS - timeSinceLastLoad;
-        console.log(
-          `[Infinite Scroll] Throttled: waiting ${remainingDelay}ms before next load`
-        );
-        return;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch match history");
       }
 
-      lastLoadMoreTimeRef.current = now;
-      setIsLoadingMore(true);
-
-      try {
-        const response = await fetch(`/api/riot/match-history`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            puuid,
-            region,
-            start: currentStart.toString(),
-            count: COUNT.toString(),
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Failed to fetch match history");
-        }
-
-        const { matches: newMatches } = await response.json();
-        const validMatches = filterValidMatches(newMatches);
-
-        setMatches((prev) => [...prev, ...validMatches]);
-        setHasMoreMatches(validMatches.length === COUNT);
-        setCurrentStart((prev) => prev + validMatches.length);
-      } catch (err) {
-        console.error(`[Summoner Page] ❌ Error loading more matches:`, err);
-        setError(err instanceof Error ? err.message : "Failed to load matches");
-      } finally {
-        setIsLoadingMore(false);
-      }
-    };
-
-    // Use Intersection Observer for better reliability
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting) {
-          loadMoreMatches();
-        }
-      },
-      {
-        root: null,
-        rootMargin: "200px", // Start loading 200px before the sentinel is visible
-        threshold: 0.1,
-      }
-    );
-
-    // Find the sentinel element (the loading indicator or end message)
-    const sentinel = document.getElementById("infinite-scroll-sentinel");
-    if (sentinel) {
-      observer.observe(sentinel);
+      const { matches: newMatches } = await response.json();
+      const validMatches = filterValidMatches(newMatches);
+      
+      setMatches(validMatches);
+      setHasMoreMatches(validMatches.length === COUNT);
+      setCurrentStart(validMatches.length);
+      
+      // Cache fresh data
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          matches: validMatches,
+          timestamp: Date.now(),
+          start: validMatches.length,
+        })
+      );
+      
+      console.log(`[Summoner Page] ✅ Refreshed with ${validMatches.length} matches`);
+    } catch (err) {
+      console.error("[Summoner Page] ❌ Failed to refresh:", err);
+      setError(err instanceof Error ? err.message : "Failed to refresh matches");
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    return () => {
-      if (sentinel) {
-        observer.unobserve(sentinel);
-      }
-    };
-  }, [
-    currentStart,
-    isLoadingMore,
-    hasMoreMatches,
-    puuid,
-    region,
-    matches.length,
-  ]);
-
-  // Check if we need to load more when all matches fit on screen (no scrollbar)
-  useEffect(() => {
-    if (
-      !hasMoreMatches ||
-      isLoadingMore ||
-      !puuid ||
-      matches.length === 0 ||
-      isLoading
-    )
-      return;
-
-    const checkAndLoad = () => {
-      // Small delay to ensure DOM is fully rendered
-      setTimeout(() => {
-        // Check if page is scrollable
-        const isScrollable =
-          document.documentElement.scrollHeight > window.innerHeight;
-
-        // If not scrollable and we have more matches, load more automatically
-        if (!isScrollable && hasMoreMatches && !isLoadingMore) {
-          setIsLoadingMore(true);
-
-          fetch(`/api/riot/match-history`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              puuid,
-              region,
-              start: currentStart.toString(),
-              count: COUNT.toString(),
-            }),
-          })
-            .then((response) => {
-              if (response.ok) {
-                return response.json();
-              }
-              throw new Error("Failed to fetch match history");
-            })
-            .then((data) => {
-              const validMatches = filterValidMatches(data.matches);
-
-              setMatches((prev) => {
-                const existingIds = new Set(
-                  prev.map((m) => m.metadata?.matchId).filter(Boolean)
-                );
-                const uniqueNewMatches = validMatches.filter(
-                  (m) =>
-                    m.metadata?.matchId && !existingIds.has(m.metadata.matchId)
-                );
-                return [...prev, ...uniqueNewMatches];
-              });
-              setHasMoreMatches(validMatches.length === COUNT);
-              setCurrentStart((prev) => prev + validMatches.length);
-            })
-            .catch((err) => {
-              console.error("Failed to load more matches:", err);
-            })
-            .finally(() => {
-              setIsLoadingMore(false);
-            });
-        }
-      }, 300);
-    };
-
-    checkAndLoad();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matches.length]); // Only run when matches change to check if we need to load more
-
+  // Manual load more - ONLY triggered by button click
   const handleLoadMore = async () => {
     if (isLoadingMore || !hasMoreMatches || !puuid) return;
 
@@ -455,10 +409,12 @@ export default function SummonerPage({
       lastLoadMoreTimeRef.current !== 0 &&
       timeSinceLastLoad < MIN_LOAD_MORE_DELAY_MS
     ) {
+      console.log(`[Summoner Page] ⏳ Throttled: wait ${MIN_LOAD_MORE_DELAY_MS - timeSinceLastLoad}ms`);
       return;
     }
 
     lastLoadMoreTimeRef.current = now;
+    console.log(`[Summoner Page] 📥 Manual load more - fetching from ${currentStart}`);
     setIsLoadingMore(true);
 
     try {
@@ -490,12 +446,25 @@ export default function SummonerPage({
         const uniqueNewMatches = validMatches.filter(
           (m) => m.metadata?.matchId && !existingIds.has(m.metadata.matchId)
         );
-        return [...prev, ...uniqueNewMatches];
+        const updatedMatches = [...prev, ...uniqueNewMatches];
+        
+        // Update cache with new matches
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({
+            matches: updatedMatches,
+            timestamp: Date.now(),
+            start: currentStart + uniqueNewMatches.length,
+          })
+        );
+        
+        console.log(`[Summoner Page] ✅ Loaded ${uniqueNewMatches.length} more matches (total: ${updatedMatches.length})`);
+        return updatedMatches;
       });
       setHasMoreMatches(validMatches.length === COUNT);
       setCurrentStart((prev) => prev + validMatches.length);
     } catch (err) {
-      console.error("Failed to load more matches:", err);
+      console.error("[Summoner Page] ❌ Failed to load more matches:", err);
       setError(err instanceof Error ? err.message : "Failed to load matches");
     } finally {
       setIsLoadingMore(false);
@@ -545,7 +514,29 @@ export default function SummonerPage({
           {/* Match History*/}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white">Match History</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-white">Match History</h2>
+                <button
+                  onClick={handleForceRefresh}
+                  disabled={isLoading}
+                  className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors group"
+                  title="Refresh matches"
+                >
+                  <svg 
+                    className={`w-4 h-4 text-gray-400 group-hover:text-white transition-colors ${isLoading ? 'animate-spin' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                    />
+                  </svg>
+                </button>
+              </div>
               <button
                 onClick={async () => {
                   if (

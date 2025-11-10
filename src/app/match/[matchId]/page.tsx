@@ -479,10 +479,8 @@ function MapTimeline({
   // Convert percentage position to game coordinates
   const convertPercentToGameCoords = (xPercent: number, yPercent: number) => {
     // Account for the same offsets used for champion icons
-    const xOffset = -5;
-    const yOffset = 3;
-    const adjustedXPercent = xPercent - xOffset;
-    const adjustedYPercent = yPercent - yOffset;
+    const adjustedXPercent = xPercent;
+    const adjustedYPercent = yPercent;
 
     // Convert percentage back to game coordinates
     // xPercent = ((x - mapMinX) / mapWidth) * 100
