@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         hostname: "raw.communitydragon.org",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "image-5.uhdpaper.com",
+        pathname: "/**",
+      },
     ],
   },
 };
