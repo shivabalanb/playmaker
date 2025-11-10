@@ -156,20 +156,20 @@ export async function POST(request: NextRequest) {
       console.log(`[Match History API]   → [${index + 1}/${matchIds.length}] Fetching match: ${matchId}`);
       return fetchWithRetry(
         `https://${region}.api.riotgames.com/lol/match/v5/matches/${encodedMatchId}`,
-          apiKey
+        apiKey
       )
         .then(async (response) => {
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(
-            `Failed to fetch match ${matchId}: ${response.status} - ${errorText}`
-          );
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(
+              `Failed to fetch match ${matchId}: ${response.status} - ${errorText}`
+            );
             return null;
-        }
+          }
           return response.json();
         })
         .catch((error) => {
-        console.error(`Error fetching match ${matchId}:`, error);
+          console.error(`Error fetching match ${matchId}:`, error);
           return null;
         });
     });
