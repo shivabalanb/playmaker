@@ -1,0 +1,4302 @@
+{
+  "puuid": "6OWDd0eYfb-cLv5b5JZAy-DP6fqHq4ARl6GrPrulN61kapkzgdTgYvqwXAahpfcMSHHmc3iTHhHlIQ",
+  "stats": {
+    "corePerformance": {
+      "totalGames": 100,
+      "wins": 54,
+      "losses": 46,
+      "winRate": 0.54,
+      "totalGameTime": 135501,
+      "averageGameDuration": 1355.01,
+      "totalKills": 522,
+      "totalDeaths": 387,
+      "totalAssists": 622,
+      "averageKDA": 2.9560723514211884,
+      "killParticipation": 0.3804456268706352,
+      "totalDamageDealt": 13613188,
+      "totalDamageToChampions": 3727324,
+      "averageDamagePerGame": 37273.24,
+      "highestDamageGame": {
+        "matchId": "KR_7785980615",
+        "damage": 263743,
+        "champion": "Lucian"
+      },
+      "totalGoldEarned": 1398640,
+      "totalGoldSpent": 1258186,
+      "averageGoldPerMinute": 619.3194146168663,
+      "totalBountyGold": 9055.025619506836
+    },
+    "championStats": {
+      "champions": {
+        "Yone": {
+          "champion": "Yone",
+          "championId": 777,
+          "gamesPlayed": 9,
+          "wins": 5,
+          "losses": 4,
+          "winRate": 0.5555555555555556,
+          "averageKDA": 1.9062500000000002,
+          "averageDamage": 37846.77777777778,
+          "averageGoldPerMin": 77.81188784609536,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7786131695",
+            "kda": 0.0,
+            "damage": 137244,
+            "win": false
+          }
+        },
+        "Azir": {
+          "champion": "Azir",
+          "championId": 268,
+          "gamesPlayed": 7,
+          "wins": 3,
+          "losses": 4,
+          "winRate": 0.42857142857142855,
+          "averageKDA": 2.423076923076923,
+          "averageDamage": 38168.57142857143,
+          "averageGoldPerMin": 73.09160036611983,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7786357956",
+            "kda": 0.0,
+            "damage": 86888,
+            "win": false
+          }
+        },
+        "Orianna": {
+          "champion": "Orianna",
+          "championId": 61,
+          "gamesPlayed": 7,
+          "wins": 2,
+          "losses": 5,
+          "winRate": 0.2857142857142857,
+          "averageKDA": 2.7741935483870965,
+          "averageDamage": 26841.0,
+          "averageGoldPerMin": 63.46232076940462,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7809887199",
+            "kda": 14.0,
+            "damage": 37402,
+            "win": true
+          }
+        },
+        "Lucian": {
+          "champion": "Lucian",
+          "championId": 236,
+          "gamesPlayed": 6,
+          "wins": 0,
+          "losses": 6,
+          "winRate": 0.0,
+          "averageKDA": 0.0,
+          "averageDamage": 123252.66666666667,
+          "averageGoldPerMin": 2058.5242030696577,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7785980615",
+            "kda": 0.0,
+            "damage": 263743,
+            "win": false
+          }
+        },
+        "Taliyah": {
+          "champion": "Taliyah",
+          "championId": 163,
+          "gamesPlayed": 5,
+          "wins": 2,
+          "losses": 3,
+          "winRate": 0.4,
+          "averageKDA": 2.75,
+          "averageDamage": 24681.2,
+          "averageGoldPerMin": 83.90979704334752,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7800340103",
+            "kda": 6.2,
+            "damage": 48512,
+            "win": true
+          }
+        },
+        "Aurora": {
+          "champion": "Aurora",
+          "championId": 893,
+          "gamesPlayed": 5,
+          "wins": 4,
+          "losses": 1,
+          "winRate": 0.8,
+          "averageKDA": 4.500000000000001,
+          "averageDamage": 19547.6,
+          "averageGoldPerMin": 94.8314606741573,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7813048255",
+            "kda": 12.0,
+            "damage": 31362,
+            "win": true
+          }
+        },
+        "Ryze": {
+          "champion": "Ryze",
+          "championId": 13,
+          "gamesPlayed": 5,
+          "wins": 3,
+          "losses": 2,
+          "winRate": 0.6,
+          "averageKDA": 3.5238095238095237,
+          "averageDamage": 22935.2,
+          "averageGoldPerMin": 96.43577569613757,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7851809754",
+            "kda": 16.0,
+            "damage": 26413,
+            "win": true
+          }
+        },
+        "Jayce": {
+          "champion": "Jayce",
+          "championId": 126,
+          "gamesPlayed": 4,
+          "wins": 3,
+          "losses": 1,
+          "winRate": 0.75,
+          "averageKDA": 2.0,
+          "averageDamage": 17800.25,
+          "averageGoldPerMin": 102.19042056074767,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7855800422",
+            "kda": 2.142857142857143,
+            "damage": 22354,
+            "win": true
+          }
+        },
+        "Galio": {
+          "champion": "Galio",
+          "championId": 3,
+          "gamesPlayed": 4,
+          "wins": 2,
+          "losses": 2,
+          "winRate": 0.5,
+          "averageKDA": 3.0,
+          "averageDamage": 20010.25,
+          "averageGoldPerMin": 112.06984940724126,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7801582199",
+            "kda": 3.3333333333333335,
+            "damage": 44350,
+            "win": false
+          }
+        },
+        "Leblanc": {
+          "champion": "Leblanc",
+          "championId": 7,
+          "gamesPlayed": 3,
+          "wins": 1,
+          "losses": 2,
+          "winRate": 0.3333333333333333,
+          "averageKDA": 1.5,
+          "averageDamage": 15414.666666666666,
+          "averageGoldPerMin": 124.48603351955309,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7858019563",
+            "kda": 1.6,
+            "damage": 25770,
+            "win": false
+          }
+        },
+        "Annie": {
+          "champion": "Annie",
+          "championId": 1,
+          "gamesPlayed": 3,
+          "wins": 2,
+          "losses": 1,
+          "winRate": 0.6666666666666666,
+          "averageKDA": 4.2,
+          "averageDamage": 13950.333333333334,
+          "averageGoldPerMin": 144.5592508879561,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7814349616",
+            "kda": 13.0,
+            "damage": 18857,
+            "win": true
+          }
+        },
+        "Lissandra": {
+          "champion": "Lissandra",
+          "championId": 127,
+          "gamesPlayed": 2,
+          "wins": 2,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 8.5,
+          "averageDamage": 16980.5,
+          "averageGoldPerMin": 204.91397849462365,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7858151244",
+            "kda": 15.0,
+            "damage": 25527,
+            "win": true
+          }
+        },
+        "Ambessa": {
+          "champion": "Ambessa",
+          "championId": 799,
+          "gamesPlayed": 2,
+          "wins": 1,
+          "losses": 1,
+          "winRate": 0.5,
+          "averageKDA": 13.0,
+          "averageDamage": 47321.5,
+          "averageGoldPerMin": 310.4590163934426,
+          "favoriteRole": "TOP",
+          "bestGame": {
+            "matchId": "KR_7790780213",
+            "kda": 11.0,
+            "damage": 84896,
+            "win": true
+          }
+        },
+        "Aatrox": {
+          "champion": "Aatrox",
+          "championId": 266,
+          "gamesPlayed": 2,
+          "wins": 0,
+          "losses": 2,
+          "winRate": 0.0,
+          "averageKDA": 1.8181818181818181,
+          "averageDamage": 30285.5,
+          "averageGoldPerMin": 203.7281879194631,
+          "favoriteRole": "TOP",
+          "bestGame": {
+            "matchId": "KR_7796694312",
+            "kda": 2.1666666666666665,
+            "damage": 48104,
+            "win": false
+          }
+        },
+        "TwistedFate": {
+          "champion": "TwistedFate",
+          "championId": 4,
+          "gamesPlayed": 2,
+          "wins": 2,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 8.5,
+          "averageDamage": 21956.5,
+          "averageGoldPerMin": 264.95011264885744,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7799956621",
+            "kda": 18.0,
+            "damage": 22982,
+            "win": true
+          }
+        },
+        "Morgana": {
+          "champion": "Morgana",
+          "championId": 25,
+          "gamesPlayed": 2,
+          "wins": 2,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.5555555555555554,
+          "averageDamage": 21305.5,
+          "averageGoldPerMin": 205.6590909090909,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7805435642",
+            "kda": 2.5,
+            "damage": 25631,
+            "win": true
+          }
+        },
+        "MonkeyKing": {
+          "champion": "MonkeyKing",
+          "championId": 62,
+          "gamesPlayed": 2,
+          "wins": 1,
+          "losses": 1,
+          "winRate": 0.5,
+          "averageKDA": 2.142857142857143,
+          "averageDamage": 15033.0,
+          "averageGoldPerMin": 176.18009145269082,
+          "favoriteRole": "JUNGLE",
+          "bestGame": {
+            "matchId": "KR_7798579670",
+            "kda": 1.3333333333333333,
+            "damage": 19348,
+            "win": false
+          }
+        },
+        "Kalista": {
+          "champion": "Kalista",
+          "championId": 429,
+          "gamesPlayed": 2,
+          "wins": 0,
+          "losses": 2,
+          "winRate": 0.0,
+          "averageKDA": 1.125,
+          "averageDamage": 41471.0,
+          "averageGoldPerMin": 238.11637080867848,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7790073239",
+            "kda": 1.8571428571428572,
+            "damage": 50711,
+            "win": false
+          }
+        },
+        "Darius": {
+          "champion": "Darius",
+          "championId": 122,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 10.0,
+          "averageDamage": 58209.0,
+          "averageGoldPerMin": 786.3712757830405,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7855895357",
+            "kda": 10.0,
+            "damage": 58209,
+            "win": true
+          }
+        },
+        "TahmKench": {
+          "champion": "TahmKench",
+          "championId": 223,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 4.0,
+          "averageDamage": 7506.0,
+          "averageGoldPerMin": 288.6443661971831,
+          "favoriteRole": "UTILITY",
+          "bestGame": {
+            "matchId": "KR_7853949039",
+            "kda": 4.0,
+            "damage": 7506,
+            "win": true
+          }
+        },
+        "Bard": {
+          "champion": "Bard",
+          "championId": 432,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 1.0,
+          "averageDamage": 18917.0,
+          "averageGoldPerMin": 450.9705248023005,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7852025214",
+            "kda": 1.0,
+            "damage": 18917,
+            "win": false
+          }
+        },
+        "LeeSin": {
+          "champion": "LeeSin",
+          "championId": 64,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 18.0,
+          "averageDamage": 14597.0,
+          "averageGoldPerMin": 401.6865671641791,
+          "favoriteRole": "JUNGLE",
+          "bestGame": {
+            "matchId": "KR_7851300813",
+            "kda": 18.0,
+            "damage": 14597,
+            "win": true
+          }
+        },
+        "Yasuo": {
+          "champion": "Yasuo",
+          "championId": 157,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 1.0,
+          "averageDamage": 7111.0,
+          "averageGoldPerMin": 344.8916408668731,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7851225074",
+            "kda": 1.0,
+            "damage": 7111,
+            "win": false
+          }
+        },
+        "Vex": {
+          "champion": "Vex",
+          "championId": 711,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 0.3333333333333333,
+          "averageDamage": 18277.0,
+          "averageGoldPerMin": 383.5260930888576,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7850998706",
+            "kda": 0.3333333333333333,
+            "damage": 18277,
+            "win": false
+          }
+        },
+        "Pyke": {
+          "champion": "Pyke",
+          "championId": 555,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.857142857142857,
+          "averageDamage": 73417.0,
+          "averageGoldPerMin": 972.2598105548038,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7818745957",
+            "kda": 3.857142857142857,
+            "damage": 73417,
+            "win": true
+          }
+        },
+        "Diana": {
+          "champion": "Diana",
+          "championId": 131,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.1666666666666665,
+          "averageDamage": 80005.0,
+          "averageGoldPerMin": 1027.9260780287473,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7808378205",
+            "kda": 3.1666666666666665,
+            "damage": 80005,
+            "win": true
+          }
+        },
+        "Fizz": {
+          "champion": "Fizz",
+          "championId": 105,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 5.25,
+          "averageDamage": 61676.0,
+          "averageGoldPerMin": 974.6835443037975,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7808219654",
+            "kda": 5.25,
+            "damage": 61676,
+            "win": true
+          }
+        },
+        "Braum": {
+          "champion": "Braum",
+          "championId": 201,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 4.125,
+          "averageDamage": 14930.0,
+          "averageGoldPerMin": 348.7762803234501,
+          "favoriteRole": "UTILITY",
+          "bestGame": {
+            "matchId": "KR_7807052687",
+            "kda": 4.125,
+            "damage": 14930,
+            "win": false
+          }
+        },
+        "Renata": {
+          "champion": "Renata",
+          "championId": 888,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 3.0,
+          "averageDamage": 22666.0,
+          "averageGoldPerMin": 450.5204718945177,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7806984310",
+            "kda": 3.0,
+            "damage": 22666,
+            "win": false
+          }
+        },
+        "Smolder": {
+          "champion": "Smolder",
+          "championId": 901,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.0,
+          "averageDamage": 76917.0,
+          "averageGoldPerMin": 1395.598349381018,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7806934322",
+            "kda": 3.0,
+            "damage": 76917,
+            "win": true
+          }
+        },
+        "Tristana": {
+          "champion": "Tristana",
+          "championId": 18,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 5.666666666666667,
+          "averageDamage": 26860.0,
+          "averageGoldPerMin": 438.4903306300686,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7806815627",
+            "kda": 5.666666666666667,
+            "damage": 26860,
+            "win": true
+          }
+        },
+        "Cassiopeia": {
+          "champion": "Cassiopeia",
+          "championId": 69,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 4.0,
+          "averageDamage": 26270.0,
+          "averageGoldPerMin": 466.7690417690418,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7805499358",
+            "kda": 4.0,
+            "damage": 26270,
+            "win": true
+          }
+        },
+        "Jhin": {
+          "champion": "Jhin",
+          "championId": 202,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 0.7,
+          "averageDamage": 30340.0,
+          "averageGoldPerMin": 412.27484989993326,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7805263050",
+            "kda": 0.7,
+            "damage": 30340,
+            "win": false
+          }
+        },
+        "Qiyana": {
+          "champion": "Qiyana",
+          "championId": 246,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 1.875,
+          "averageDamage": 28112.0,
+          "averageGoldPerMin": 480.21454112038145,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7805183938",
+            "kda": 1.875,
+            "damage": 28112,
+            "win": false
+          }
+        },
+        "Olaf": {
+          "champion": "Olaf",
+          "championId": 2,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 0.5,
+          "averageDamage": 12226.0,
+          "averageGoldPerMin": 340.32210834553445,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7802673293",
+            "kda": 0.5,
+            "damage": 12226,
+            "win": false
+          }
+        },
+        "Yorick": {
+          "champion": "Yorick",
+          "championId": 83,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.6,
+          "averageDamage": 61867.0,
+          "averageGoldPerMin": 829.106628242075,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7802536455",
+            "kda": 3.6,
+            "damage": 61867,
+            "win": true
+          }
+        },
+        "Ornn": {
+          "champion": "Ornn",
+          "championId": 516,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 11.0,
+          "averageDamage": 33572.0,
+          "averageGoldPerMin": 816.198347107438,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7801651104",
+            "kda": 11.0,
+            "damage": 33572,
+            "win": true
+          }
+        },
+        "Amumu": {
+          "champion": "Amumu",
+          "championId": 32,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 1.1666666666666667,
+          "averageDamage": 15336.0,
+          "averageGoldPerMin": 391.12781954887214,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7801460499",
+            "kda": 1.1666666666666667,
+            "damage": 15336,
+            "win": false
+          }
+        },
+        "Zyra": {
+          "champion": "Zyra",
+          "championId": 143,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.6,
+          "averageDamage": 56407.0,
+          "averageGoldPerMin": 912.2368421052632,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7801413028",
+            "kda": 3.6,
+            "damage": 56407,
+            "win": true
+          }
+        },
+        "Xerath": {
+          "champion": "Xerath",
+          "championId": 101,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 5.25,
+          "averageDamage": 100553.0,
+          "averageGoldPerMin": 961.7047560222359,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7801352091",
+            "kda": 5.25,
+            "damage": 100553,
+            "win": true
+          }
+        },
+        "Udyr": {
+          "champion": "Udyr",
+          "championId": 77,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 1.4,
+          "averageDamage": 29115.0,
+          "averageGoldPerMin": 451.2556342562782,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7799904113",
+            "kda": 1.4,
+            "damage": 29115,
+            "win": true
+          }
+        },
+        "Neeko": {
+          "champion": "Neeko",
+          "championId": 518,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 4.0,
+          "averageDamage": 81958.0,
+          "averageGoldPerMin": 940.974605353466,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7798131676",
+            "kda": 4.0,
+            "damage": 81958,
+            "win": true
+          }
+        },
+        "Seraphine": {
+          "champion": "Seraphine",
+          "championId": 147,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 5.25,
+          "averageDamage": 68938.0,
+          "averageGoldPerMin": 1078.3216783216783,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7796748178",
+            "kda": 5.25,
+            "damage": 68938,
+            "win": true
+          }
+        },
+        "Lux": {
+          "champion": "Lux",
+          "championId": 99,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 10.0,
+          "averageDamage": 121902.0,
+          "averageGoldPerMin": 1148.6345609065156,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7790857706",
+            "kda": 10.0,
+            "damage": 121902,
+            "win": true
+          }
+        },
+        "Sejuani": {
+          "champion": "Sejuani",
+          "championId": 113,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 2.5,
+          "averageDamage": 41790.0,
+          "averageGoldPerMin": 570.1823092505064,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7790018138",
+            "kda": 2.5,
+            "damage": 41790,
+            "win": true
+          }
+        },
+        "Janna": {
+          "champion": "Janna",
+          "championId": 40,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.4,
+          "averageDamage": 38782.0,
+          "averageGoldPerMin": 1134.1841680129241,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7785751949",
+            "kda": 3.4,
+            "damage": 38782,
+            "win": true
+          }
+        }
+      },
+      "mostPlayedChampion": "Yone",
+      "highestWinRateChampion": "Aurora",
+      "championDiversity": 46
+    },
+    "roleStats": {
+      "roles": {
+        "MIDDLE": {
+          "role": "MIDDLE",
+          "games": 56,
+          "wins": 33,
+          "losses": 23,
+          "winRate": 0.5892857142857143,
+          "avgKDA": 2.8403755868544605
+        },
+        "": {
+          "role": "",
+          "games": 35,
+          "wins": 16,
+          "losses": 19,
+          "winRate": 0.45714285714285713,
+          "avgKDA": 2.915492957746479
+        },
+        "TOP": {
+          "role": "TOP",
+          "games": 4,
+          "wins": 2,
+          "losses": 2,
+          "winRate": 0.5,
+          "avgKDA": 3.6153846153846154
+        },
+        "JUNGLE": {
+          "role": "JUNGLE",
+          "games": 3,
+          "wins": 2,
+          "losses": 1,
+          "winRate": 0.6666666666666666,
+          "avgKDA": 4.125
+        },
+        "UTILITY": {
+          "role": "UTILITY",
+          "games": 2,
+          "wins": 1,
+          "losses": 1,
+          "winRate": 0.5,
+          "avgKDA": 4.090909090909091
+        }
+      },
+      "favoriteRole": "MIDDLE",
+      "bestRole": "JUNGLE"
+    },
+    "vision": {
+      "totalVisionScore": 1582,
+      "averageVisionScore": 15.82,
+      "totalWardsPlaced": 704,
+      "totalWardsDestroyed": 261,
+      "totalControlWardsPlaced": 192,
+      "visionScorePerMinute": 0.7005114353399606
+    },
+    "objectives": {
+      "totalDragonTakedowns": 23,
+      "totalBaronTakedowns": 10,
+      "totalTurretTakedowns": 110,
+      "firstTurretRate": 0.06,
+      "epicMonsterSteals": 3,
+      "riftHeraldTakedowns": 5
+    },
+    "achievements": {
+      "pentakills": 0,
+      "quadrakills": 0,
+      "tripleKills": 4,
+      "soloKills": 0,
+      "firstBloods": 5,
+      "perfectGames": 15,
+      "flawlessAces": 22,
+      "epicMonsterSteals": 3
+    },
+    "skillStats": {
+      "totalSkillshotsDodged": 3743,
+      "totalSkillshotsHit": 2827,
+      "skillshotAccuracy": 0.43028919330289195,
+      "survivedLowHP": 7
+    },
+    "communication": {
+      "totalPings": 3601,
+      "pingBreakdown": {
+        "assistMe": 393,
+        "danger": 0,
+        "onMyWay": 1134,
+        "enemyMissing": 367,
+        "enemyVision": 220,
+        "getBack": 695,
+        "retreat": 22,
+        "command": 631,
+        "allIn": 75
+      },
+      "averagePingsPerGame": 36.01
+    },
+    "clutchMoments": {
+      "outnumberedKills": 55,
+      "killsUnderOwnTurret": 33,
+      "savesAllyFromDeath": 19,
+      "survivedThreeImmobilizes": 317
+    },
+    "timePatterns": {
+      "averageGameLength": 1355.01,
+      "shortestGame": {
+        "matchId": "KR_7784657896",
+        "duration": 64
+      },
+      "longestGame": {
+        "matchId": "KR_7800340103",
+        "duration": 2679
+      },
+      "gamesByTimeOfDay": {
+        "14": 10,
+        "13": 10,
+        "7": 1,
+        "17": 16,
+        "16": 24,
+        "15": 19,
+        "12": 6,
+        "11": 5,
+        "10": 2,
+        "18": 6,
+        "5": 1
+      },
+      "winRateByGameLength": {
+        "short": {
+          "games": 24,
+          "wins": 12,
+          "winRate": 0.5
+        },
+        "medium": {
+          "games": 72,
+          "wins": 39,
+          "winRate": 0.5416666666666666
+        },
+        "long": {
+          "games": 4,
+          "wins": 3,
+          "winRate": 0.75
+        }
+      }
+    },
+    "summary": {
+      "totalGames": 100,
+      "wins": 54,
+      "losses": 46,
+      "winRate": 0.54
+    },
+    "favoriteChampion": {
+      "champion": "Yone",
+      "championId": 777,
+      "gamesPlayed": 9,
+      "wins": 5,
+      "losses": 4,
+      "winRate": 0.5555555555555556,
+      "averageKDA": 1.9062500000000002,
+      "averageDamage": 37846.77777777778,
+      "averageGoldPerMin": 77.81188784609536,
+      "favoriteRole": "MIDDLE",
+      "bestGame": {
+        "matchId": "KR_7786131695",
+        "kda": 0.0,
+        "damage": 137244,
+        "win": false
+      }
+    },
+    "top5Champions": [
+      {
+        "champion": "Yone",
+        "championId": 777,
+        "gamesPlayed": 9,
+        "wins": 5,
+        "losses": 4,
+        "winRate": 0.5555555555555556,
+        "averageKDA": 1.9062500000000002,
+        "averageDamage": 37846.77777777778,
+        "averageGoldPerMin": 77.81188784609536,
+        "favoriteRole": "MIDDLE",
+        "bestGame": {
+          "matchId": "KR_7786131695",
+          "kda": 0.0,
+          "damage": 137244,
+          "win": false
+        }
+      },
+      {
+        "champion": "Azir",
+        "championId": 268,
+        "gamesPlayed": 7,
+        "wins": 3,
+        "losses": 4,
+        "winRate": 0.42857142857142855,
+        "averageKDA": 2.423076923076923,
+        "averageDamage": 38168.57142857143,
+        "averageGoldPerMin": 73.09160036611983,
+        "favoriteRole": "MIDDLE",
+        "bestGame": {
+          "matchId": "KR_7786357956",
+          "kda": 0.0,
+          "damage": 86888,
+          "win": false
+        }
+      },
+      {
+        "champion": "Orianna",
+        "championId": 61,
+        "gamesPlayed": 7,
+        "wins": 2,
+        "losses": 5,
+        "winRate": 0.2857142857142857,
+        "averageKDA": 2.7741935483870965,
+        "averageDamage": 26841.0,
+        "averageGoldPerMin": 63.46232076940462,
+        "favoriteRole": "MIDDLE",
+        "bestGame": {
+          "matchId": "KR_7809887199",
+          "kda": 14.0,
+          "damage": 37402,
+          "win": true
+        }
+      },
+      {
+        "champion": "Lucian",
+        "championId": 236,
+        "gamesPlayed": 6,
+        "wins": 0,
+        "losses": 6,
+        "winRate": 0.0,
+        "averageKDA": 0.0,
+        "averageDamage": 123252.66666666667,
+        "averageGoldPerMin": 2058.5242030696577,
+        "favoriteRole": "",
+        "bestGame": {
+          "matchId": "KR_7785980615",
+          "kda": 0.0,
+          "damage": 263743,
+          "win": false
+        }
+      },
+      {
+        "champion": "Taliyah",
+        "championId": 163,
+        "gamesPlayed": 5,
+        "wins": 2,
+        "losses": 3,
+        "winRate": 0.4,
+        "averageKDA": 2.75,
+        "averageDamage": 24681.2,
+        "averageGoldPerMin": 83.90979704334752,
+        "favoriteRole": "MIDDLE",
+        "bestGame": {
+          "matchId": "KR_7800340103",
+          "kda": 6.2,
+          "damage": 48512,
+          "win": true
+        }
+      }
+    ],
+    "favoriteRole": {
+      "role": "MIDDLE"
+    },
+    "roleDistribution": [
+      {
+        "role": "MIDDLE",
+        "games": 56,
+        "wins": 33,
+        "losses": 23,
+        "winRate": 0.5892857142857143,
+        "avgKDA": 2.8403755868544605
+      },
+      {
+        "role": "",
+        "games": 35,
+        "wins": 16,
+        "losses": 19,
+        "winRate": 0.45714285714285713,
+        "avgKDA": 2.915492957746479
+      },
+      {
+        "role": "TOP",
+        "games": 4,
+        "wins": 2,
+        "losses": 2,
+        "winRate": 0.5,
+        "avgKDA": 3.6153846153846154
+      },
+      {
+        "role": "JUNGLE",
+        "games": 3,
+        "wins": 2,
+        "losses": 1,
+        "winRate": 0.6666666666666666,
+        "avgKDA": 4.125
+      },
+      {
+        "role": "UTILITY",
+        "games": 2,
+        "wins": 1,
+        "losses": 1,
+        "winRate": 0.5,
+        "avgKDA": 4.090909090909091
+      }
+    ],
+    "personalRecords": {
+      "mostKills": {
+        "value": 19,
+        "matchId": "KR_7790857706"
+      },
+      "mostAssists": {
+        "value": 29,
+        "matchId": "KR_7807052687"
+      },
+      "mostDeaths": {
+        "value": 10,
+        "matchId": "KR_7805263050"
+      }
+    },
+    "gloryMoments": {
+      "pentakills": 0,
+      "quadrakills": 0,
+      "tripleKills": 4
+    },
+    "playstyle": {
+      "avgSoloKills": 0.0,
+      "avgMultikills": 0.12,
+      "firstBloodRate": 0.05,
+      "avgDragonKills": 0.23,
+      "avgBaronKills": 0.1,
+      "avgTurretKills": 1.1
+    },
+    "performance": {
+      "avgKills": 5.22,
+      "avgDeaths": 3.87,
+      "avgAssists": 6.22,
+      "avgKDA": 2.9560723514211884,
+      "avgGold": 13986.4,
+      "avgCS": 129.09,
+      "avgDamage": 37273.24,
+      "avgVisionScore": 15.82
+    },
+    "champions": {
+      "totalUnique": 46,
+      "all": [
+        {
+          "champion": "Yone",
+          "championId": 777,
+          "gamesPlayed": 9,
+          "wins": 5,
+          "losses": 4,
+          "winRate": 0.5555555555555556,
+          "averageKDA": 1.9062500000000002,
+          "averageDamage": 37846.77777777778,
+          "averageGoldPerMin": 77.81188784609536,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7786131695",
+            "kda": 0.0,
+            "damage": 137244,
+            "win": false
+          }
+        },
+        {
+          "champion": "Azir",
+          "championId": 268,
+          "gamesPlayed": 7,
+          "wins": 3,
+          "losses": 4,
+          "winRate": 0.42857142857142855,
+          "averageKDA": 2.423076923076923,
+          "averageDamage": 38168.57142857143,
+          "averageGoldPerMin": 73.09160036611983,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7786357956",
+            "kda": 0.0,
+            "damage": 86888,
+            "win": false
+          }
+        },
+        {
+          "champion": "Orianna",
+          "championId": 61,
+          "gamesPlayed": 7,
+          "wins": 2,
+          "losses": 5,
+          "winRate": 0.2857142857142857,
+          "averageKDA": 2.7741935483870965,
+          "averageDamage": 26841.0,
+          "averageGoldPerMin": 63.46232076940462,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7809887199",
+            "kda": 14.0,
+            "damage": 37402,
+            "win": true
+          }
+        },
+        {
+          "champion": "Lucian",
+          "championId": 236,
+          "gamesPlayed": 6,
+          "wins": 0,
+          "losses": 6,
+          "winRate": 0.0,
+          "averageKDA": 0.0,
+          "averageDamage": 123252.66666666667,
+          "averageGoldPerMin": 2058.5242030696577,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7785980615",
+            "kda": 0.0,
+            "damage": 263743,
+            "win": false
+          }
+        },
+        {
+          "champion": "Taliyah",
+          "championId": 163,
+          "gamesPlayed": 5,
+          "wins": 2,
+          "losses": 3,
+          "winRate": 0.4,
+          "averageKDA": 2.75,
+          "averageDamage": 24681.2,
+          "averageGoldPerMin": 83.90979704334752,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7800340103",
+            "kda": 6.2,
+            "damage": 48512,
+            "win": true
+          }
+        },
+        {
+          "champion": "Aurora",
+          "championId": 893,
+          "gamesPlayed": 5,
+          "wins": 4,
+          "losses": 1,
+          "winRate": 0.8,
+          "averageKDA": 4.500000000000001,
+          "averageDamage": 19547.6,
+          "averageGoldPerMin": 94.8314606741573,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7813048255",
+            "kda": 12.0,
+            "damage": 31362,
+            "win": true
+          }
+        },
+        {
+          "champion": "Ryze",
+          "championId": 13,
+          "gamesPlayed": 5,
+          "wins": 3,
+          "losses": 2,
+          "winRate": 0.6,
+          "averageKDA": 3.5238095238095237,
+          "averageDamage": 22935.2,
+          "averageGoldPerMin": 96.43577569613757,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7851809754",
+            "kda": 16.0,
+            "damage": 26413,
+            "win": true
+          }
+        },
+        {
+          "champion": "Jayce",
+          "championId": 126,
+          "gamesPlayed": 4,
+          "wins": 3,
+          "losses": 1,
+          "winRate": 0.75,
+          "averageKDA": 2.0,
+          "averageDamage": 17800.25,
+          "averageGoldPerMin": 102.19042056074767,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7855800422",
+            "kda": 2.142857142857143,
+            "damage": 22354,
+            "win": true
+          }
+        },
+        {
+          "champion": "Galio",
+          "championId": 3,
+          "gamesPlayed": 4,
+          "wins": 2,
+          "losses": 2,
+          "winRate": 0.5,
+          "averageKDA": 3.0,
+          "averageDamage": 20010.25,
+          "averageGoldPerMin": 112.06984940724126,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7801582199",
+            "kda": 3.3333333333333335,
+            "damage": 44350,
+            "win": false
+          }
+        },
+        {
+          "champion": "Leblanc",
+          "championId": 7,
+          "gamesPlayed": 3,
+          "wins": 1,
+          "losses": 2,
+          "winRate": 0.3333333333333333,
+          "averageKDA": 1.5,
+          "averageDamage": 15414.666666666666,
+          "averageGoldPerMin": 124.48603351955309,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7858019563",
+            "kda": 1.6,
+            "damage": 25770,
+            "win": false
+          }
+        },
+        {
+          "champion": "Annie",
+          "championId": 1,
+          "gamesPlayed": 3,
+          "wins": 2,
+          "losses": 1,
+          "winRate": 0.6666666666666666,
+          "averageKDA": 4.2,
+          "averageDamage": 13950.333333333334,
+          "averageGoldPerMin": 144.5592508879561,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7814349616",
+            "kda": 13.0,
+            "damage": 18857,
+            "win": true
+          }
+        },
+        {
+          "champion": "Lissandra",
+          "championId": 127,
+          "gamesPlayed": 2,
+          "wins": 2,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 8.5,
+          "averageDamage": 16980.5,
+          "averageGoldPerMin": 204.91397849462365,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7858151244",
+            "kda": 15.0,
+            "damage": 25527,
+            "win": true
+          }
+        },
+        {
+          "champion": "Ambessa",
+          "championId": 799,
+          "gamesPlayed": 2,
+          "wins": 1,
+          "losses": 1,
+          "winRate": 0.5,
+          "averageKDA": 13.0,
+          "averageDamage": 47321.5,
+          "averageGoldPerMin": 310.4590163934426,
+          "favoriteRole": "TOP",
+          "bestGame": {
+            "matchId": "KR_7790780213",
+            "kda": 11.0,
+            "damage": 84896,
+            "win": true
+          }
+        },
+        {
+          "champion": "Aatrox",
+          "championId": 266,
+          "gamesPlayed": 2,
+          "wins": 0,
+          "losses": 2,
+          "winRate": 0.0,
+          "averageKDA": 1.8181818181818181,
+          "averageDamage": 30285.5,
+          "averageGoldPerMin": 203.7281879194631,
+          "favoriteRole": "TOP",
+          "bestGame": {
+            "matchId": "KR_7796694312",
+            "kda": 2.1666666666666665,
+            "damage": 48104,
+            "win": false
+          }
+        },
+        {
+          "champion": "TwistedFate",
+          "championId": 4,
+          "gamesPlayed": 2,
+          "wins": 2,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 8.5,
+          "averageDamage": 21956.5,
+          "averageGoldPerMin": 264.95011264885744,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7799956621",
+            "kda": 18.0,
+            "damage": 22982,
+            "win": true
+          }
+        },
+        {
+          "champion": "Morgana",
+          "championId": 25,
+          "gamesPlayed": 2,
+          "wins": 2,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.5555555555555554,
+          "averageDamage": 21305.5,
+          "averageGoldPerMin": 205.6590909090909,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7805435642",
+            "kda": 2.5,
+            "damage": 25631,
+            "win": true
+          }
+        },
+        {
+          "champion": "MonkeyKing",
+          "championId": 62,
+          "gamesPlayed": 2,
+          "wins": 1,
+          "losses": 1,
+          "winRate": 0.5,
+          "averageKDA": 2.142857142857143,
+          "averageDamage": 15033.0,
+          "averageGoldPerMin": 176.18009145269082,
+          "favoriteRole": "JUNGLE",
+          "bestGame": {
+            "matchId": "KR_7798579670",
+            "kda": 1.3333333333333333,
+            "damage": 19348,
+            "win": false
+          }
+        },
+        {
+          "champion": "Kalista",
+          "championId": 429,
+          "gamesPlayed": 2,
+          "wins": 0,
+          "losses": 2,
+          "winRate": 0.0,
+          "averageKDA": 1.125,
+          "averageDamage": 41471.0,
+          "averageGoldPerMin": 238.11637080867848,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7790073239",
+            "kda": 1.8571428571428572,
+            "damage": 50711,
+            "win": false
+          }
+        },
+        {
+          "champion": "Darius",
+          "championId": 122,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 10.0,
+          "averageDamage": 58209.0,
+          "averageGoldPerMin": 786.3712757830405,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7855895357",
+            "kda": 10.0,
+            "damage": 58209,
+            "win": true
+          }
+        },
+        {
+          "champion": "TahmKench",
+          "championId": 223,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 4.0,
+          "averageDamage": 7506.0,
+          "averageGoldPerMin": 288.6443661971831,
+          "favoriteRole": "UTILITY",
+          "bestGame": {
+            "matchId": "KR_7853949039",
+            "kda": 4.0,
+            "damage": 7506,
+            "win": true
+          }
+        },
+        {
+          "champion": "Bard",
+          "championId": 432,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 1.0,
+          "averageDamage": 18917.0,
+          "averageGoldPerMin": 450.9705248023005,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7852025214",
+            "kda": 1.0,
+            "damage": 18917,
+            "win": false
+          }
+        },
+        {
+          "champion": "LeeSin",
+          "championId": 64,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 18.0,
+          "averageDamage": 14597.0,
+          "averageGoldPerMin": 401.6865671641791,
+          "favoriteRole": "JUNGLE",
+          "bestGame": {
+            "matchId": "KR_7851300813",
+            "kda": 18.0,
+            "damage": 14597,
+            "win": true
+          }
+        },
+        {
+          "champion": "Yasuo",
+          "championId": 157,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 1.0,
+          "averageDamage": 7111.0,
+          "averageGoldPerMin": 344.8916408668731,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7851225074",
+            "kda": 1.0,
+            "damage": 7111,
+            "win": false
+          }
+        },
+        {
+          "champion": "Vex",
+          "championId": 711,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 0.3333333333333333,
+          "averageDamage": 18277.0,
+          "averageGoldPerMin": 383.5260930888576,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7850998706",
+            "kda": 0.3333333333333333,
+            "damage": 18277,
+            "win": false
+          }
+        },
+        {
+          "champion": "Pyke",
+          "championId": 555,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.857142857142857,
+          "averageDamage": 73417.0,
+          "averageGoldPerMin": 972.2598105548038,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7818745957",
+            "kda": 3.857142857142857,
+            "damage": 73417,
+            "win": true
+          }
+        },
+        {
+          "champion": "Diana",
+          "championId": 131,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.1666666666666665,
+          "averageDamage": 80005.0,
+          "averageGoldPerMin": 1027.9260780287473,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7808378205",
+            "kda": 3.1666666666666665,
+            "damage": 80005,
+            "win": true
+          }
+        },
+        {
+          "champion": "Fizz",
+          "championId": 105,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 5.25,
+          "averageDamage": 61676.0,
+          "averageGoldPerMin": 974.6835443037975,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7808219654",
+            "kda": 5.25,
+            "damage": 61676,
+            "win": true
+          }
+        },
+        {
+          "champion": "Braum",
+          "championId": 201,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 4.125,
+          "averageDamage": 14930.0,
+          "averageGoldPerMin": 348.7762803234501,
+          "favoriteRole": "UTILITY",
+          "bestGame": {
+            "matchId": "KR_7807052687",
+            "kda": 4.125,
+            "damage": 14930,
+            "win": false
+          }
+        },
+        {
+          "champion": "Renata",
+          "championId": 888,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 3.0,
+          "averageDamage": 22666.0,
+          "averageGoldPerMin": 450.5204718945177,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7806984310",
+            "kda": 3.0,
+            "damage": 22666,
+            "win": false
+          }
+        },
+        {
+          "champion": "Smolder",
+          "championId": 901,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.0,
+          "averageDamage": 76917.0,
+          "averageGoldPerMin": 1395.598349381018,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7806934322",
+            "kda": 3.0,
+            "damage": 76917,
+            "win": true
+          }
+        },
+        {
+          "champion": "Tristana",
+          "championId": 18,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 5.666666666666667,
+          "averageDamage": 26860.0,
+          "averageGoldPerMin": 438.4903306300686,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7806815627",
+            "kda": 5.666666666666667,
+            "damage": 26860,
+            "win": true
+          }
+        },
+        {
+          "champion": "Cassiopeia",
+          "championId": 69,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 4.0,
+          "averageDamage": 26270.0,
+          "averageGoldPerMin": 466.7690417690418,
+          "favoriteRole": "MIDDLE",
+          "bestGame": {
+            "matchId": "KR_7805499358",
+            "kda": 4.0,
+            "damage": 26270,
+            "win": true
+          }
+        },
+        {
+          "champion": "Jhin",
+          "championId": 202,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 0.7,
+          "averageDamage": 30340.0,
+          "averageGoldPerMin": 412.27484989993326,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7805263050",
+            "kda": 0.7,
+            "damage": 30340,
+            "win": false
+          }
+        },
+        {
+          "champion": "Qiyana",
+          "championId": 246,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 1.875,
+          "averageDamage": 28112.0,
+          "averageGoldPerMin": 480.21454112038145,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7805183938",
+            "kda": 1.875,
+            "damage": 28112,
+            "win": false
+          }
+        },
+        {
+          "champion": "Olaf",
+          "championId": 2,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 0.5,
+          "averageDamage": 12226.0,
+          "averageGoldPerMin": 340.32210834553445,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7802673293",
+            "kda": 0.5,
+            "damage": 12226,
+            "win": false
+          }
+        },
+        {
+          "champion": "Yorick",
+          "championId": 83,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.6,
+          "averageDamage": 61867.0,
+          "averageGoldPerMin": 829.106628242075,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7802536455",
+            "kda": 3.6,
+            "damage": 61867,
+            "win": true
+          }
+        },
+        {
+          "champion": "Ornn",
+          "championId": 516,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 11.0,
+          "averageDamage": 33572.0,
+          "averageGoldPerMin": 816.198347107438,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7801651104",
+            "kda": 11.0,
+            "damage": 33572,
+            "win": true
+          }
+        },
+        {
+          "champion": "Amumu",
+          "championId": 32,
+          "gamesPlayed": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0.0,
+          "averageKDA": 1.1666666666666667,
+          "averageDamage": 15336.0,
+          "averageGoldPerMin": 391.12781954887214,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7801460499",
+            "kda": 1.1666666666666667,
+            "damage": 15336,
+            "win": false
+          }
+        },
+        {
+          "champion": "Zyra",
+          "championId": 143,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.6,
+          "averageDamage": 56407.0,
+          "averageGoldPerMin": 912.2368421052632,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7801413028",
+            "kda": 3.6,
+            "damage": 56407,
+            "win": true
+          }
+        },
+        {
+          "champion": "Xerath",
+          "championId": 101,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 5.25,
+          "averageDamage": 100553.0,
+          "averageGoldPerMin": 961.7047560222359,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7801352091",
+            "kda": 5.25,
+            "damage": 100553,
+            "win": true
+          }
+        },
+        {
+          "champion": "Udyr",
+          "championId": 77,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 1.4,
+          "averageDamage": 29115.0,
+          "averageGoldPerMin": 451.2556342562782,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7799904113",
+            "kda": 1.4,
+            "damage": 29115,
+            "win": true
+          }
+        },
+        {
+          "champion": "Neeko",
+          "championId": 518,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 4.0,
+          "averageDamage": 81958.0,
+          "averageGoldPerMin": 940.974605353466,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7798131676",
+            "kda": 4.0,
+            "damage": 81958,
+            "win": true
+          }
+        },
+        {
+          "champion": "Seraphine",
+          "championId": 147,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 5.25,
+          "averageDamage": 68938.0,
+          "averageGoldPerMin": 1078.3216783216783,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7796748178",
+            "kda": 5.25,
+            "damage": 68938,
+            "win": true
+          }
+        },
+        {
+          "champion": "Lux",
+          "championId": 99,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 10.0,
+          "averageDamage": 121902.0,
+          "averageGoldPerMin": 1148.6345609065156,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7790857706",
+            "kda": 10.0,
+            "damage": 121902,
+            "win": true
+          }
+        },
+        {
+          "champion": "Sejuani",
+          "championId": 113,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 2.5,
+          "averageDamage": 41790.0,
+          "averageGoldPerMin": 570.1823092505064,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7790018138",
+            "kda": 2.5,
+            "damage": 41790,
+            "win": true
+          }
+        },
+        {
+          "champion": "Janna",
+          "championId": 40,
+          "gamesPlayed": 1,
+          "wins": 1,
+          "losses": 0,
+          "winRate": 1.0,
+          "averageKDA": 3.4,
+          "averageDamage": 38782.0,
+          "averageGoldPerMin": 1134.1841680129241,
+          "favoriteRole": "",
+          "bestGame": {
+            "matchId": "KR_7785751949",
+            "kda": 3.4,
+            "damage": 38782,
+            "win": true
+          }
+        }
+      ]
+    },
+    "matchSummaries": [
+      {
+        "matchId": "KR_7858254806",
+        "date": 1759933867544,
+        "champion": "Jayce",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 3.25,
+        "kills": 6,
+        "deaths": 4,
+        "assists": 7,
+        "damage": 17487,
+        "damagePerMinute": 812.7188226181255,
+        "goldEarned": 9400,
+        "visionScore": 20,
+        "gameDuration": 1291,
+        "keyMoments": [
+          "firstBlood",
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7858151244",
+        "date": 1759931449275,
+        "champion": "Lissandra",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 15.0,
+        "kills": 3,
+        "deaths": 0,
+        "assists": 12,
+        "damage": 25527,
+        "damagePerMinute": 817.7362520021356,
+        "goldEarned": 13012,
+        "visionScore": 29,
+        "gameDuration": 1873,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7858019563",
+        "date": 1759928620598,
+        "champion": "Leblanc",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.6,
+        "kills": 6,
+        "deaths": 5,
+        "assists": 2,
+        "damage": 25770,
+        "damagePerMinute": 915.4529307282417,
+        "goldEarned": 12124,
+        "visionScore": 42,
+        "gameDuration": 1689,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7857352690",
+        "date": 1759909423943,
+        "champion": "Taliyah",
+        "role": "",
+        "win": false,
+        "kda": 2.0,
+        "kills": 9,
+        "deaths": 6,
+        "assists": 3,
+        "damage": 28621,
+        "damagePerMinute": 1188.415224913495,
+        "goldEarned": 11350,
+        "visionScore": 0,
+        "gameDuration": 1445,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7856448015",
+        "date": 1759856618574,
+        "champion": "Azir",
+        "role": "TOP",
+        "win": true,
+        "kda": 21.0,
+        "kills": 5,
+        "deaths": 1,
+        "assists": 16,
+        "damage": 37487,
+        "damagePerMinute": 1342.016706443914,
+        "goldEarned": 14645,
+        "visionScore": 20,
+        "gameDuration": 1676,
+        "keyMoments": [],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7856357576",
+        "date": 1759854016054,
+        "champion": "Azir",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 1.6666666666666667,
+        "kills": 4,
+        "deaths": 6,
+        "assists": 6,
+        "damage": 28240,
+        "damagePerMinute": 1039.5092024539877,
+        "goldEarned": 11569,
+        "visionScore": 16,
+        "gameDuration": 1630,
+        "keyMoments": [
+          "flawlessAce"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7856281659",
+        "date": 1759852051565,
+        "champion": "Aurora",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.4444444444444444,
+        "kills": 7,
+        "deaths": 9,
+        "assists": 6,
+        "damage": 24454,
+        "damagePerMinute": 1031.8143459915611,
+        "goldEarned": 10815,
+        "visionScore": 22,
+        "gameDuration": 1422,
+        "keyMoments": [
+          "epicSteal",
+          "outnumberedKill"
+        ],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7856196441",
+        "date": 1759849976783,
+        "champion": "Yone",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 4.0,
+        "kills": 1,
+        "deaths": 1,
+        "assists": 3,
+        "damage": 8064,
+        "damagePerMinute": 528.7868852459017,
+        "goldEarned": 5769,
+        "visionScore": 13,
+        "gameDuration": 915,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7855895357",
+        "date": 1759843207225,
+        "champion": "Darius",
+        "role": "",
+        "win": true,
+        "kda": 10.0,
+        "kills": 17,
+        "deaths": 2,
+        "assists": 3,
+        "damage": 58209,
+        "damagePerMinute": 2668.097784568373,
+        "goldEarned": 17156,
+        "visionScore": 0,
+        "gameDuration": 1309,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7855800422",
+        "date": 1759841296295,
+        "champion": "Jayce",
+        "role": "TOP",
+        "win": true,
+        "kda": 2.142857142857143,
+        "kills": 2,
+        "deaths": 7,
+        "assists": 13,
+        "damage": 22354,
+        "damagePerMinute": 847.8128950695323,
+        "goldEarned": 10843,
+        "visionScore": 36,
+        "gameDuration": 1582,
+        "keyMoments": [
+          "firstBlood",
+          "flawlessAce"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7854217940",
+        "date": 1759771678097,
+        "champion": "Jayce",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.1666666666666667,
+        "kills": 2,
+        "deaths": 6,
+        "assists": 5,
+        "damage": 20243,
+        "damagePerMinute": 900.3558191252779,
+        "goldEarned": 9075,
+        "visionScore": 27,
+        "gameDuration": 1349,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7854155054",
+        "date": 1759769038918,
+        "champion": "Azir",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.2,
+        "kills": 3,
+        "deaths": 5,
+        "assists": 3,
+        "damage": 30013,
+        "damagePerMinute": 920.6441717791411,
+        "goldEarned": 15071,
+        "visionScore": 29,
+        "gameDuration": 1956,
+        "keyMoments": [
+          "firstBlood"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7854091325",
+        "date": 1759767055027,
+        "champion": "Annie",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 6.0,
+        "kills": 2,
+        "deaths": 1,
+        "assists": 4,
+        "damage": 12286,
+        "damagePerMinute": 712.9206963249516,
+        "goldEarned": 7360,
+        "visionScore": 17,
+        "gameDuration": 1034,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7853949039",
+        "date": 1759763293775,
+        "champion": "TahmKench",
+        "role": "UTILITY",
+        "win": true,
+        "kda": 4.0,
+        "kills": 0,
+        "deaths": 3,
+        "assists": 12,
+        "damage": 7506,
+        "damagePerMinute": 396.443661971831,
+        "goldEarned": 5465,
+        "visionScore": 44,
+        "gameDuration": 1136,
+        "keyMoments": [],
+        "performance": "support"
+      },
+      {
+        "matchId": "KR_7852025214",
+        "date": 1759686106191,
+        "champion": "Bard",
+        "role": "",
+        "win": false,
+        "kda": 1.0,
+        "kills": 4,
+        "deaths": 6,
+        "assists": 2,
+        "damage": 18917,
+        "damagePerMinute": 815.9741193386053,
+        "goldEarned": 10455,
+        "visionScore": 0,
+        "gameDuration": 1391,
+        "keyMoments": [
+          "outnumberedKill",
+          "saveAlly"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7851903870",
+        "date": 1759681736628,
+        "champion": "Yone",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 2.0,
+        "kills": 3,
+        "deaths": 6,
+        "assists": 9,
+        "damage": 30997,
+        "damagePerMinute": 870.2948058025269,
+        "goldEarned": 13945,
+        "visionScore": 37,
+        "gameDuration": 2137,
+        "keyMoments": [
+          "flawlessAce",
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7851809754",
+        "date": 1759678897774,
+        "champion": "Ryze",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 16.0,
+        "kills": 12,
+        "deaths": 1,
+        "assists": 4,
+        "damage": 26413,
+        "damagePerMinute": 1110.5676243868254,
+        "goldEarned": 14007,
+        "visionScore": 29,
+        "gameDuration": 1427,
+        "keyMoments": [],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7851300813",
+        "date": 1759667275216,
+        "champion": "LeeSin",
+        "role": "JUNGLE",
+        "win": true,
+        "kda": 18.0,
+        "kills": 1,
+        "deaths": 1,
+        "assists": 17,
+        "damage": 14597,
+        "damagePerMinute": 653.5970149253732,
+        "goldEarned": 8971,
+        "visionScore": 24,
+        "gameDuration": 1340,
+        "keyMoments": [
+          "flawlessAce"
+        ],
+        "performance": "support"
+      },
+      {
+        "matchId": "KR_7851225074",
+        "date": 1759665352323,
+        "champion": "Yasuo",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.0,
+        "kills": 1,
+        "deaths": 2,
+        "assists": 1,
+        "damage": 7111,
+        "damagePerMinute": 440.30959752321985,
+        "goldEarned": 5570,
+        "visionScore": 12,
+        "gameDuration": 969,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7851145201",
+        "date": 1759663355730,
+        "champion": "Leblanc",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.3333333333333333,
+        "kills": 1,
+        "deaths": 3,
+        "assists": 3,
+        "damage": 10187,
+        "damagePerMinute": 628.8271604938271,
+        "goldEarned": 4863,
+        "visionScore": 8,
+        "gameDuration": 972,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7850998706",
+        "date": 1759659423575,
+        "champion": "Vex",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 0.3333333333333333,
+        "kills": 0,
+        "deaths": 6,
+        "assists": 2,
+        "damage": 18277,
+        "damagePerMinute": 773.3568406205924,
+        "goldEarned": 9064,
+        "visionScore": 23,
+        "gameDuration": 1418,
+        "keyMoments": [],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7818745957",
+        "date": 1758390495463,
+        "champion": "Pyke",
+        "role": "",
+        "win": true,
+        "kda": 3.857142857142857,
+        "kills": 18,
+        "deaths": 7,
+        "assists": 9,
+        "damage": 73417,
+        "damagePerMinute": 2980.3924221921516,
+        "goldEarned": 23950,
+        "visionScore": 0,
+        "gameDuration": 1478,
+        "keyMoments": [
+          "flawlessAce",
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7818641248",
+        "date": 1758385591152,
+        "champion": "Ryze",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 0.7777777777777778,
+        "kills": 2,
+        "deaths": 9,
+        "assists": 5,
+        "damage": 19041,
+        "damagePerMinute": 657.3417721518988,
+        "goldEarned": 10593,
+        "visionScore": 24,
+        "gameDuration": 1738,
+        "keyMoments": [],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7817016103",
+        "date": 1758302867216,
+        "champion": "Galio",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.3333333333333333,
+        "kills": 2,
+        "deaths": 6,
+        "assists": 6,
+        "damage": 12114,
+        "damagePerMinute": 468.32474226804123,
+        "goldEarned": 9230,
+        "visionScore": 27,
+        "gameDuration": 1552,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7816931606",
+        "date": 1758299109820,
+        "champion": "Ryze",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 2.0,
+        "kills": 5,
+        "deaths": 6,
+        "assists": 7,
+        "damage": 26354,
+        "damagePerMinute": 823.5625,
+        "goldEarned": 14422,
+        "visionScore": 41,
+        "gameDuration": 1920,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7816794932",
+        "date": 1758294773380,
+        "champion": "Lissandra",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 1.0,
+        "kills": 2,
+        "deaths": 2,
+        "assists": 0,
+        "damage": 8434,
+        "damagePerMinute": 551.8429661941112,
+        "goldEarned": 6045,
+        "visionScore": 11,
+        "gameDuration": 917,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7816733991",
+        "date": 1758293027577,
+        "champion": "Jayce",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 1.0,
+        "kills": 1,
+        "deaths": 1,
+        "assists": 0,
+        "damage": 11117,
+        "damagePerMinute": 729.781181619256,
+        "goldEarned": 5672,
+        "visionScore": 15,
+        "gameDuration": 914,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7814349616",
+        "date": 1758129494562,
+        "champion": "Annie",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 13.0,
+        "kills": 11,
+        "deaths": 0,
+        "assists": 2,
+        "damage": 18857,
+        "damagePerMinute": 1232.4836601307188,
+        "goldEarned": 7831,
+        "visionScore": 11,
+        "gameDuration": 918,
+        "keyMoments": [
+          "perfectGame",
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7814313545",
+        "date": 1758126708306,
+        "champion": "Yone",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 2.142857142857143,
+        "kills": 9,
+        "deaths": 7,
+        "assists": 6,
+        "damage": 28635,
+        "damagePerMinute": 947.1334068357221,
+        "goldEarned": 13384,
+        "visionScore": 34,
+        "gameDuration": 1814,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7814259957",
+        "date": 1758123958759,
+        "champion": "Ambessa",
+        "role": "TOP",
+        "win": false,
+        "kda": 4.0,
+        "kills": 2,
+        "deaths": 0,
+        "assists": 2,
+        "damage": 9747,
+        "damagePerMinute": 408.1088625261689,
+        "goldEarned": 8307,
+        "visionScore": 17,
+        "gameDuration": 1433,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7813048255",
+        "date": 1758041254605,
+        "champion": "Aurora",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 12.0,
+        "kills": 7,
+        "deaths": 1,
+        "assists": 5,
+        "damage": 31362,
+        "damagePerMinute": 1180.5018820577166,
+        "goldEarned": 12292,
+        "visionScore": 29,
+        "gameDuration": 1594,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7813012807",
+        "date": 1758039182268,
+        "champion": "Orianna",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 3.5,
+        "kills": 2,
+        "deaths": 2,
+        "assists": 5,
+        "damage": 27584,
+        "damagePerMinute": 1039.5979899497486,
+        "goldEarned": 10791,
+        "visionScore": 19,
+        "gameDuration": 1592,
+        "keyMoments": [],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7812983511",
+        "date": 1758037429748,
+        "champion": "Aatrox",
+        "role": "TOP",
+        "win": false,
+        "kda": 1.4,
+        "kills": 5,
+        "deaths": 5,
+        "assists": 2,
+        "damage": 12467,
+        "damagePerMinute": 555.7355126300149,
+        "goldEarned": 8477,
+        "visionScore": 18,
+        "gameDuration": 1346,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7809887199",
+        "date": 1757847727914,
+        "champion": "Orianna",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 14.0,
+        "kills": 11,
+        "deaths": 2,
+        "assists": 17,
+        "damage": 37402,
+        "damagePerMinute": 1243.968957871397,
+        "goldEarned": 16118,
+        "visionScore": 24,
+        "gameDuration": 1804,
+        "keyMoments": [
+          "flawlessAce",
+          "outnumberedKill",
+          "saveAlly"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7808755194",
+        "date": 1757781398311,
+        "champion": "TwistedFate",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 5.333333333333333,
+        "kills": 2,
+        "deaths": 3,
+        "assists": 14,
+        "damage": 20931,
+        "damagePerMinute": 872.125,
+        "goldEarned": 11470,
+        "visionScore": 14,
+        "gameDuration": 1440,
+        "keyMoments": [
+          "flawlessAce"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7808589076",
+        "date": 1757776181763,
+        "champion": "Yone",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 1.0,
+        "kills": 3,
+        "deaths": 6,
+        "assists": 3,
+        "damage": 24523,
+        "damagePerMinute": 736.4264264264265,
+        "goldEarned": 11772,
+        "visionScore": 41,
+        "gameDuration": 1998,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7808378205",
+        "date": 1757770591235,
+        "champion": "Diana",
+        "role": "",
+        "win": true,
+        "kda": 3.1666666666666665,
+        "kills": 15,
+        "deaths": 6,
+        "assists": 4,
+        "damage": 80005,
+        "damagePerMinute": 3285.6262833675564,
+        "goldEarned": 25030,
+        "visionScore": 0,
+        "gameDuration": 1461,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7808219654",
+        "date": 1757766471343,
+        "champion": "Fizz",
+        "role": "",
+        "win": true,
+        "kda": 5.25,
+        "kills": 15,
+        "deaths": 4,
+        "assists": 6,
+        "damage": 61676,
+        "damagePerMinute": 2602.362869198312,
+        "goldEarned": 23100,
+        "visionScore": 0,
+        "gameDuration": 1422,
+        "keyMoments": [
+          "flawlessAce",
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7807052687",
+        "date": 1757699831299,
+        "champion": "Braum",
+        "role": "UTILITY",
+        "win": false,
+        "kda": 4.125,
+        "kills": 4,
+        "deaths": 8,
+        "assists": 29,
+        "damage": 14930,
+        "damagePerMinute": 482.911051212938,
+        "goldEarned": 10783,
+        "visionScore": 90,
+        "gameDuration": 1855,
+        "keyMoments": [
+          "outnumberedKill",
+          "saveAlly"
+        ],
+        "performance": "support"
+      },
+      {
+        "matchId": "KR_7807007974",
+        "date": 1757697511854,
+        "champion": "Taliyah",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.5,
+        "kills": 0,
+        "deaths": 6,
+        "assists": 9,
+        "damage": 24501,
+        "damagePerMinute": 877.1241050119331,
+        "goldEarned": 9102,
+        "visionScore": 30,
+        "gameDuration": 1676,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7806984310",
+        "date": 1757695882510,
+        "champion": "Renata",
+        "role": "",
+        "win": false,
+        "kda": 3.0,
+        "kills": 1,
+        "deaths": 4,
+        "assists": 11,
+        "damage": 22666,
+        "damagePerMinute": 943.7612768910479,
+        "goldEarned": 10820,
+        "visionScore": 0,
+        "gameDuration": 1441,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7806934322",
+        "date": 1757693919903,
+        "champion": "Smolder",
+        "role": "",
+        "win": true,
+        "kda": 3.0,
+        "kills": 14,
+        "deaths": 6,
+        "assists": 4,
+        "damage": 76917,
+        "damagePerMinute": 3174.016506189821,
+        "goldEarned": 33820,
+        "visionScore": 0,
+        "gameDuration": 1454,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7806815627",
+        "date": 1757690399131,
+        "champion": "Tristana",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 5.666666666666667,
+        "kills": 5,
+        "deaths": 3,
+        "assists": 12,
+        "damage": 26860,
+        "damagePerMinute": 1005.3649407361198,
+        "goldEarned": 11715,
+        "visionScore": 30,
+        "gameDuration": 1603,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7806577625",
+        "date": 1757684309091,
+        "champion": "Galio",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 3.0,
+        "kills": 8,
+        "deaths": 4,
+        "assists": 4,
+        "damage": 17178,
+        "damagePerMinute": 726.3424947145878,
+        "goldEarned": 12461,
+        "visionScore": 17,
+        "gameDuration": 1419,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7805499358",
+        "date": 1757612970221,
+        "champion": "Cassiopeia",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 4.0,
+        "kills": 5,
+        "deaths": 4,
+        "assists": 11,
+        "damage": 26270,
+        "damagePerMinute": 968.1818181818182,
+        "goldEarned": 12665,
+        "visionScore": 23,
+        "gameDuration": 1628,
+        "keyMoments": [],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7805435642",
+        "date": 1757608785634,
+        "champion": "Morgana",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 2.5,
+        "kills": 4,
+        "deaths": 6,
+        "assists": 11,
+        "damage": 25631,
+        "damagePerMinute": 618.6082059533387,
+        "goldEarned": 16087,
+        "visionScore": 49,
+        "gameDuration": 2486,
+        "keyMoments": [
+          "flawlessAce",
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7805384817",
+        "date": 1757606081575,
+        "champion": "Orianna",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 0.2857142857142857,
+        "kills": 1,
+        "deaths": 7,
+        "assists": 1,
+        "damage": 23963,
+        "damagePerMinute": 880.9926470588235,
+        "goldEarned": 10407,
+        "visionScore": 16,
+        "gameDuration": 1632,
+        "keyMoments": [],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7805316597",
+        "date": 1757603316887,
+        "champion": "Orianna",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.1666666666666667,
+        "kills": 3,
+        "deaths": 6,
+        "assists": 4,
+        "damage": 21359,
+        "damagePerMinute": 919.9856424982054,
+        "goldEarned": 9665,
+        "visionScore": 21,
+        "gameDuration": 1393,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7805263050",
+        "date": 1757601170754,
+        "champion": "Jhin",
+        "role": "",
+        "win": false,
+        "kda": 0.7,
+        "kills": 5,
+        "deaths": 10,
+        "assists": 2,
+        "damage": 30340,
+        "damagePerMinute": 1214.4096064042694,
+        "goldEarned": 10300,
+        "visionScore": 0,
+        "gameDuration": 1499,
+        "keyMoments": [],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7805183938",
+        "date": 1757599067791,
+        "champion": "Qiyana",
+        "role": "",
+        "win": false,
+        "kda": 1.875,
+        "kills": 4,
+        "deaths": 8,
+        "assists": 11,
+        "damage": 28112,
+        "damagePerMinute": 1005.196662693683,
+        "goldEarned": 13430,
+        "visionScore": 0,
+        "gameDuration": 1678,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7802876376",
+        "date": 1757438501278,
+        "champion": "Taliyah",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 2.0,
+        "kills": 4,
+        "deaths": 4,
+        "assists": 4,
+        "damage": 13459,
+        "damagePerMinute": 651.7675544794189,
+        "goldEarned": 8085,
+        "visionScore": 10,
+        "gameDuration": 1239,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7802850057",
+        "date": 1757436200039,
+        "champion": "Galio",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 10.0,
+        "kills": 3,
+        "deaths": 1,
+        "assists": 7,
+        "damage": 6399,
+        "damagePerMinute": 330.6976744186046,
+        "goldEarned": 8548,
+        "visionScore": 13,
+        "gameDuration": 1161,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7802814583",
+        "date": 1757434160397,
+        "champion": "Azir",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 0.5,
+        "kills": 2,
+        "deaths": 6,
+        "assists": 1,
+        "damage": 30837,
+        "damagePerMinute": 1303.8900634249471,
+        "goldEarned": 8466,
+        "visionScore": 19,
+        "gameDuration": 1419,
+        "keyMoments": [],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7802772160",
+        "date": 1757431842307,
+        "champion": "Ryze",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 7.0,
+        "kills": 7,
+        "deaths": 3,
+        "assists": 14,
+        "damage": 21625,
+        "damagePerMinute": 914.3763213530656,
+        "goldEarned": 12230,
+        "visionScore": 18,
+        "gameDuration": 1419,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7802727004",
+        "date": 1757429800739,
+        "champion": "Yone",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 3.6666666666666665,
+        "kills": 4,
+        "deaths": 3,
+        "assists": 7,
+        "damage": 14348,
+        "damagePerMinute": 830.1639344262294,
+        "goldEarned": 7244,
+        "visionScore": 15,
+        "gameDuration": 1037,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7802673293",
+        "date": 1757427837974,
+        "champion": "Olaf",
+        "role": "",
+        "win": false,
+        "kda": 0.5,
+        "kills": 3,
+        "deaths": 8,
+        "assists": 1,
+        "damage": 12226,
+        "damagePerMinute": 537.0131771595901,
+        "goldEarned": 7748,
+        "visionScore": 0,
+        "gameDuration": 1366,
+        "keyMoments": [],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7802536455",
+        "date": 1757423510648,
+        "champion": "Yorick",
+        "role": "",
+        "win": true,
+        "kda": 3.6,
+        "kills": 10,
+        "deaths": 5,
+        "assists": 8,
+        "damage": 61867,
+        "damagePerMinute": 2674.3659942363115,
+        "goldEarned": 19180,
+        "visionScore": 0,
+        "gameDuration": 1388,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7802452290",
+        "date": 1757420969703,
+        "champion": "Orianna",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.2857142857142858,
+        "kills": 4,
+        "deaths": 7,
+        "assists": 5,
+        "damage": 27419,
+        "damagePerMinute": 977.5044563279857,
+        "goldEarned": 11600,
+        "visionScore": 27,
+        "gameDuration": 1683,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7801651104",
+        "date": 1757353593971,
+        "champion": "Ornn",
+        "role": "",
+        "win": true,
+        "kda": 11.0,
+        "kills": 10,
+        "deaths": 2,
+        "assists": 12,
+        "damage": 33572,
+        "damagePerMinute": 1513.388429752066,
+        "goldEarned": 18106,
+        "visionScore": 0,
+        "gameDuration": 1331,
+        "keyMoments": [
+          "flawlessAce"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7801582199",
+        "date": 1757348290070,
+        "champion": "Galio",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 3.3333333333333335,
+        "kills": 7,
+        "deaths": 9,
+        "assists": 23,
+        "damage": 44350,
+        "damagePerMinute": 1261.137440758294,
+        "goldEarned": 16397,
+        "visionScore": 17,
+        "gameDuration": 2110,
+        "keyMoments": [
+          "outnumberedKill",
+          "saveAlly"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7801528221",
+        "date": 1757345588793,
+        "champion": "Morgana",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 5.666666666666667,
+        "kills": 6,
+        "deaths": 3,
+        "assists": 11,
+        "damage": 16980,
+        "damagePerMinute": 691.1804613297151,
+        "goldEarned": 11060,
+        "visionScore": 17,
+        "gameDuration": 1474,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7801460499",
+        "date": 1757342624875,
+        "champion": "Amumu",
+        "role": "",
+        "win": false,
+        "kda": 1.1666666666666667,
+        "kills": 1,
+        "deaths": 6,
+        "assists": 6,
+        "damage": 15336,
+        "damagePerMinute": 576.5413533834586,
+        "goldEarned": 10404,
+        "visionScore": 0,
+        "gameDuration": 1596,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7801413028",
+        "date": 1757340836573,
+        "champion": "Zyra",
+        "role": "",
+        "win": true,
+        "kda": 3.6,
+        "kills": 10,
+        "deaths": 5,
+        "assists": 8,
+        "damage": 56407,
+        "damagePerMinute": 2226.592105263158,
+        "goldEarned": 23110,
+        "visionScore": 0,
+        "gameDuration": 1520,
+        "keyMoments": [
+          "firstBlood",
+          "flawlessAce",
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7801352091",
+        "date": 1757338866237,
+        "champion": "Xerath",
+        "role": "",
+        "win": true,
+        "kda": 5.25,
+        "kills": 14,
+        "deaths": 4,
+        "assists": 7,
+        "damage": 100553,
+        "damagePerMinute": 3726.4854848672016,
+        "goldEarned": 25950,
+        "visionScore": 0,
+        "gameDuration": 1619,
+        "keyMoments": [],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7800410070",
+        "date": 1757268965701,
+        "champion": "MonkeyKing",
+        "role": "JUNGLE",
+        "win": true,
+        "kda": 7.0,
+        "kills": 2,
+        "deaths": 1,
+        "assists": 5,
+        "damage": 10718,
+        "damagePerMinute": 530.156636438582,
+        "goldEarned": 7624,
+        "visionScore": 10,
+        "gameDuration": 1213,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7800340103",
+        "date": 1757263073756,
+        "champion": "Taliyah",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 6.2,
+        "kills": 10,
+        "deaths": 5,
+        "assists": 21,
+        "damage": 48512,
+        "damagePerMinute": 1086.4949608062711,
+        "goldEarned": 21439,
+        "visionScore": 47,
+        "gameDuration": 2679,
+        "keyMoments": [
+          "epicSteal",
+          "saveAlly"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7800259728",
+        "date": 1757259227589,
+        "champion": "Taliyah",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 2.0,
+        "kills": 2,
+        "deaths": 3,
+        "assists": 4,
+        "damage": 8313,
+        "damagePerMinute": 528.9289501590669,
+        "goldEarned": 5838,
+        "visionScore": 13,
+        "gameDuration": 943,
+        "keyMoments": [
+          "flawlessAce"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7799956621",
+        "date": 1757249630963,
+        "champion": "TwistedFate",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 18.0,
+        "kills": 7,
+        "deaths": 1,
+        "assists": 11,
+        "damage": 22982,
+        "damagePerMinute": 827.1865626874625,
+        "goldEarned": 15970,
+        "visionScore": 34,
+        "gameDuration": 1667,
+        "keyMoments": [
+          "firstBlood",
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7799904113",
+        "date": 1757247907436,
+        "champion": "Udyr",
+        "role": "",
+        "win": true,
+        "kda": 1.4,
+        "kills": 3,
+        "deaths": 5,
+        "assists": 4,
+        "damage": 29115,
+        "damagePerMinute": 1124.8551191242757,
+        "goldEarned": 11680,
+        "visionScore": 0,
+        "gameDuration": 1553,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7798700269",
+        "date": 1757183214606,
+        "champion": "Aurora",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 17.0,
+        "kills": 9,
+        "deaths": 0,
+        "assists": 8,
+        "damage": 22786,
+        "damagePerMinute": 1038.8753799392098,
+        "goldEarned": 10918,
+        "visionScore": 29,
+        "gameDuration": 1316,
+        "keyMoments": [
+          "perfectGame",
+          "flawlessAce",
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7798660398",
+        "date": 1757180719830,
+        "champion": "Leblanc",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 0.0,
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "damage": 10287,
+        "damagePerMinute": 671.6213275299239,
+        "goldEarned": 5296,
+        "visionScore": 7,
+        "gameDuration": 919,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7798579670",
+        "date": 1757177116552,
+        "champion": "MonkeyKing",
+        "role": "JUNGLE",
+        "win": false,
+        "kda": 1.3333333333333333,
+        "kills": 4,
+        "deaths": 6,
+        "assists": 4,
+        "damage": 19348,
+        "damagePerMinute": 712.1963190184049,
+        "goldEarned": 9072,
+        "visionScore": 40,
+        "gameDuration": 1630,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7798511373",
+        "date": 1757174511667,
+        "champion": "Azir",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.2,
+        "kills": 2,
+        "deaths": 5,
+        "assists": 4,
+        "damage": 18869,
+        "damagePerMinute": 696.7015384615385,
+        "goldEarned": 11948,
+        "visionScore": 35,
+        "gameDuration": 1625,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7798409344",
+        "date": 1757171518314,
+        "champion": "Yone",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 1.3333333333333333,
+        "kills": 1,
+        "deaths": 6,
+        "assists": 7,
+        "damage": 26612,
+        "damagePerMinute": 912.4114285714286,
+        "goldEarned": 10567,
+        "visionScore": 24,
+        "gameDuration": 1750,
+        "keyMoments": [
+          "epicSteal"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7798131676",
+        "date": 1757164249621,
+        "champion": "Neeko",
+        "role": "",
+        "win": true,
+        "kda": 4.0,
+        "kills": 13,
+        "deaths": 6,
+        "assists": 11,
+        "damage": 81958,
+        "damagePerMinute": 3375.072065888812,
+        "goldEarned": 22850,
+        "visionScore": 0,
+        "gameDuration": 1457,
+        "keyMoments": [
+          "flawlessAce"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7797318305",
+        "date": 1757136370947,
+        "champion": "Aurora",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 0.0,
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "damage": 308,
+        "damagePerMinute": 182.97029702970298,
+        "goldEarned": 503,
+        "visionScore": 0,
+        "gameDuration": 101,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7796799935",
+        "date": 1757092153281,
+        "champion": "Aurora",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 6.0,
+        "kills": 6,
+        "deaths": 2,
+        "assists": 6,
+        "damage": 18828,
+        "damagePerMinute": 962.2487223168654,
+        "goldEarned": 9782,
+        "visionScore": 22,
+        "gameDuration": 1174,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7796748178",
+        "date": 1757089414729,
+        "champion": "Seraphine",
+        "role": "",
+        "win": true,
+        "kda": 5.25,
+        "kills": 16,
+        "deaths": 4,
+        "assists": 5,
+        "damage": 68938,
+        "damagePerMinute": 2892.5034965034965,
+        "goldEarned": 25700,
+        "visionScore": 0,
+        "gameDuration": 1430,
+        "keyMoments": [
+          "saveAlly"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7796694312",
+        "date": 1757087566169,
+        "champion": "Aatrox",
+        "role": "",
+        "win": false,
+        "kda": 2.1666666666666665,
+        "kills": 9,
+        "deaths": 6,
+        "assists": 4,
+        "damage": 48104,
+        "damagePerMinute": 1766.3647490820074,
+        "goldEarned": 11760,
+        "visionScore": 0,
+        "gameDuration": 1634,
+        "keyMoments": [
+          "flawlessAce",
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7796584323",
+        "date": 1757084347790,
+        "champion": "Orianna",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 5.666666666666667,
+        "kills": 5,
+        "deaths": 3,
+        "assists": 12,
+        "damage": 17373,
+        "damagePerMinute": 761.9736842105262,
+        "goldEarned": 10768,
+        "visionScore": 19,
+        "gameDuration": 1368,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7793463167",
+        "date": 1756898324132,
+        "champion": "Annie",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 0.5,
+        "kills": 1,
+        "deaths": 4,
+        "assists": 1,
+        "damage": 10708,
+        "damagePerMinute": 561.1179039301311,
+        "goldEarned": 7194,
+        "visionScore": 13,
+        "gameDuration": 1145,
+        "keyMoments": [],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7790857706",
+        "date": 1756726731936,
+        "champion": "Lux",
+        "role": "",
+        "win": true,
+        "kda": 10.0,
+        "kills": 19,
+        "deaths": 3,
+        "assists": 11,
+        "damage": 121902,
+        "damagePerMinute": 4143.977337110481,
+        "goldEarned": 33789,
+        "visionScore": 0,
+        "gameDuration": 1765,
+        "keyMoments": [
+          "flawlessAce",
+          "outnumberedKill",
+          "saveAlly"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7790780213",
+        "date": 1756723850715,
+        "champion": "Ambessa",
+        "role": "",
+        "win": true,
+        "kda": 11.0,
+        "kills": 16,
+        "deaths": 2,
+        "assists": 6,
+        "damage": 84896,
+        "damagePerMinute": 3882.439024390244,
+        "goldEarned": 20100,
+        "visionScore": 0,
+        "gameDuration": 1312,
+        "keyMoments": [
+          "flawlessAce",
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7790073239",
+        "date": 1756662776517,
+        "champion": "Kalista",
+        "role": "",
+        "win": false,
+        "kda": 1.8571428571428572,
+        "kills": 9,
+        "deaths": 7,
+        "assists": 4,
+        "damage": 50711,
+        "damagePerMinute": 2044.7983870967741,
+        "goldEarned": 13075,
+        "visionScore": 2,
+        "gameDuration": 1488,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7790018138",
+        "date": 1756658474659,
+        "champion": "Sejuani",
+        "role": "",
+        "win": true,
+        "kda": 2.5,
+        "kills": 14,
+        "deaths": 6,
+        "assists": 1,
+        "damage": 41790,
+        "damagePerMinute": 1693.0452397029035,
+        "goldEarned": 14074,
+        "visionScore": 0,
+        "gameDuration": 1481,
+        "keyMoments": [
+          "outnumberedKill"
+        ],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7786370465",
+        "date": 1756492213593,
+        "champion": "Lucian",
+        "role": "",
+        "win": false,
+        "kda": 0.0,
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "damage": 52269,
+        "damagePerMinute": 34846.0,
+        "goldEarned": 30500,
+        "visionScore": 0,
+        "gameDuration": 90,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7786363766",
+        "date": 1756491946434,
+        "champion": "Lucian",
+        "role": "",
+        "win": false,
+        "kda": 0.0,
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "damage": 79429,
+        "damagePerMinute": 34786.42335766424,
+        "goldEarned": 30786,
+        "visionScore": 0,
+        "gameDuration": 137,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7786357956",
+        "date": 1756491694330,
+        "champion": "Azir",
+        "role": "",
+        "win": false,
+        "kda": 0.0,
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "damage": 86888,
+        "damagePerMinute": 26329.69696969697,
+        "goldEarned": 10854,
+        "visionScore": 0,
+        "gameDuration": 198,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7786357580",
+        "date": 1756491418355,
+        "champion": "Lucian",
+        "role": "",
+        "win": false,
+        "kda": 0.0,
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "damage": 253106,
+        "damagePerMinute": 69662.20183486238,
+        "goldEarned": 31162,
+        "visionScore": 0,
+        "gameDuration": 218,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7786227977",
+        "date": 1756485433676,
+        "champion": "Azir",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 5.666666666666667,
+        "kills": 7,
+        "deaths": 3,
+        "assists": 10,
+        "damage": 34846,
+        "damagePerMinute": 1274.0767824497257,
+        "goldEarned": 13957,
+        "visionScore": 40,
+        "gameDuration": 1641,
+        "keyMoments": [
+          "flawlessAce",
+          "outnumberedKill"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7786154696",
+        "date": 1756482941478,
+        "champion": "Orianna",
+        "role": "MIDDLE",
+        "win": false,
+        "kda": 4.0,
+        "kills": 8,
+        "deaths": 4,
+        "assists": 8,
+        "damage": 32787,
+        "damagePerMinute": 1032.1196222455405,
+        "goldEarned": 14893,
+        "visionScore": 20,
+        "gameDuration": 1906,
+        "keyMoments": [
+          "saveAlly"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7786131695",
+        "date": 1756482070613,
+        "champion": "Yone",
+        "role": "",
+        "win": false,
+        "kda": 0.0,
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "damage": 137244,
+        "damagePerMinute": 81531.08910891089,
+        "goldEarned": 30503,
+        "visionScore": 0,
+        "gameDuration": 101,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7786057664",
+        "date": 1756480341507,
+        "champion": "Yone",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 1.6666666666666667,
+        "kills": 0,
+        "deaths": 3,
+        "assists": 5,
+        "damage": 19461,
+        "damagePerMinute": 824.0366972477065,
+        "goldEarned": 8821,
+        "visionScore": 27,
+        "gameDuration": 1417,
+        "keyMoments": [],
+        "performance": "average"
+      },
+      {
+        "matchId": "KR_7786005271",
+        "date": 1756478728407,
+        "champion": "Kalista",
+        "role": "",
+        "win": false,
+        "kda": 0.5555555555555556,
+        "kills": 4,
+        "deaths": 9,
+        "assists": 1,
+        "damage": 32231,
+        "damagePerMinute": 1244.4401544401544,
+        "goldEarned": 11070,
+        "visionScore": 0,
+        "gameDuration": 1554,
+        "keyMoments": [],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7785980615",
+        "date": 1756478154748,
+        "champion": "Lucian",
+        "role": "",
+        "win": false,
+        "kda": 0.0,
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "damage": 263743,
+        "damagePerMinute": 72924.33179723502,
+        "goldEarned": 20823,
+        "visionScore": 0,
+        "gameDuration": 217,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7785751949",
+        "date": 1756472869492,
+        "champion": "Janna",
+        "role": "",
+        "win": true,
+        "kda": 3.4,
+        "kills": 6,
+        "deaths": 5,
+        "assists": 11,
+        "damage": 38782,
+        "damagePerMinute": 1879.5799676898223,
+        "goldEarned": 23402,
+        "visionScore": 0,
+        "gameDuration": 1238,
+        "keyMoments": [
+          "saveAlly"
+        ],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7784668837",
+        "date": 1756401649721,
+        "champion": "Ryze",
+        "role": "MIDDLE",
+        "win": true,
+        "kda": 9.0,
+        "kills": 9,
+        "deaths": 2,
+        "assists": 9,
+        "damage": 21243,
+        "damagePerMinute": 988.8130333591931,
+        "goldEarned": 11375,
+        "visionScore": 15,
+        "gameDuration": 1289,
+        "keyMoments": [],
+        "performance": "carry"
+      },
+      {
+        "matchId": "KR_7784657896",
+        "date": 1756400803527,
+        "champion": "Lucian",
+        "role": "",
+        "win": false,
+        "kda": 0.0,
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "damage": 47299,
+        "damagePerMinute": 44342.8125,
+        "goldEarned": 30500,
+        "visionScore": 0,
+        "gameDuration": 64,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7784649879",
+        "date": 1756400274011,
+        "champion": "Lucian",
+        "role": "",
+        "win": false,
+        "kda": 0.0,
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "damage": 43670,
+        "damagePerMinute": 21654.545454545456,
+        "goldEarned": 30586,
+        "visionScore": 0,
+        "gameDuration": 121,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "feed"
+      },
+      {
+        "matchId": "KR_7784636753",
+        "date": 1756399481871,
+        "champion": "Yone",
+        "role": "",
+        "win": false,
+        "kda": 0.0,
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "damage": 50737,
+        "damagePerMinute": 13121.637931034482,
+        "goldEarned": 31065,
+        "visionScore": 0,
+        "gameDuration": 232,
+        "keyMoments": [
+          "perfectGame"
+        ],
+        "performance": "feed"
+      }
+    ],
+    "trends": {
+      "winStreaks": [
+        {
+          "type": true,
+          "length": 2,
+          "start": "KR_7858254806"
+        },
+        {
+          "type": true,
+          "length": 2,
+          "start": "KR_7856448015"
+        },
+        {
+          "type": true,
+          "length": 3,
+          "start": "KR_7856196441"
+        },
+        {
+          "type": true,
+          "length": 2,
+          "start": "KR_7854091325"
+        },
+        {
+          "type": true,
+          "length": 3,
+          "start": "KR_7851903870"
+        },
+        {
+          "type": true,
+          "length": 1,
+          "start": "KR_7818745957"
+        },
+        {
+          "type": true,
+          "length": 3,
+          "start": "KR_7816794932"
+        },
+        {
+          "type": true,
+          "length": 1,
+          "start": "KR_7813048255"
+        },
+        {
+          "type": true,
+          "length": 5,
+          "start": "KR_7809887199"
+        },
+        {
+          "type": true,
+          "length": 5,
+          "start": "KR_7806934322"
+        },
+        {
+          "type": true,
+          "length": 1,
+          "start": "KR_7802850057"
+        },
+        {
+          "type": true,
+          "length": 2,
+          "start": "KR_7802772160"
+        },
+        {
+          "type": true,
+          "length": 1,
+          "start": "KR_7802536455"
+        },
+        {
+          "type": true,
+          "length": 1,
+          "start": "KR_7801651104"
+        },
+        {
+          "type": true,
+          "length": 1,
+          "start": "KR_7801528221"
+        },
+        {
+          "type": true,
+          "length": 9,
+          "start": "KR_7801413028"
+        },
+        {
+          "type": true,
+          "length": 4,
+          "start": "KR_7798131676"
+        },
+        {
+          "type": true,
+          "length": 1,
+          "start": "KR_7796584323"
+        },
+        {
+          "type": true,
+          "length": 2,
+          "start": "KR_7790857706"
+        },
+        {
+          "type": true,
+          "length": 1,
+          "start": "KR_7790018138"
+        },
+        {
+          "type": true,
+          "length": 1,
+          "start": "KR_7786227977"
+        },
+        {
+          "type": true,
+          "length": 1,
+          "start": "KR_7786057664"
+        },
+        {
+          "type": true,
+          "length": 2,
+          "start": "KR_7785751949"
+        }
+      ],
+      "lossStreaks": [
+        {
+          "type": false,
+          "length": 2,
+          "start": "KR_7858019563"
+        },
+        {
+          "type": false,
+          "length": 1,
+          "start": "KR_7856281659"
+        },
+        {
+          "type": false,
+          "length": 2,
+          "start": "KR_7854217940"
+        },
+        {
+          "type": false,
+          "length": 1,
+          "start": "KR_7852025214"
+        },
+        {
+          "type": false,
+          "length": 3,
+          "start": "KR_7851225074"
+        },
+        {
+          "type": false,
+          "length": 3,
+          "start": "KR_7818641248"
+        },
+        {
+          "type": false,
+          "length": 2,
+          "start": "KR_7814313545"
+        },
+        {
+          "type": false,
+          "length": 2,
+          "start": "KR_7813012807"
+        },
+        {
+          "type": false,
+          "length": 3,
+          "start": "KR_7807052687"
+        },
+        {
+          "type": false,
+          "length": 5,
+          "start": "KR_7805384817"
+        },
+        {
+          "type": false,
+          "length": 1,
+          "start": "KR_7802814583"
+        },
+        {
+          "type": false,
+          "length": 1,
+          "start": "KR_7802673293"
+        },
+        {
+          "type": false,
+          "length": 1,
+          "start": "KR_7802452290"
+        },
+        {
+          "type": false,
+          "length": 1,
+          "start": "KR_7801582199"
+        },
+        {
+          "type": false,
+          "length": 1,
+          "start": "KR_7801460499"
+        },
+        {
+          "type": false,
+          "length": 3,
+          "start": "KR_7798579670"
+        },
+        {
+          "type": false,
+          "length": 1,
+          "start": "KR_7796694312"
+        },
+        {
+          "type": false,
+          "length": 1,
+          "start": "KR_7793463167"
+        },
+        {
+          "type": false,
+          "length": 1,
+          "start": "KR_7790073239"
+        },
+        {
+          "type": false,
+          "length": 4,
+          "start": "KR_7786370465"
+        },
+        {
+          "type": false,
+          "length": 2,
+          "start": "KR_7786154696"
+        },
+        {
+          "type": false,
+          "length": 2,
+          "start": "KR_7786005271"
+        },
+        {
+          "type": false,
+          "length": 3,
+          "start": "KR_7784657896"
+        }
+      ],
+      "longestWinStreak": {
+        "type": true,
+        "length": 9,
+        "start": "KR_7801413028"
+      },
+      "longestLossStreak": {
+        "type": false,
+        "length": 5,
+        "start": "KR_7805384817"
+      },
+      "currentStreak": {
+        "type": false,
+        "length": 3,
+        "start": "KR_7784657896"
+      },
+      "performanceOverTime": {
+        "recent10Games": {
+          "games": 10,
+          "wins": 7,
+          "winRate": 0.7,
+          "avgKDA": 6.210396825396826,
+          "avgDamage": 27621.3,
+          "avgDamagePerMinute": 1119.2361050035267
+        },
+        "recent20Games": {
+          "games": 20,
+          "wins": 12,
+          "winRate": 0.6,
+          "avgKDA": 5.690198412698413,
+          "avgDamage": 22724.15,
+          "avgDamagePerMinute": 932.1147860853423
+        },
+        "first50Games": {
+          "games": 50,
+          "wins": 27,
+          "winRate": 0.54,
+          "avgKDA": 3.7453015873015874,
+          "avgDamage": 48243.42,
+          "avgDamagePerMinute": 9101.056975851196
+        },
+        "last50Games": {
+          "games": 50,
+          "wins": 27,
+          "winRate": 0.54,
+          "avgKDA": 4.394349206349206,
+          "avgDamage": 26303.06,
+          "avgDamagePerMinute": 1050.9572791058654
+        }
+      }
+    }
+  },
+  "insights": {
+    "overview": "You've had a solid season with a 54% win rate across 100 games, showing particular dominance in the mid lane where you maintained an impressive 59% win rate. Your recent performance has been especially strong, with a 70% win rate in your last 10 games and a notable 9-game win streak during the season.",
+    "strengths": [
+      "Your mid lane performance is exceptional, with 56 games and a 59% win rate showing it's clearly your comfort zone",
+      "You maintain consistently good KDA ratios across different roles, averaging 2.96 overall",
+      "Your ability to secure objectives is strong, with 22 flawless aces and 3 epic monster steals"
+    ],
+    "weaknesses": [
+      "Your kill participation of 38% suggests you could be more involved in team fights",
+      "Your champion pool might be too wide with 46 different champions played, potentially limiting mastery"
+    ],
+    "improvements": [
+      "Your KDA has significantly improved from 3.75 in your first 50 games to 4.39 in your last 50",
+      "Your recent 10-game performance shows remarkable improvement with a 6.21 KDA",
+      "You've developed better consistency, maintaining the same win rate while improving KDA metrics"
+    ],
+    "funFacts": [
+      "You managed to achieve 15 perfect games where you didn't die at all",
+      "Your longest win streak was 9 games - quite the hot streak!"
+    ],
+    "playstyle": "As a mid lane main with Yone as your most played champion, you seem to favor an aggressive, solo-oriented playstyle. Your high number of perfect games and improving KDA suggest you're becoming more calculated with your aggression, learning to secure kills while staying alive.",
+    "recommendations": [
+      "Try to increase your kill participation by roaming more to side lanes",
+      "Consider narrowing your champion pool to 2-3 core picks per role",
+      "Focus on translating your individual performance into more team objectives"
+    ],
+    "poem": "Mid lane warrior with blade in hand,\nYone's your pick across this land.\nNine wins in a row, you've shown your might,\nFifteen perfect games, not a death in sight.\nFrom strength to strength you've surely grown,\nMaking that middle lane your throne!"
+  },
+  "generatedAt": 1762746172,
+  "numMatches": 100,
+  "latestMatchId": "KR_7858254806"
+}
