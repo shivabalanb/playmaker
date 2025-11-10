@@ -11,6 +11,8 @@ interface SelectedMatch {
   matchId: string;
   championName: string;
   championImageUrl: string;
+  kda?: string;
+  isVictory?: boolean;
 }
 
 interface WebSocketContextType {
@@ -27,7 +29,7 @@ interface WebSocketContextType {
   stopIngestionPolling: () => void;
   sendMessage: (message: string, matchId?: string, puuid?: string, matchIds?: string[]) => void;
   clearMessages: () => void;
-  addMatchId: (matchId: string, championName?: string, championImageUrl?: string) => void;
+  addMatchId: (matchId: string, championName?: string, championImageUrl?: string, kda?: string, isVictory?: boolean) => void;
   removeMatchId: (matchId: string) => void;
   clearSelectedMatches: () => void;
 }
@@ -240,7 +242,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     setMessages([]);
   }, []);
 
-  const addMatchId = useCallback((matchId: string, championName?: string, championImageUrl?: string) => {
+  const addMatchId = useCallback((matchId: string, championName?: string, championImageUrl?: string, kda?: string, isVictory?: boolean) => {
     setSelectedMatchIds((prev) => {
       if (prev.includes(matchId)) return prev;
       return [...prev, matchId];
@@ -249,7 +251,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     if (championName && championImageUrl) {
       setSelectedMatches((prev) => {
         if (prev.some(m => m.matchId === matchId)) return prev;
-        return [...prev, { matchId, championName, championImageUrl }];
+        return [...prev, { matchId, championName, championImageUrl, kda, isVictory }];
       });
     }
   }, []);

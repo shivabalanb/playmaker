@@ -216,16 +216,58 @@ export function MatchCard({
     e.dataTransfer.setData("matchId", match.metadata.matchId);
     e.dataTransfer.setData("championName", playerData.championName);
     e.dataTransfer.setData("championImageUrl", getChampionImageUrl(playerData.championName));
+    e.dataTransfer.setData("kda", kda);
+    e.dataTransfer.setData("isVictory", isVictory.toString());
     
-    // Use champion image as drag preview
-    if (championImageRef.current) {
-      const rect = championImageRef.current.getBoundingClientRect();
-      e.dataTransfer.setDragImage(
-        championImageRef.current,
-        rect.width / 2,
-        rect.height / 2
-      );
-    }
+    // Create custom drag preview with champion icon, KDA, and win/loss background
+    const dragPreview = document.createElement("div");
+    dragPreview.style.position = "absolute";
+    dragPreview.style.top = "-9999px";
+    dragPreview.style.left = "-9999px";
+    dragPreview.style.width = "80px";
+    dragPreview.style.height = "80px";
+    dragPreview.style.borderRadius = "8px";
+    dragPreview.style.overflow = "hidden";
+    dragPreview.style.border = "2px solid rgba(255, 255, 255, 0.2)";
+    dragPreview.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.5)";
+    dragPreview.style.background = isVictory 
+      ? "linear-gradient(135deg, rgba(34, 197, 94, 0.9) 0%, rgba(22, 163, 74, 0.9) 100%)"
+      : "linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(220, 38, 38, 0.9) 100%)";
+    
+    // Champion image
+    const championImg = document.createElement("img");
+    championImg.src = getChampionImageUrl(playerData.championName);
+    championImg.style.width = "100%";
+    championImg.style.height = "100%";
+    championImg.style.objectFit = "cover";
+    championImg.style.opacity = "0.7";
+    dragPreview.appendChild(championImg);
+    
+    // KDA overlay
+    const kdaOverlay = document.createElement("div");
+    kdaOverlay.style.position = "absolute";
+    kdaOverlay.style.bottom = "0";
+    kdaOverlay.style.left = "0";
+    kdaOverlay.style.right = "0";
+    kdaOverlay.style.background = "rgba(0, 0, 0, 0.8)";
+    kdaOverlay.style.padding = "4px";
+    kdaOverlay.style.textAlign = "center";
+    kdaOverlay.style.fontSize = "11px";
+    kdaOverlay.style.fontWeight = "bold";
+    kdaOverlay.style.color = "white";
+    kdaOverlay.style.fontFamily = "system-ui, -apple-system, sans-serif";
+    kdaOverlay.textContent = kda;
+    dragPreview.appendChild(kdaOverlay);
+    
+    document.body.appendChild(dragPreview);
+    
+    // Use custom drag preview
+    e.dataTransfer.setDragImage(dragPreview, 40, 40);
+    
+    // Clean up after drag starts
+    setTimeout(() => {
+      document.body.removeChild(dragPreview);
+    }, 0);
   };
 
   return (

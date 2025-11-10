@@ -216,9 +216,18 @@ export function GlobalAIChat() {
     const matchId = e.dataTransfer.getData("matchId");
     const championName = e.dataTransfer.getData("championName");
     const championImageUrl = e.dataTransfer.getData("championImageUrl");
+    const kda = e.dataTransfer.getData("kda");
+    const isVictoryStr = e.dataTransfer.getData("isVictory");
+    const isVictory = isVictoryStr === "true";
     
     if (matchId) {
-      addMatchId(matchId, championName || undefined, championImageUrl || undefined);
+      addMatchId(
+        matchId, 
+        championName || undefined, 
+        championImageUrl || undefined,
+        kda || undefined,
+        isVictoryStr ? isVictory : undefined
+      );
     }
   };
 
@@ -482,14 +491,23 @@ export function GlobalAIChat() {
                   {selectedMatches.map((match) => (
                     <div
                       key={match.matchId}
-                      className="bg-gray-700/50 px-2 py-1 rounded-full flex items-center gap-2 text-xs text-gray-300"
+                      className={`px-2 py-1 rounded-full flex items-center gap-2 text-xs ${
+                        match.isVictory !== undefined
+                          ? match.isVictory
+                            ? "bg-green-500/20 border border-green-500/30"
+                            : "bg-red-500/20 border border-red-500/30"
+                          : "bg-gray-700/50"
+                      }`}
                     >
                       <img
                         src={match.championImageUrl}
                         alt={match.championName}
                         className="w-5 h-5 rounded"
                       />
-                      <span className="text-xs font-medium">{match.championName}</span>
+                      <span className="text-xs font-medium text-gray-200">{match.championName}</span>
+                      {match.kda && (
+                        <span className="text-xs text-gray-400 font-mono">{match.kda}</span>
+                      )}
                       <button
                         onClick={() => removeMatchId(match.matchId)}
                         className="text-gray-400 hover:text-red-400 transition-colors ml-1"
