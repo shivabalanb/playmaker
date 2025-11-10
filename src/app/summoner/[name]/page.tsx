@@ -50,6 +50,8 @@ export default function SummonerPage({
   const [error, setError] = useState("");
   const [hasMoreMatches, setHasMoreMatches] = useState(true);
   const [currentStart, setCurrentStart] = useState(0);
+  const lastLoadMoreTimeRef = useRef<number>(0);
+  const MIN_LOAD_MORE_DELAY_MS = 1000; // Minimum 1 second between load more calls
   // Match stats for AI insights (will be used for LLM context)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [matchStats, setMatchStats] = useState<Record<string, unknown> | null>(
@@ -303,40 +305,40 @@ export default function SummonerPage({
       }
 
       lastLoadMoreTimeRef.current = now;
-        setIsLoadingMore(true);
+      setIsLoadingMore(true);
 
-        try {
-          const response = await fetch(`/api/riot/match-history`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              puuid,
-              region,
-              start: currentStart.toString(),
-              count: COUNT.toString(),
-            }),
-          });
+      try {
+        const response = await fetch(`/api/riot/match-history`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            puuid,
+            region,
+            start: currentStart.toString(),
+            count: COUNT.toString(),
+          }),
+        });
 
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || "Failed to fetch match history");
-          }
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to fetch match history");
+        }
 
-          const { matches: newMatches } = await response.json();
-          const validMatches = filterValidMatches(newMatches);
+        const { matches: newMatches } = await response.json();
+        const validMatches = filterValidMatches(newMatches);
 
-      setMatches((prev) => [...prev, ...validMatches]);
-      setHasMoreMatches(validMatches.length === COUNT);
-      setCurrentStart((prev) => prev + validMatches.length);
-    } catch (err) {
-      console.error(`[Summoner Page] ❌ Error loading more matches:`, err);
-      setError(err instanceof Error ? err.message : "Failed to load matches");
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
+        setMatches((prev) => [...prev, ...validMatches]);
+        setHasMoreMatches(validMatches.length === COUNT);
+        setCurrentStart((prev) => prev + validMatches.length);
+      } catch (err) {
+        console.error(`[Summoner Page] ❌ Error loading more matches:`, err);
+        setError(err instanceof Error ? err.message : "Failed to load matches");
+      } finally {
+        setIsLoadingMore(false);
+      }
+    };
 
     // Use Intersection Observer for better reliability
     const observer = new IntersectionObserver(
@@ -416,24 +418,24 @@ export default function SummonerPage({
             .then((data) => {
               const validMatches = filterValidMatches(data.matches);
 
-          setMatches((prev) => {
-            const existingIds = new Set(
-              prev.map((m) => m.metadata?.matchId).filter(Boolean)
-            );
-            const uniqueNewMatches = validMatches.filter(
+              setMatches((prev) => {
+                const existingIds = new Set(
+                  prev.map((m) => m.metadata?.matchId).filter(Boolean)
+                );
+                const uniqueNewMatches = validMatches.filter(
                   (m) =>
                     m.metadata?.matchId && !existingIds.has(m.metadata.matchId)
-            );
-            return [...prev, ...uniqueNewMatches];
-          });
-          setHasMoreMatches(validMatches.length === COUNT);
-          setCurrentStart((prev) => prev + validMatches.length);
+                );
+                return [...prev, ...uniqueNewMatches];
+              });
+              setHasMoreMatches(validMatches.length === COUNT);
+              setCurrentStart((prev) => prev + validMatches.length);
             })
             .catch((err) => {
               console.error("Failed to load more matches:", err);
             })
             .finally(() => {
-          setIsLoadingMore(false);
+              setIsLoadingMore(false);
             });
         }
       }, 300);
@@ -442,6 +444,63 @@ export default function SummonerPage({
     checkAndLoad();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matches.length]); // Only run when matches change to check if we need to load more
+
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMoreMatches || !puuid) return;
+
+    const now = Date.now();
+    const timeSinceLastLoad = now - lastLoadMoreTimeRef.current;
+
+    if (
+      lastLoadMoreTimeRef.current !== 0 &&
+      timeSinceLastLoad < MIN_LOAD_MORE_DELAY_MS
+    ) {
+      return;
+    }
+
+    lastLoadMoreTimeRef.current = now;
+    setIsLoadingMore(true);
+
+    try {
+      const response = await fetch(`/api/riot/match-history`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          puuid,
+          region,
+          start: currentStart.toString(),
+          count: COUNT.toString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch match history");
+      }
+
+      const { matches: newMatches } = await response.json();
+      const validMatches = filterValidMatches(newMatches);
+
+      setMatches((prev) => {
+        const existingIds = new Set(
+          prev.map((m) => m.metadata?.matchId).filter(Boolean)
+        );
+        const uniqueNewMatches = validMatches.filter(
+          (m) => m.metadata?.matchId && !existingIds.has(m.metadata.matchId)
+        );
+        return [...prev, ...uniqueNewMatches];
+      });
+      setHasMoreMatches(validMatches.length === COUNT);
+      setCurrentStart((prev) => prev + validMatches.length);
+    } catch (err) {
+      console.error("Failed to load more matches:", err);
+      setError(err instanceof Error ? err.message : "Failed to load matches");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -660,8 +719,18 @@ export default function SummonerPage({
                   ) : (
                     <>
                       Show More Matches
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
                     </>
                   )}
