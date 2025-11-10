@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ComparisonView } from "./components/ComparisonView";
 import { LoadingState } from "./components/LoadingState";
@@ -23,7 +23,7 @@ interface ComparisonData {
   };
 }
 
-export default function ComparePage() {
+function ComparePageContent() {
   const searchParams = useSearchParams();
   const puuid1 = searchParams.get("puuid1");
   const puuid2 = searchParams.get("puuid2");
@@ -186,4 +186,12 @@ export default function ComparePage() {
   }
 
   return <ComparisonView data={comparisonData} region={region} />;
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense fallback={<LoadingState message="Loading..." />}>
+      <ComparePageContent />
+    </Suspense>
+  );
 }

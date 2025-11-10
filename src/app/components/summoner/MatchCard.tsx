@@ -576,7 +576,7 @@ export function MatchCard({
               
               // Navigate to match detail page
               // Only add review=true if ingestion is complete
-              const url = `/match/${match.metadata.matchId}?region=${region}${puuid ? `&puuid=${encodeURIComponent(puuid)}` : ""}${ingestionComplete ? '&review=true' : ''}`;
+              const url = `/match/${match.metadata.matchId}?region=${region}${puuid ? `&puuid=${encodeURIComponent(puuid)}` : ""}`;
               router.push(url);
             }}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all cursor-pointer bg-gray-700/30 hover:bg-gray-600/40 z-20"

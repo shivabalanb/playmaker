@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { TitleSlide } from "./components/TitleSlide";
@@ -210,7 +210,7 @@ interface RecapData {
   platform?: string;
 }
 
-export default function SeasonRecapPage() {
+function SeasonRecapPageContent() {
   const searchParams = useSearchParams();
   const puuid = searchParams.get("puuid");
   const region = searchParams.get("region");
@@ -452,12 +452,13 @@ function buildSlides(
   // Slide 2 & 3: Core Performance (2 slides)
   if (corePerformance && Object.keys(corePerformance).length > 0) {
     // Determine most active hour of day from time patterns, if present
-    const gamesByTime = (stats as any)?.timePatterns?.gamesByTimeOfDay as
-      | Record<string, number>
+    const gamesByTime = (stats as Record<string, unknown>)?.timePatterns as
+      | { gamesByTimeOfDay?: Record<string, number> }
       | undefined;
+    const gamesByTimeOfDay = gamesByTime?.gamesByTimeOfDay;
     let mostActiveHour: number | undefined = undefined;
-    if (gamesByTime && Object.keys(gamesByTime).length > 0) {
-      const top = Object.entries(gamesByTime).sort(
+    if (gamesByTimeOfDay && Object.keys(gamesByTimeOfDay).length > 0) {
+      const top = Object.entries(gamesByTimeOfDay).sort(
         (a, b) => (b[1] as number) - (a[1] as number)
       )[0];
       if (top) mostActiveHour = Number(top[0]);
@@ -553,7 +554,7 @@ function buildSlides(
         key="playstyle"
         playstyle={{ description: insights.playstyle }}
         strengths={insights.strengths}
-        improvements={insights.improvements || insights.recommendations}
+        improvements={insights.recommendations}
       />
     );
   }
@@ -575,4 +576,12 @@ function buildSlides(
   );
 
   return slides;
+}
+
+export default function SeasonRecapPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <SeasonRecapPageContent />
+    </Suspense>
+  );
 }

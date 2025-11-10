@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -25,7 +25,7 @@ let summonerSpellCache: Map<number, { image: { full: string } }> | null = null;
 let runeCache: Map<number, { icon: string }> | null = null;
 let runeStyleCache: Map<number, { icon: string }> | null = null;
 
-export default function MatchDetailPage() {
+function MatchDetailPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const matchId = params.matchId as string;
@@ -41,17 +41,26 @@ export default function MatchDetailPage() {
   const [selectedPlayerPuuid, setSelectedPlayerPuuid] = useState<string | null>(
     puuid || null
   );
-  const [highlightedParticipants, setHighlightedParticipants] = useState<number[]>([]);
-  const [highlightedBuilding, setHighlightedBuilding] = useState<{ name: string; type: 'flash-out' | 'flash-in-out' } | null>(null);
-  const [highlightedMonster, setHighlightedMonster] = useState<{ position: { x: number; y: number }; monsterType: string; teamId: number } | null>(null);
-  
+  const [highlightedParticipants, setHighlightedParticipants] = useState<
+    number[]
+  >([]);
+  const [highlightedBuilding, setHighlightedBuilding] = useState<{
+    name: string;
+    type: "flash-out" | "flash-in-out";
+  } | null>(null);
+  const [highlightedMonster, setHighlightedMonster] = useState<{
+    position: { x: number; y: number };
+    monsterType: string;
+    teamId: number;
+  } | null>(null);
+
   // Story generation state
   const [showStoryPopup, setShowStoryPopup] = useState(false);
   const [storyContent, setStoryContent] = useState("");
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const storyContainerRef = useRef<HTMLDivElement | null>(null);
-  
+
   // Get ingestion status from WebSocket context
   const { isIngesting, ingestionStatus } = useWebSocket();
 
@@ -187,57 +196,62 @@ export default function MatchDetailPage() {
   // Story generation function - no retry logic
   const generateStory = () => {
     if (!puuid || !matchId || storyContent) return; // Don't regenerate if story already exists
-    
+
     // Prevent multiple simultaneous requests
     if (wsRef.current) {
-      console.log('[Story] WebSocket already exists, skipping');
+      console.log("[Story] WebSocket already exists, skipping");
       return;
     }
-    
+
     setIsGeneratingStory(true);
 
     // Connect to websocket
-    const ws = new WebSocket(process.env.NEXT_PUBLIC_WEBSOCKET_ENDPOINT || 'wss://ot204y8uvd.execute-api.us-east-2.amazonaws.com/test/');
+    const ws = new WebSocket(
+      process.env.NEXT_PUBLIC_WEBSOCKET_ENDPOINT ||
+        "wss://ot204y8uvd.execute-api.us-east-2.amazonaws.com/test/"
+    );
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('[Story] WebSocket connected');
-      ws.send(JSON.stringify({
-        match_id: matchId,
-        puuid: puuid,
-        action: "generateStory"
-      }));
+      console.log("[Story] WebSocket connected");
+      ws.send(
+        JSON.stringify({
+          match_id: matchId,
+          puuid: puuid,
+          action: "generateStory",
+        })
+      );
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "chunk" && data.content) {
-          setStoryContent(prev => prev + data.content);
+          setStoryContent((prev) => prev + data.content);
         } else if (data.type === "complete") {
           setIsGeneratingStory(false);
           ws.close();
           wsRef.current = null;
         } else if (data.type === "error") {
-          console.error('[Story] Error:', data.message);
+          console.error("[Story] Error:", data.message);
           setIsGeneratingStory(false);
           ws.close();
           wsRef.current = null;
         }
       } catch (err) {
-        console.error('[Story] Failed to parse message:', err);
+        console.error("[Story] Failed to parse message:", err);
       }
     };
 
     ws.onerror = (error) => {
-      console.error('[Story] WebSocket error:', error);
+      console.error("[Story] WebSocket error:", error);
       setIsGeneratingStory(false);
       ws.close();
       wsRef.current = null;
     };
 
     ws.onclose = (event) => {
-      console.log('[Story] WebSocket closed', event.code, event.reason);
+      console.log("[Story] WebSocket closed", event.code, event.reason);
       setIsGeneratingStory(false);
       wsRef.current = null;
     };
@@ -246,9 +260,18 @@ export default function MatchDetailPage() {
   // Auto-generate story if review=true in URL AND ingestion is complete
   useEffect(() => {
     const shouldReview = searchParams.get("review") === "true";
-    const ingestionComplete = !isIngesting && (ingestionStatus === 'COMPLETE' || ingestionStatus === null);
-    
-    if (shouldReview && puuid && matchId && !storyContent && !isGeneratingStory && ingestionComplete) {
+    const ingestionComplete =
+      !isIngesting &&
+      (ingestionStatus === "COMPLETE" || ingestionStatus === null);
+
+    if (
+      shouldReview &&
+      puuid &&
+      matchId &&
+      !storyContent &&
+      !isGeneratingStory &&
+      ingestionComplete
+    ) {
       setShowStoryPopup(true);
       generateStory();
     }
@@ -258,20 +281,20 @@ export default function MatchDetailPage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!timelineData?.info?.frames) return;
-      
+
       const maxFrame = timelineData.info.frames.length - 1;
-      
-      if (e.key === 'ArrowLeft') {
+
+      if (e.key === "ArrowLeft") {
         e.preventDefault();
-        setCurrentFrame(prev => Math.max(0, prev - 1));
-      } else if (e.key === 'ArrowRight') {
+        setCurrentFrame((prev) => Math.max(0, prev - 1));
+      } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        setCurrentFrame(prev => Math.min(maxFrame, prev + 1));
+        setCurrentFrame((prev) => Math.min(maxFrame, prev + 1));
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [timelineData]);
 
   // Auto-scroll as story content updates
@@ -282,7 +305,7 @@ export default function MatchDetailPage() {
       requestAnimationFrame(() => {
         container.scrollTo({
           top: container.scrollHeight,
-          behavior: 'smooth'
+          behavior: "smooth",
         });
       });
     }
@@ -364,14 +387,21 @@ export default function MatchDetailPage() {
   const team200Won = team200[0]?.win || false;
 
   // Get team objectives
-  const team100Objectives = matchData.info.teams?.find((t) => t.teamId === 100)?.objectives;
-  const team200Objectives = matchData.info.teams?.find((t) => t.teamId === 200)?.objectives;
+  const team100Objectives = matchData.info.teams?.find(
+    (t) => t.teamId === 100
+  )?.objectives;
+  const team200Objectives = matchData.info.teams?.find(
+    (t) => t.teamId === 200
+  )?.objectives;
 
   // Get the player info for back button
-  const currentPlayer = puuid ? matchData.info.participants.find((p) => p.puuid === puuid) : null;
-  const backUrl = currentPlayer && currentPlayer.riotIdGameName && currentPlayer.riotIdTagline
-    ? `/summoner/${currentPlayer.riotIdGameName}-${currentPlayer.riotIdTagline}?puuid=${puuid}&region=${region}`
-    : "/";
+  const currentPlayer = puuid
+    ? matchData.info.participants.find((p) => p.puuid === puuid)
+    : null;
+  const backUrl =
+    currentPlayer && currentPlayer.riotIdGameName && currentPlayer.riotIdTagline
+      ? `/summoner/${currentPlayer.riotIdGameName}-${currentPlayer.riotIdTagline}?puuid=${puuid}&region=${region}`
+      : "/";
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -382,7 +412,7 @@ export default function MatchDetailPage() {
           alt="Background"
           fill
           className="object-cover"
-          style={{ filter: 'blur(1px)' }}
+          style={{ filter: "blur(1px)" }}
           priority
           quality={75}
           sizes="100vw"
@@ -390,503 +420,622 @@ export default function MatchDetailPage() {
       </div>
       {/* Dark Overlay */}
       <div className="fixed inset-0 z-[1] bg-black/70" />
-      
+
       {/* Content Container */}
       <div className="relative z-10">
-      {/* Back Button */}
-      <Link
-        href={backUrl}
-        className="fixed top-4 left-4 w-10 h-10 rounded-full bg-black/80 hover:bg-black flex items-center justify-center transition-colors border border-[#2a3544]/50 z-50"
-        aria-label="Back to Summoner"
-      >
-        <svg
-          className="w-5 h-5 text-white"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+        {/* Back Button */}
+        <Link
+          href={backUrl}
+          className="fixed top-4 left-4 w-10 h-10 rounded-full bg-black/80 hover:bg-black flex items-center justify-center transition-colors border border-[#2a3544]/50 z-50"
+          aria-label="Back to Summoner"
         >
-          <path d="M15 19l-7-7 7-7" />
-        </svg>
-      </Link>
+          <svg
+            className="w-5 h-5 text-white"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path d="M15 19l-7-7 7-7" />
+          </svg>
+        </Link>
 
-      {/* View Story Button */}
-      {puuid && (
-        <button
-          onClick={() => {
-            const ingestionComplete = !isIngesting && (ingestionStatus === 'COMPLETE' || ingestionStatus === null);
-            if (!ingestionComplete) return;
-            
-            setShowStoryPopup(true);
-            if (!storyContent && !isGeneratingStory) {
-              generateStory();
+        {/* View Story Button */}
+        {puuid && (
+          <button
+            onClick={() => {
+              const ingestionComplete =
+                !isIngesting &&
+                (ingestionStatus === "COMPLETE" || ingestionStatus === null);
+              if (!ingestionComplete) return;
+
+              setShowStoryPopup(true);
+              if (!storyContent && !isGeneratingStory) {
+                generateStory();
+              }
+            }}
+            disabled={isIngesting || (isGeneratingStory && !storyContent)}
+            className="fixed top-4 left-16 px-4 h-10 rounded-full bg-blue-600/80 hover:bg-blue-600 disabled:bg-gray-600/50 disabled:cursor-not-allowed flex items-center justify-center transition-colors border border-blue-500/50 z-50 text-white text-sm font-semibold"
+            aria-label="View Match Story"
+            title={
+              isIngesting ? "Processing match data..." : "View Match Story"
             }
-          }}
-          disabled={isIngesting || (isGeneratingStory && !storyContent)}
-          className="fixed top-4 left-16 px-4 h-10 rounded-full bg-blue-600/80 hover:bg-blue-600 disabled:bg-gray-600/50 disabled:cursor-not-allowed flex items-center justify-center transition-colors border border-blue-500/50 z-50 text-white text-sm font-semibold"
-          aria-label="View Match Story"
-          title={isIngesting ? "Processing match data..." : "View Match Story"}
-        >
-          {isIngesting ? (
-            <>
-              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Processing...
-            </>
-          ) : isGeneratingStory && !storyContent ? (
-            "Generating..."
-          ) : (
-            "View Story"
-          )}
-        </button>
-      )}
+          >
+            {isIngesting ? (
+              <>
+                <svg
+                  className="animate-spin h-4 w-4 mr-2"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Processing...
+              </>
+            ) : isGeneratingStory && !storyContent ? (
+              "Generating..."
+            ) : (
+              "View Story"
+            )}
+          </button>
+        )}
 
-      {/* Header with Logo */}
-      <header className="pt-8 pb-6">
-        <div className="container mx-auto px-4 text-center">
-          <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
-            <h1 className="text-4xl font-bold text-white mb-1 tracking-tight">
-              PLAYMAKER
-            </h1>
-            <p className="text-gray-400 text-xs tracking-wider">
-              LEAGUE OF LEGENDS STATS
-            </p>
-          </Link>
-        </div>
-      </header>
+        {/* Header with Logo */}
+        <header className="pt-8 pb-6">
+          <div className="container mx-auto px-4 text-center">
+            <Link
+              href="/"
+              className="inline-block hover:opacity-80 transition-opacity"
+            >
+              <h1 className="text-4xl font-bold text-white mb-1 tracking-tight">
+                PLAYMAKER
+              </h1>
+              <p className="text-gray-400 text-xs tracking-wider">
+                LEAGUE OF LEGENDS STATS
+              </p>
+            </Link>
+          </div>
+        </header>
 
-      {/* Main Content - Side by Side Layout */}
-      <div className="container mx-auto max-w-[1600px] px-2 py-4 ml-20">
-        <div className="flex gap-6 items-start">
-          {/* Left Side - Scoreboard */}
-          <div className="flex-1 min-w-0 max-w-[835px]">
-            {/* Team 100 (Blue Side) */}
-            <div className="mb-4.5">
-              {/* Team Header Row with Victory/Defeat, Game Info, and Column Labels */}
-              <div className="mb-0.5">
-                <div className="flex items-center gap-1.5 px-1.5 pb-0.5">
-                  {/* Victory/Defeat + Game Info takes up the player info space */}
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-[220px] flex-shrink-0 flex items-center gap-1.5 -mt-0.5">
-                      <div
-                        className={`text-xs font-bold ${
-                          team100Won ? "text-green-400" : "text-red-400"
-                        }`}
-                      >
-                        {team100Won ? "Victory" : "Defeat"}
+        {/* Main Content - Side by Side Layout */}
+        <div className="container mx-auto max-w-[1600px] px-2 py-4 ml-20">
+          <div className="flex gap-6 items-start">
+            {/* Left Side - Scoreboard */}
+            <div className="flex-1 min-w-0 max-w-[835px]">
+              {/* Team 100 (Blue Side) */}
+              <div className="mb-4.5">
+                {/* Team Header Row with Victory/Defeat, Game Info, and Column Labels */}
+                <div className="mb-0.5">
+                  <div className="flex items-center gap-1.5 px-1.5 pb-0.5">
+                    {/* Victory/Defeat + Game Info takes up the player info space */}
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-[220px] flex-shrink-0 flex items-center gap-1.5 -mt-0.5">
+                        <div
+                          className={`text-xs font-bold ${
+                            team100Won ? "text-green-400" : "text-red-400"
+                          }`}
+                        >
+                          {team100Won ? "Victory" : "Defeat"}
+                        </div>
+                        <span className="text-[10px] text-gray-400 whitespace-nowrap mt-1">
+                          {getQueueType(matchData.info.queueId)}
+                        </span>
+                        <span className="text-[10px] text-gray-400 mt-0.75">
+                          •
+                        </span>
+                        <span className="text-[10px] text-gray-400 mt-1.25 whitespace-nowrap">
+                          {formatDuration(matchData.info.gameDuration)}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-gray-400 whitespace-nowrap mt-1">
-                        {getQueueType(matchData.info.queueId)}
-                      </span>
-                      <span className="text-[10px] text-gray-400 mt-0.75">•</span>
-                      <span className="text-[10px] text-gray-400 mt-1.25 whitespace-nowrap">
-                        {formatDuration(matchData.info.gameDuration)}
-                      </span>
+                      <div className="w-4 flex-shrink-0"></div>
+                      <div className="w-5 flex-shrink-0"></div>
                     </div>
-                    <div className="w-4 flex-shrink-0"></div>
-                    <div className="w-5 flex-shrink-0"></div>
-                  </div>
-                  
 
-                  
-                  {/* Objectives - Always reserve space */}
-                  <div className="flex items-center gap-0 -ml-[80px] mt-1 w-[130px] flex-shrink-0">
-                    {team100Objectives && (
-                      <>
-                        {team100Objectives.tower.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Towers">
-                            <Image
-                              src="/tower-100.png"
-                              alt="Tower"
-                              width={12}
-                              height={12}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team100Objectives.tower.kills}</span>
-                          </div>
-                        )}
-                        {team100Objectives.horde.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Grubs">
-                            <Image
-                              src="/grub-blue.png"
-                              alt="Grubs"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team100Objectives.horde.kills}</span>
-                          </div>
-                        )}
-                        {team100Objectives.riftHerald.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Rift Herald">
-                            <Image
-                              src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/herald-100.png"
-                              alt="Herald"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team100Objectives.riftHerald.kills}</span>
-                          </div>
-                        )}
-                        {team100Objectives.dragon.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Dragons">
-                            <Image
-                              src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/dragon-100.png"
-                              alt="Dragon"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team100Objectives.dragon.kills}</span>
-                          </div>
-                        )}
-                        {team100Objectives.atakhan && team100Objectives.atakhan.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Atakhan">
-                            <Image
-                              src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/vilemaw-100.png"
-                              alt="Atakhan"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team100Objectives.atakhan.kills}</span>
-                          </div>
-                        )}
-                        {team100Objectives.baron.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Baron">
-                            <Image
-                              src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/baron-100.png"
-                              alt="Baron"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team100Objectives.baron.kills}</span>
-                          </div>
-                        )}
-                        {team100Objectives.dragon.kills >= 5 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Elder Dragon">
-                            <Image
-                              src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/elder-100.png"
-                              alt="Elder Dragon"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{Math.max(0, team100Objectives.dragon.kills - 4)}</span>
-                          </div>
-                        )}
-                      </>
-                    )}
+                    {/* Objectives - Always reserve space */}
+                    <div className="flex items-center gap-0 -ml-[80px] mt-1 w-[130px] flex-shrink-0">
+                      {team100Objectives && (
+                        <>
+                          {team100Objectives.tower.kills > 0 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Towers"
+                            >
+                              <Image
+                                src="/tower-100.png"
+                                alt="Tower"
+                                width={12}
+                                height={12}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {team100Objectives.tower.kills}
+                              </span>
+                            </div>
+                          )}
+                          {team100Objectives.horde.kills > 0 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Grubs"
+                            >
+                              <Image
+                                src="/grub-blue.png"
+                                alt="Grubs"
+                                width={14}
+                                height={14}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {team100Objectives.horde.kills}
+                              </span>
+                            </div>
+                          )}
+                          {team100Objectives.riftHerald.kills > 0 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Rift Herald"
+                            >
+                              <Image
+                                src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/herald-100.png"
+                                alt="Herald"
+                                width={14}
+                                height={14}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {team100Objectives.riftHerald.kills}
+                              </span>
+                            </div>
+                          )}
+                          {team100Objectives.dragon.kills > 0 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Dragons"
+                            >
+                              <Image
+                                src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/dragon-100.png"
+                                alt="Dragon"
+                                width={14}
+                                height={14}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {team100Objectives.dragon.kills}
+                              </span>
+                            </div>
+                          )}
+                          {team100Objectives.atakhan &&
+                            team100Objectives.atakhan.kills > 0 && (
+                              <div
+                                className="flex items-center gap-0 group relative mr-0.5"
+                                title="Atakhan"
+                              >
+                                <Image
+                                  src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/vilemaw-100.png"
+                                  alt="Atakhan"
+                                  width={14}
+                                  height={14}
+                                  className="object-contain"
+                                  unoptimized
+                                />
+                                <span className="text-[9px] text-gray-300 font-semibold">
+                                  {team100Objectives.atakhan.kills}
+                                </span>
+                              </div>
+                            )}
+                          {team100Objectives.baron.kills > 0 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Baron"
+                            >
+                              <Image
+                                src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/baron-100.png"
+                                alt="Baron"
+                                width={14}
+                                height={14}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {team100Objectives.baron.kills}
+                              </span>
+                            </div>
+                          )}
+                          {team100Objectives.dragon.kills >= 5 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Elder Dragon"
+                            >
+                              <Image
+                                src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/elder-100.png"
+                                alt="Elder Dragon"
+                                width={14}
+                                height={14}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {Math.max(
+                                  0,
+                                  team100Objectives.dragon.kills - 4
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex gap-1 mt-1">
+                      <div className="text-center w-[47px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">
+                        KDA
+                      </div>
+                      <div className="text-center w-[19px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">
+                        KP
+                      </div>
+                      <div className="text-center w-[42px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">
+                        CS
+                      </div>
+                      <div className="text-center w-[37px] ml-2.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">
+                        GOLD
+                      </div>
+                      <div className="text-center w-[130px] ml-10 flex-shrink-0 text-[9px] text-gray-500 font-semibold">
+                        DAMAGE
+                      </div>
+                      <div className="w-[51px] flex-shrink-0"></div>
+                    </div>
                   </div>
-                  
-                <div className="flex gap-1 mt-1">
-                  <div className="text-center w-[47px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">KDA</div>
-                  <div className="text-center w-[19px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">KP</div>
-                  <div className="text-center w-[42px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">CS</div>
-                  <div className="text-center w-[37px] ml-2.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">GOLD</div>
-                  <div className="text-center w-[130px] ml-10 flex-shrink-0 text-[9px] text-gray-500 font-semibold">DAMAGE</div>
-                  <div className="w-[51px] flex-shrink-0"></div>
                 </div>
+
+                <div className="space-y-0.5">
+                  {sortPlayersByRole(
+                    allPlayerScores.filter((p) => p.teamId === 100)
+                  ).map((player) => (
+                    <PlayerRow
+                      key={player.puuid}
+                      player={player}
+                      matchData={matchData}
+                      region={region}
+                      summonerSpellCache={summonerSpellCache}
+                      runeCache={runeCache}
+                      runeStyleCache={runeStyleCache}
+                      isSelected={selectedPlayerPuuid === player.puuid}
+                      onClick={() => setSelectedPlayerPuuid(player.puuid)}
+                    />
+                  ))}
                 </div>
               </div>
-              
-              <div className="space-y-0.5">
-                {sortPlayersByRole(
-                  allPlayerScores.filter((p) => p.teamId === 100)
-                ).map((player) => (
-                  <PlayerRow
-                    key={player.puuid}
-                    player={player}
+
+              {/* Team 200 (Red Side) */}
+              <div>
+                {/* Team Header Row with Victory/Defeat and Column Labels */}
+                <div className="mb-0.5">
+                  <div className="flex items-center gap-1.5 px-1.5 pb-0.5">
+                    {/* Victory/Defeat takes up the player info space */}
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-[220px] flex-shrink-0 -mt-0.5">
+                        <div
+                          className={`text-xs font-bold ${
+                            team200Won ? "text-green-400" : "text-red-400"
+                          }`}
+                        >
+                          {team200Won ? "Victory" : "Defeat"}
+                        </div>
+                      </div>
+                      <div className="w-4 flex-shrink-0"></div>
+                      <div className="w-5 flex-shrink-0"></div>
+                    </div>
+
+                    {/* Objectives - Always reserve space */}
+                    <div className="flex items-center gap-0 -ml-[80px] mt-1 w-[130px] flex-shrink-0">
+                      {team200Objectives && (
+                        <>
+                          {team200Objectives.tower.kills > 0 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Towers"
+                            >
+                              <Image
+                                src="/tower-200.png"
+                                alt="Tower"
+                                width={12}
+                                height={12}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {team200Objectives.tower.kills}
+                              </span>
+                            </div>
+                          )}
+                          {team200Objectives.horde.kills > 0 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Grubs"
+                            >
+                              <Image
+                                src="/grub-red.png"
+                                alt="Grubs"
+                                width={14}
+                                height={14}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {team200Objectives.horde.kills}
+                              </span>
+                            </div>
+                          )}
+                          {team200Objectives.riftHerald.kills > 0 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Rift Herald"
+                            >
+                              <Image
+                                src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/herald-200.png"
+                                alt="Herald"
+                                width={14}
+                                height={14}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {team200Objectives.riftHerald.kills}
+                              </span>
+                            </div>
+                          )}
+                          {team200Objectives.dragon.kills > 0 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Dragons"
+                            >
+                              <Image
+                                src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/dragon-200.png"
+                                alt="Dragon"
+                                width={14}
+                                height={14}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {team200Objectives.dragon.kills}
+                              </span>
+                            </div>
+                          )}
+                          {team200Objectives.atakhan &&
+                            team200Objectives.atakhan.kills > 0 && (
+                              <div
+                                className="flex items-center gap-0 group relative mr-0.5"
+                                title="Atakhan"
+                              >
+                                <Image
+                                  src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/vilemaw-200.png"
+                                  alt="Atakhan"
+                                  width={14}
+                                  height={14}
+                                  className="object-contain"
+                                  unoptimized
+                                />
+                                <span className="text-[9px] text-gray-300 font-semibold">
+                                  {team200Objectives.atakhan.kills}
+                                </span>
+                              </div>
+                            )}
+                          {team200Objectives.baron.kills > 0 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Baron"
+                            >
+                              <Image
+                                src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/baron-200.png"
+                                alt="Baron"
+                                width={14}
+                                height={14}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {team200Objectives.baron.kills}
+                              </span>
+                            </div>
+                          )}
+                          {team200Objectives.dragon.kills >= 5 && (
+                            <div
+                              className="flex items-center gap-0 group relative mr-0.5"
+                              title="Elder Dragon"
+                            >
+                              <Image
+                                src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/elder-200.png"
+                                alt="Elder Dragon"
+                                width={14}
+                                height={14}
+                                className="object-contain"
+                                unoptimized
+                              />
+                              <span className="text-[9px] text-gray-300 font-semibold">
+                                {Math.max(
+                                  0,
+                                  team200Objectives.dragon.kills - 4
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Stats Column Labels */}
+                    <div className="flex gap-1 mt-1">
+                      <div className="text-center w-[47px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">
+                        KDA
+                      </div>
+                      <div className="text-center w-[19px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">
+                        KP
+                      </div>
+                      <div className="text-center w-[42px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">
+                        CS
+                      </div>
+                      <div className="text-center w-[37px] ml-2.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">
+                        GOLD
+                      </div>
+                      <div className="text-center w-[130px] flex-shrink-0 text-[9px] text-gray-500 ml-10 font-semibold">
+                        DAMAGE
+                      </div>
+                      <div className="w-[51px] flex-shrink-0"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-0.5">
+                  {sortPlayersByRole(
+                    allPlayerScores.filter((p) => p.teamId === 200)
+                  ).map((player) => (
+                    <PlayerRow
+                      key={player.puuid}
+                      player={player}
+                      matchData={matchData}
+                      region={region}
+                      summonerSpellCache={summonerSpellCache}
+                      runeCache={runeCache}
+                      runeStyleCache={runeStyleCache}
+                      isSelected={selectedPlayerPuuid === player.puuid}
+                      onClick={() => setSelectedPlayerPuuid(player.puuid)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Player Purchase Timeline - Now under scoreboard */}
+              {selectedPlayerPuuid && timelineData && matchData && (
+                <div className="mt-2">
+                  <PlayerPurchaseTimeline
+                    selectedPlayerPuuid={selectedPlayerPuuid}
+                    timelineData={timelineData}
                     matchData={matchData}
-                    region={region}
-                    summonerSpellCache={summonerSpellCache}
-                    runeCache={runeCache}
-                    runeStyleCache={runeStyleCache}
-                    isSelected={selectedPlayerPuuid === player.puuid}
-                    onClick={() => setSelectedPlayerPuuid(player.puuid)}
                   />
-                ))}
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Team 200 (Red Side) */}
-            <div>
-              {/* Team Header Row with Victory/Defeat and Column Labels */}
-              <div className="mb-0.5">
-                <div className="flex items-center gap-1.5 px-1.5 pb-0.5">
-                  {/* Victory/Defeat takes up the player info space */}
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-[220px] flex-shrink-0 -mt-0.5">
-                      <div
-                        className={`text-xs font-bold ${
-                          team200Won ? "text-green-400" : "text-red-400"
-                        }`}
-                      >
-                        {team200Won ? "Victory" : "Defeat"}
-                      </div>
-                    </div>
-                    <div className="w-4 flex-shrink-0"></div>
-                    <div className="w-5 flex-shrink-0"></div>
-                  </div>
-                  
-
-                  
-                  {/* Objectives - Always reserve space */}
-                  <div className="flex items-center gap-0 -ml-[80px] mt-1 w-[130px] flex-shrink-0">
-                    {team200Objectives && (
-                      <>
-                        {team200Objectives.tower.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Towers">
-                            <Image
-                              src="/tower-200.png"
-                              alt="Tower"
-                              width={12}
-                              height={12}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team200Objectives.tower.kills}</span>
-                          </div>
-                        )}
-                        {team200Objectives.horde.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Grubs">
-                            <Image
-                              src="/grub-red.png"
-                              alt="Grubs"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team200Objectives.horde.kills}</span>
-                          </div>
-                        )}
-                        {team200Objectives.riftHerald.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Rift Herald">
-                            <Image
-                              src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/herald-200.png"
-                              alt="Herald"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team200Objectives.riftHerald.kills}</span>
-                          </div>
-                        )}
-                        {team200Objectives.dragon.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Dragons">
-                            <Image
-                              src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/dragon-200.png"
-                              alt="Dragon"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team200Objectives.dragon.kills}</span>
-                          </div>
-                        )}
-                        {team200Objectives.atakhan && team200Objectives.atakhan.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Atakhan">
-                            <Image
-                              src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/vilemaw-200.png"
-                              alt="Atakhan"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team200Objectives.atakhan.kills}</span>
-                          </div>
-                        )}
-                        {team200Objectives.baron.kills > 0 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Baron">
-                            <Image
-                              src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/baron-200.png"
-                              alt="Baron"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{team200Objectives.baron.kills}</span>
-                          </div>
-                        )}
-                        {team200Objectives.dragon.kills >= 5 && (
-                          <div className="flex items-center gap-0 group relative mr-0.5" title="Elder Dragon">
-                            <Image
-                              src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/elder-200.png"
-                              alt="Elder Dragon"
-                              width={14}
-                              height={14}
-                              className="object-contain"
-                              unoptimized
-                            />
-                            <span className="text-[9px] text-gray-300 font-semibold">{Math.max(0, team200Objectives.dragon.kills - 4)}</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  
-                  {/* Stats Column Labels */}
-                <div className="flex gap-1 mt-1">
-                  <div className="text-center w-[47px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">KDA</div>
-                  <div className="text-center w-[19px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">KP</div>
-                  <div className="text-center w-[42px] ml-3.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">CS</div>
-                  <div className="text-center w-[37px] ml-2.5 flex-shrink-0 text-[9px] text-gray-500 font-semibold">GOLD</div>
-                  <div className="text-center w-[130px] flex-shrink-0 text-[9px] text-gray-500 ml-10 font-semibold">DAMAGE</div>
-                  <div className="w-[51px] flex-shrink-0">
-                </div>
-
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-0.5">
-                {sortPlayersByRole(
-                  allPlayerScores.filter((p) => p.teamId === 200)
-                ).map((player) => (
-                  <PlayerRow
-                    key={player.puuid}
-                    player={player}
-                    matchData={matchData}
-                    region={region}
-                    summonerSpellCache={summonerSpellCache}
-                    runeCache={runeCache}
-                    runeStyleCache={runeStyleCache}
-                    isSelected={selectedPlayerPuuid === player.puuid}
-                    onClick={() => setSelectedPlayerPuuid(player.puuid)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Player Purchase Timeline - Now under scoreboard */}
-            {selectedPlayerPuuid && timelineData && matchData && (
-              <div className="mt-2">
-                <PlayerPurchaseTimeline
-                  selectedPlayerPuuid={selectedPlayerPuuid}
+            {/* Right Side - Map Timeline and Event Timeline */}
+            {timelineData && matchData && matchData.info.queueId !== 450 && (
+              <div className="w-[480px] flex-shrink-0 mt-4 space-y-4">
+                <MapTimeline
                   timelineData={timelineData}
                   matchData={matchData}
+                  currentFrame={currentFrame}
+                  setCurrentFrame={setCurrentFrame}
+                  highlightedParticipants={highlightedParticipants}
+                  highlightedBuilding={highlightedBuilding}
+                  highlightedMonster={highlightedMonster}
+                />
+
+                {/* Event Timeline */}
+                <EventTimeline
+                  timelineData={timelineData}
+                  matchData={matchData}
+                  setCurrentFrame={setCurrentFrame}
+                  setHighlightedParticipants={setHighlightedParticipants}
+                  setHighlightedBuilding={setHighlightedBuilding}
+                  setHighlightedMonster={setHighlightedMonster}
+                  onEventClick={(position) => {
+                    // TODO: Highlight position on map
+                    console.log("Event position:", position);
+                  }}
                 />
               </div>
             )}
           </div>
-
-          {/* Right Side - Map Timeline and Event Timeline */}
-          {timelineData && matchData && matchData.info.queueId !== 450 && (
-            <div className="w-[480px] flex-shrink-0 mt-4 space-y-4">
-              <MapTimeline
-                timelineData={timelineData}
-                matchData={matchData}
-                currentFrame={currentFrame}
-                setCurrentFrame={setCurrentFrame}
-                highlightedParticipants={highlightedParticipants}
-                highlightedBuilding={highlightedBuilding}
-                highlightedMonster={highlightedMonster}
-              />
-              
-              {/* Event Timeline */}
-              <EventTimeline
-                timelineData={timelineData}
-                matchData={matchData}
-                setCurrentFrame={setCurrentFrame}
-                setHighlightedParticipants={setHighlightedParticipants}
-                setHighlightedBuilding={setHighlightedBuilding}
-                setHighlightedMonster={setHighlightedMonster}
-                onEventClick={(position) => {
-                  // TODO: Highlight position on map
-                  console.log('Event position:', position);
-                }}
-              />
-            </div>
-          )}
         </div>
-      </div>
 
-      {/* Story Popup */}
-      {showStoryPopup && (
-        <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
-          onClick={() => setShowStoryPopup(false)}
-        >
-          <div 
-            ref={storyContainerRef}
-            className="relative bg-transparent rounded-xl max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto story-scroll"
-            onClick={(e) => e.stopPropagation()}
+        {/* Story Popup */}
+        {showStoryPopup && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowStoryPopup(false)}
           >
-            <style jsx>{`
-              .story-scroll::-webkit-scrollbar {
-                width: 8px;
-              }
-              .story-scroll::-webkit-scrollbar-track {
-                background: transparent;
-              }
-              .story-scroll::-webkit-scrollbar-thumb {
-                background: #1e3a8a;
-                border-radius: 4px;
-              }
-              .story-scroll::-webkit-scrollbar-thumb:hover {
-                background: #1e40af;
-              }
-              .story-scroll {
-                scrollbar-width: thin;
-                scrollbar-color: #1e3a8a transparent;
-              }
-            `}</style>
-
-            {/* Close button */}
-            <button
-              onClick={() => setShowStoryPopup(false)}
-              className="absolute top-2 right-2 p-2 hover:opacity-70 transition-opacity z-10"
-              aria-label="Close"
+            <div
+              ref={storyContainerRef}
+              className="relative bg-transparent rounded-xl max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto story-scroll"
+              onClick={(e) => e.stopPropagation()}
             >
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+              <style jsx>{`
+                .story-scroll::-webkit-scrollbar {
+                  width: 8px;
+                }
+                .story-scroll::-webkit-scrollbar-track {
+                  background: transparent;
+                }
+                .story-scroll::-webkit-scrollbar-thumb {
+                  background: #1e3a8a;
+                  border-radius: 4px;
+                }
+                .story-scroll::-webkit-scrollbar-thumb:hover {
+                  background: #1e40af;
+                }
+                .story-scroll {
+                  scrollbar-width: thin;
+                  scrollbar-color: #1e3a8a transparent;
+                }
+              `}</style>
 
-            {/* Story content */}
-            <div className="px-6 pb-6">
-              {storyContent ? (
-                <div className="text-gray-200 whitespace-pre-wrap leading-relaxed text-lg">
-                  {storyContent}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-400">Generating your match story...</p>
+              {/* Close button */}
+              <button
+                onClick={() => setShowStoryPopup(false)}
+                className="absolute top-2 right-2 p-2 hover:opacity-70 transition-opacity z-10"
+                aria-label="Close"
+              >
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Story content */}
+              <div className="px-6 pb-6">
+                {storyContent ? (
+                  <div className="text-gray-200 whitespace-pre-wrap leading-relaxed text-lg">
+                    {storyContent}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                      <p className="text-gray-400">
+                        Generating your match story...
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );
@@ -910,15 +1059,17 @@ function PlayerPurchaseTimeline({
   if (!selectedPlayer) return null;
 
   const participantId =
-    matchData.info.participants.findIndex((p) => p.puuid === selectedPlayerPuuid) + 1;
+    matchData.info.participants.findIndex(
+      (p) => p.puuid === selectedPlayerPuuid
+    ) + 1;
 
-  const itemEvents: Array<{ 
-    timestamp: number; 
+  const itemEvents: Array<{
+    timestamp: number;
     itemId: number;
     participantId: number;
-    type: 'PURCHASE' | 'SELL' | 'UNDO';
+    type: "PURCHASE" | "SELL" | "UNDO";
   }> = [];
-  
+
   if (timelineData && timelineData.info && timelineData.info.frames) {
     timelineData.info.frames.forEach((frame: any) => {
       if (frame.events) {
@@ -929,21 +1080,21 @@ function PlayerPurchaseTimeline({
                 timestamp: event.timestamp,
                 itemId: event.itemId,
                 participantId: event.participantId,
-                type: 'PURCHASE'
+                type: "PURCHASE",
               });
             } else if (event.type === "ITEM_SOLD") {
               itemEvents.push({
                 timestamp: event.timestamp,
                 itemId: event.itemId,
                 participantId: event.participantId,
-                type: 'SELL'
+                type: "SELL",
               });
             } else if (event.type === "ITEM_UNDO") {
               itemEvents.push({
                 timestamp: event.timestamp,
                 itemId: event.beforeId,
                 participantId: event.participantId,
-                type: 'UNDO'
+                type: "UNDO",
               });
             }
           }
@@ -952,67 +1103,78 @@ function PlayerPurchaseTimeline({
     });
   }
 
-  const finalPurchases: Array<{ timestamp: number; itemId: number; participantId: number }> = [];
+  const finalPurchases: Array<{
+    timestamp: number;
+    itemId: number;
+    participantId: number;
+  }> = [];
   const eventStack: Array<{
-    type: 'PURCHASE' | 'SELL';
+    type: "PURCHASE" | "SELL";
     timestamp: number;
     itemId: number;
     participantId: number;
   }> = [];
 
   itemEvents.forEach((event) => {
-    if (event.type === 'PURCHASE') {
+    if (event.type === "PURCHASE") {
       finalPurchases.push({
         timestamp: event.timestamp,
         itemId: event.itemId,
-        participantId: event.participantId
+        participantId: event.participantId,
       });
       eventStack.push({
-        type: 'PURCHASE',
+        type: "PURCHASE",
         timestamp: event.timestamp,
         itemId: event.itemId,
-        participantId: event.participantId
+        participantId: event.participantId,
       });
-    } else if (event.type === 'SELL') {
-      const purchaseIndex = finalPurchases.findIndex(p => p.itemId === event.itemId);
+    } else if (event.type === "SELL") {
+      const purchaseIndex = finalPurchases.findIndex(
+        (p) => p.itemId === event.itemId
+      );
       if (purchaseIndex !== -1) {
         finalPurchases.splice(purchaseIndex, 1);
       }
       eventStack.push({
-        type: 'SELL',
+        type: "SELL",
         timestamp: event.timestamp,
         itemId: event.itemId,
-        participantId: event.participantId
+        participantId: event.participantId,
       });
-    } else if (event.type === 'UNDO') {
-      const lastEventIndex = [...eventStack].reverse().findIndex(e => e.participantId === event.participantId);
+    } else if (event.type === "UNDO") {
+      const lastEventIndex = [...eventStack]
+        .reverse()
+        .findIndex((e) => e.participantId === event.participantId);
       if (lastEventIndex !== -1) {
         const actualIndex = eventStack.length - 1 - lastEventIndex;
         const lastEvent = eventStack[actualIndex];
-        
+
         eventStack.splice(actualIndex, 1);
-        
-        if (lastEvent.type === 'PURCHASE') {
-          const purchaseIndex = finalPurchases.findIndex(p => 
-            p.timestamp === lastEvent.timestamp && p.itemId === lastEvent.itemId
+
+        if (lastEvent.type === "PURCHASE") {
+          const purchaseIndex = finalPurchases.findIndex(
+            (p) =>
+              p.timestamp === lastEvent.timestamp &&
+              p.itemId === lastEvent.itemId
           );
           if (purchaseIndex !== -1) {
             finalPurchases.splice(purchaseIndex, 1);
           }
-        } else if (lastEvent.type === 'SELL') {
+        } else if (lastEvent.type === "SELL") {
           const originalPurchase = [...eventStack]
             .slice(0, actualIndex)
             .reverse()
-            .find(e => 
-              e.type === 'PURCHASE' && 
-              e.itemId === lastEvent.itemId &&
-              e.participantId === event.participantId
+            .find(
+              (e) =>
+                e.type === "PURCHASE" &&
+                e.itemId === lastEvent.itemId &&
+                e.participantId === event.participantId
             );
           if (originalPurchase) {
             finalPurchases.push({
               timestamp: originalPurchase.timestamp,
               itemId: originalPurchase.itemId,
-              participantId: originalPurchase.participantId
+              participantId: originalPurchase.participantId,
             });
           }
         }
@@ -1043,47 +1205,45 @@ function PlayerPurchaseTimeline({
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
-return (
-  <div className="bg-[#1a2332] rounded-lg p-2 border border-[#2a3a4a]">
-
-
-    {groupedPurchases.length === 0 ? (
-      <p className="text-xs text-gray-400">No purchases recorded</p>
-    ) : (
-      <div className="flex items-center gap-y-2 gap-x-0 flex-wrap">
-        {groupedPurchases.map((group, idx) => (
-          <div key={idx} className="flex items-center gap-0">
-            <div className="flex items-center gap-1.5 bg-[#0f1821] p-1.5 rounded">
-              <div className="text-[10px] font-mono text-gray-400 flex-shrink-0">
-                {formatTime(group.timestamp)}
+  return (
+    <div className="bg-[#1a2332] rounded-lg p-2 border border-[#2a3a4a]">
+      {groupedPurchases.length === 0 ? (
+        <p className="text-xs text-gray-400">No purchases recorded</p>
+      ) : (
+        <div className="flex items-center gap-y-2 gap-x-0 flex-wrap">
+          {groupedPurchases.map((group, idx) => (
+            <div key={idx} className="flex items-center gap-0">
+              <div className="flex items-center gap-1.5 bg-[#0f1821] p-1.5 rounded">
+                <div className="text-[10px] font-mono text-gray-400 flex-shrink-0">
+                  {formatTime(group.timestamp)}
+                </div>
+                <div className="flex items-center gap-0.5">
+                  {group.items.map((itemId, itemIdx) => (
+                    <div
+                      key={itemIdx}
+                      className="relative w-6 h-6 bg-[#0a0e14] rounded border border-[#3a4a5a] flex-shrink-0"
+                    >
+                      <Image
+                        src={getItemImageUrl(itemId)}
+                        alt={`Item ${itemId}`}
+                        width={24}
+                        height={24}
+                        className="object-cover rounded"
+                        unoptimized
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-0.5">
-                {group.items.map((itemId, itemIdx) => (
-                  <div
-                    key={itemIdx}
-                    className="relative w-6 h-6 bg-[#0a0e14] rounded border border-[#3a4a5a] flex-shrink-0"
-                  >
-                    <Image
-                      src={getItemImageUrl(itemId)}
-                      alt={`Item ${itemId}`}
-                      width={24}
-                      height={24}
-                      className="object-cover rounded"
-                      unoptimized
-                    />
-                  </div>
-                ))}
-              </div>
+              {idx < groupedPurchases.length - 1 && (
+                <div className="w-6 h-0.5 bg-gradient-to-r from-blue-500/50 to-transparent flex-shrink-0" />
+              )}
             </div>
-            {idx < groupedPurchases.length - 1 && (
-              <div className="w-6 h-0.5 bg-gradient-to-r from-blue-500/50 to-transparent flex-shrink-0" />
-            )}
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface MapTimelineProps {
@@ -1092,8 +1252,15 @@ interface MapTimelineProps {
   currentFrame: number;
   setCurrentFrame: (frame: number) => void;
   highlightedParticipants: number[];
-  highlightedBuilding: { name: string; type: 'flash-out' | 'flash-in-out' } | null;
-  highlightedMonster: { position: { x: number; y: number }; monsterType: string; teamId: number } | null;
+  highlightedBuilding: {
+    name: string;
+    type: "flash-out" | "flash-in-out";
+  } | null;
+  highlightedMonster: {
+    position: { x: number; y: number };
+    monsterType: string;
+    teamId: number;
+  } | null;
 }
 
 function MapTimeline({
@@ -1145,7 +1312,12 @@ function MapTimeline({
     BLUE_MID_LANE_OUTER_TURRET: { x: 5846, y: 7096, team: 100, isNexus: false },
     BLUE_MID_LANE_INNER_TURRET: { x: 5048, y: 5512, team: 100, isNexus: false },
     BLUE_MID_LANE_BASE_TURRET: { x: 3651, y: 4396, team: 100, isNexus: false },
-    BLUE_BOT_LANE_OUTER_TURRET: { x: 10504, y: 1729, team: 100, isNexus: false },
+    BLUE_BOT_LANE_OUTER_TURRET: {
+      x: 10504,
+      y: 1729,
+      team: 100,
+      isNexus: false,
+    },
     BLUE_BOT_LANE_INNER_TURRET: { x: 6919, y: 2183, team: 100, isNexus: false },
     BLUE_BOT_LANE_BASE_TURRET: { x: 4281, y: 1753, team: 100, isNexus: false },
     BLUE_TOP_LANE_NEXUS_TURRET: { x: 1748, y: 3070, team: 100, isNexus: true },
@@ -1164,20 +1336,23 @@ function MapTimeline({
   };
 
   const towerDestructions = useRef<Map<string, number>>(new Map());
-  
+
   useEffect(() => {
     if (!timelineData) return;
-    
+
     towerDestructions.current.clear();
-    
+
     timelineData.info.frames.forEach((frame: any) => {
       if (frame.events) {
         frame.events.forEach((event: any) => {
-          if (event.type === "BUILDING_KILL" && event.buildingType === "TOWER_BUILDING") {
+          if (
+            event.type === "BUILDING_KILL" &&
+            event.buildingType === "TOWER_BUILDING"
+          ) {
             const teamPrefix = event.teamId === 100 ? "BLUE" : "RED";
             const laneType = event.laneType;
             const towerTier = event.towerType;
-            
+
             const towerName = `${teamPrefix}_${laneType}_${towerTier}`;
             towerDestructions.current.set(towerName, event.timestamp);
           }
@@ -1252,53 +1427,69 @@ function MapTimeline({
     let blueGold = 0;
     let redGold = 0;
 
-    Object.entries(frame.participantFrames).forEach(([participantId, participantFrame]: [string, any]) => {
-      const pid = parseInt(participantId);
-      const participant = matchData.info.participants[pid - 1];
-      
-      if (participant) {
-        const kills = participantFrame.championStats?.kills || 0;
-        const gold = participantFrame.totalGold || 0;
-        
-        if (participant.teamId === 100) {
-          blueKills += kills;
-          blueGold += gold;
-        } else {
-          redKills += kills;
-          redGold += gold;
+    Object.entries(frame.participantFrames).forEach(
+      ([participantId, participantFrame]: [string, any]) => {
+        const pid = parseInt(participantId);
+        const participant = matchData.info.participants[pid - 1];
+
+        if (participant) {
+          const kills = participantFrame.championStats?.kills || 0;
+          const gold = participantFrame.totalGold || 0;
+
+          if (participant.teamId === 100) {
+            blueKills += kills;
+            blueGold += gold;
+          } else {
+            redKills += kills;
+            redGold += gold;
+          }
         }
       }
-    });
+    );
 
     return {
       blue: { kills: blueKills, gold: Math.round(blueGold / 1000) },
-      red: { kills: redKills, gold: Math.round(redGold / 1000) }
+      red: { kills: redKills, gold: Math.round(redGold / 1000) },
     };
   };
 
   // Count objectives up to current frame
   const getObjectivesForFrame = () => {
     const currentTimestamp = frame?.timestamp || 0;
-    let blueTowers = 0, blueDragons = 0, blueElders = 0, blueBarons = 0, blueHeralds = 0, blueGrubs = 0, blueAtakhans = 0;
-    let redTowers = 0, redDragons = 0, redElders = 0, redBarons = 0, redHeralds = 0, redGrubs = 0, redAtakhans = 0;
+    let blueTowers = 0,
+      blueDragons = 0,
+      blueElders = 0,
+      blueBarons = 0,
+      blueHeralds = 0,
+      blueGrubs = 0,
+      blueAtakhans = 0;
+    let redTowers = 0,
+      redDragons = 0,
+      redElders = 0,
+      redBarons = 0,
+      redHeralds = 0,
+      redGrubs = 0,
+      redAtakhans = 0;
 
     if (timelineData?.info?.frames) {
       timelineData.info.frames.forEach((f: any) => {
         if (f.timestamp > currentTimestamp) return;
-        
+
         f.events?.forEach((event: any) => {
-          if (event.type === "BUILDING_KILL" && event.buildingType === "TOWER_BUILDING") {
+          if (
+            event.type === "BUILDING_KILL" &&
+            event.buildingType === "TOWER_BUILDING"
+          ) {
             // Count towers destroyed by the enemy team (teamId is the team that LOST the tower)
-            if (event.teamId === 100) redTowers++; // Blue team's tower destroyed = red team gets credit
+            if (event.teamId === 100)
+              redTowers++; // Blue team's tower destroyed = red team gets credit
             else if (event.teamId === 200) blueTowers++; // Red team's tower destroyed = blue team gets credit
-          }
-          else if (event.type === "ELITE_MONSTER_KILL") {
+          } else if (event.type === "ELITE_MONSTER_KILL") {
             if (event.killerTeamId === 100) {
               if (event.monsterType === "DRAGON") {
                 if (event.monsterSubType === "ELDER_DRAGON") blueElders++;
                 else blueDragons++;
-              }
-              else if (event.monsterType === "BARON_NASHOR") blueBarons++;
+              } else if (event.monsterType === "BARON_NASHOR") blueBarons++;
               else if (event.monsterType === "RIFTHERALD") blueHeralds++;
               else if (event.monsterType === "HORDE") blueGrubs++;
               else if (event.monsterType === "ATAKHAN") blueAtakhans++;
@@ -1306,8 +1497,7 @@ function MapTimeline({
               if (event.monsterType === "DRAGON") {
                 if (event.monsterSubType === "ELDER_DRAGON") redElders++;
                 else redDragons++;
-              }
-              else if (event.monsterType === "BARON_NASHOR") redBarons++;
+              } else if (event.monsterType === "BARON_NASHOR") redBarons++;
               else if (event.monsterType === "RIFTHERALD") redHeralds++;
               else if (event.monsterType === "HORDE") redGrubs++;
               else if (event.monsterType === "ATAKHAN") redAtakhans++;
@@ -1318,15 +1508,31 @@ function MapTimeline({
     }
 
     return {
-      blue: { towers: blueTowers, dragons: blueDragons, elders: blueElders, barons: blueBarons, heralds: blueHeralds, grubs: blueGrubs, atakhans: blueAtakhans },
-      red: { towers: redTowers, dragons: redDragons, elders: redElders, barons: redBarons, heralds: redHeralds, grubs: redGrubs, atakhans: redAtakhans }
+      blue: {
+        towers: blueTowers,
+        dragons: blueDragons,
+        elders: blueElders,
+        barons: blueBarons,
+        heralds: blueHeralds,
+        grubs: blueGrubs,
+        atakhans: blueAtakhans,
+      },
+      red: {
+        towers: redTowers,
+        dragons: redDragons,
+        elders: redElders,
+        barons: redBarons,
+        heralds: redHeralds,
+        grubs: redGrubs,
+        atakhans: redAtakhans,
+      },
     };
   };
 
   const teamStats = getTeamStatsForFrame();
   const objectives = getObjectivesForFrame();
 
-return (
+  return (
     <div className="sticky top-2">
       {/* Team Stats Header */}
       <div className="bg-[#1a2332] rounded-xl p-3 border border-[#2a3544]/50 shadow-lg mb-2">
@@ -1344,7 +1550,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-blue-400 font-semibold">{objectives.blue.towers}</span>
+                <span className="text-blue-400 font-semibold">
+                  {objectives.blue.towers}
+                </span>
               </div>
               <div className="flex items-center gap-0.5">
                 <Image
@@ -1355,7 +1563,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-blue-400 font-semibold">{objectives.blue.grubs}</span>
+                <span className="text-blue-400 font-semibold">
+                  {objectives.blue.grubs}
+                </span>
               </div>
               <div className="flex items-center gap-0.5">
                 <Image
@@ -1366,7 +1576,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-blue-400 font-semibold">{objectives.blue.heralds}</span>
+                <span className="text-blue-400 font-semibold">
+                  {objectives.blue.heralds}
+                </span>
               </div>
               <div className="flex items-center gap-0.5">
                 <Image
@@ -1377,7 +1589,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-blue-400 font-semibold">{objectives.blue.dragons}</span>
+                <span className="text-blue-400 font-semibold">
+                  {objectives.blue.dragons}
+                </span>
               </div>
               <div className="flex items-center gap-0.5">
                 <Image
@@ -1388,7 +1602,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-blue-400 font-semibold">{objectives.blue.atakhans}</span>
+                <span className="text-blue-400 font-semibold">
+                  {objectives.blue.atakhans}
+                </span>
               </div>
               <div className="flex items-center gap-0.5">
                 <Image
@@ -1399,7 +1615,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-blue-400 font-semibold">{objectives.blue.barons}</span>
+                <span className="text-blue-400 font-semibold">
+                  {objectives.blue.barons}
+                </span>
               </div>
               {objectives.blue.elders > 0 && (
                 <div className="flex items-center gap-0.5">
@@ -1411,19 +1629,16 @@ return (
                     className="object-contain"
                     unoptimized
                   />
-                  <span className="text-blue-400 font-semibold">{objectives.blue.elders}</span>
+                  <span className="text-blue-400 font-semibold">
+                    {objectives.blue.elders}
+                  </span>
                 </div>
               )}
             </div>
-            
+
             {/* Blue Gold */}
             <div className="flex items-center gap-1 text-yellow-400">
               <span className="font-semibold">{teamStats.blue.gold}K</span>
-            </div>
-            
-            {/* Blue Kills */}
-            <div className="flex items-center gap-1 text-blue-400">
-              <span className="font-semibold">{teamStats.blue.kills}</span>
             </div>
           </div>
 
@@ -1441,16 +1656,11 @@ return (
 
           {/* Red Team */}
           <div className="flex items-center gap-4">
-            {/* Red Kills */}
-            <div className="flex items-center gap-1 text-red-400">
-              <span className="font-semibold">{teamStats.red.kills}</span>
-            </div>
-            
             {/* Red Gold */}
             <div className="flex items-center gap-1 text-yellow-400">
               <span className="font-semibold">{teamStats.red.gold}K</span>
             </div>
-            
+
             {/* Red Objectives */}
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-0.5">
@@ -1462,7 +1672,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-red-400 font-semibold">{objectives.red.towers}</span>
+                <span className="text-red-400 font-semibold">
+                  {objectives.red.towers}
+                </span>
               </div>
               <div className="flex items-center gap-0.5">
                 <Image
@@ -1473,7 +1685,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-red-400 font-semibold">{objectives.red.grubs}</span>
+                <span className="text-red-400 font-semibold">
+                  {objectives.red.grubs}
+                </span>
               </div>
               <div className="flex items-center gap-0.5">
                 <Image
@@ -1484,7 +1698,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-red-400 font-semibold">{objectives.red.heralds}</span>
+                <span className="text-red-400 font-semibold">
+                  {objectives.red.heralds}
+                </span>
               </div>
               <div className="flex items-center gap-0.5">
                 <Image
@@ -1495,7 +1711,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-red-400 font-semibold">{objectives.red.dragons}</span>
+                <span className="text-red-400 font-semibold">
+                  {objectives.red.dragons}
+                </span>
               </div>
               <div className="flex items-center gap-0.5">
                 <Image
@@ -1506,7 +1724,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-red-400 font-semibold">{objectives.red.atakhans}</span>
+                <span className="text-red-400 font-semibold">
+                  {objectives.red.atakhans}
+                </span>
               </div>
               <div className="flex items-center gap-0.5">
                 <Image
@@ -1517,7 +1737,9 @@ return (
                   className="object-contain"
                   unoptimized
                 />
-                <span className="text-red-400 font-semibold">{objectives.red.barons}</span>
+                <span className="text-red-400 font-semibold">
+                  {objectives.red.barons}
+                </span>
               </div>
               {objectives.red.elders > 0 && (
                 <div className="flex items-center gap-0.5">
@@ -1529,7 +1751,9 @@ return (
                     className="object-contain"
                     unoptimized
                   />
-                  <span className="text-red-400 font-semibold">{objectives.red.elders}</span>
+                  <span className="text-red-400 font-semibold">
+                    {objectives.red.elders}
+                  </span>
                 </div>
               )}
             </div>
@@ -1547,19 +1771,11 @@ return (
             aria-label={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
-              <svg
-                className="w-4 h-4"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
               </svg>
             ) : (
-              <svg
-                className="w-4 h-4"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             )}
@@ -1648,7 +1864,10 @@ return (
       </div>
 
       {/* Map with Champion Positions */}
-      <div ref={mapContainerRef} className="relative w-full bg-[#0a1428] rounded-lg overflow-hidden" >
+      <div
+        ref={mapContainerRef}
+        className="relative w-full bg-[#0a1428] rounded-lg overflow-hidden"
+      >
         <style jsx>{`
           @keyframes goldPulseBlue {
             0% {
@@ -1683,7 +1902,8 @@ return (
               filter: drop-shadow(0 0 0px rgba(250, 204, 21, 0));
             }
             50% {
-              filter: drop-shadow(0 0 15px rgba(250, 204, 21, 1)) brightness(1.3);
+              filter: drop-shadow(0 0 15px rgba(250, 204, 21, 1))
+                brightness(1.3);
             }
             100% {
               filter: drop-shadow(0 0 0px rgba(250, 204, 21, 0));
@@ -1700,7 +1920,8 @@ return (
             }
             50% {
               opacity: 1;
-              filter: drop-shadow(0 0 20px rgba(250, 204, 21, 1)) brightness(1.4);
+              filter: drop-shadow(0 0 20px rgba(250, 204, 21, 1))
+                brightness(1.4);
             }
             85% {
               opacity: 1;
@@ -1760,8 +1981,8 @@ return (
                 <div
                   className={`w-full h-full rounded-full border-3 shadow-lg cursor-pointer transition-transform ${
                     highlightedParticipants.includes(pos.participantId)
-                      ? pos.teamId === 100 
-                        ? "gold-pulse-animation-blue" 
+                      ? pos.teamId === 100
+                        ? "gold-pulse-animation-blue"
                         : "gold-pulse-animation-red"
                       : ""
                   } ${
@@ -1784,154 +2005,166 @@ return (
               </div>
             );
           })}
-          
+
           {/* Hover Card - Rendered separately with highest z-index */}
-          {hoveredChampion !== null && (() => {
-            const hoveredPos = championPositions.find(p => p.participantId === hoveredChampion);
-            const participantFrame = frame?.participantFrames?.[hoveredChampion];
-            
-            if (!hoveredPos || !participantFrame) return null;
-            
-            const normalizedX = (hoveredPos.x - mapMinX) / mapWidth;
-            const normalizedY = 1 - (hoveredPos.y - mapMinY) / mapHeight;
-            const xPercent = normalizedX * 100;
-            const yPercent = normalizedY * 100;
-            
-            return (
-              <div
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                style={{
-                  left: `${xPercent}%`,
-                  top: `${yPercent}%`,
-                  width: "36px",
-                  height: "36px",
-                  zIndex: 100,
-                }}
-              >
+          {hoveredChampion !== null &&
+            (() => {
+              const hoveredPos = championPositions.find(
+                (p) => p.participantId === hoveredChampion
+              );
+              const participantFrame =
+                frame?.participantFrames?.[hoveredChampion];
+
+              if (!hoveredPos || !participantFrame) return null;
+
+              const normalizedX = (hoveredPos.x - mapMinX) / mapWidth;
+              const normalizedY = 1 - (hoveredPos.y - mapMinY) / mapHeight;
+              const xPercent = normalizedX * 100;
+              const yPercent = normalizedY * 100;
+
+              return (
                 <div
-                  ref={(el) => {
-                    if (el && mapContainerRef.current) {
-                      const mapRect = mapContainerRef.current.getBoundingClientRect();
-                      const cardRect = el.getBoundingClientRect();
-                      
-                      const championX = (xPercent / 100) * mapRect.width;
-                      const championY = (yPercent / 100) * mapRect.height;
-
-                      el.style.left = '';
-                      el.style.right = '';
-                      el.style.top = '';
-                      el.style.bottom = '';
-                      
-                      const spaceRight = mapRect.width - championX;
-                      
-                      if (spaceRight < cardRect.width + 26) {
-                        el.style.right = 'calc(100% + 8px)';
-                        el.style.left = 'auto';
-                      } else {
-                        el.style.left = 'calc(100% + 8px)';
-                        el.style.right = 'auto';
-                      }
-
-                      const updatedCardRect = el.getBoundingClientRect();
-                      const cardHeight = updatedCardRect.height;
-                      
-                      if (championY + cardHeight > mapRect.height) {
-                        el.style.bottom = '0px';
-                        el.style.top = 'auto';
-                      } else if (championY - cardHeight < 0) {
-                        el.style.top = '0px';
-                        el.style.bottom = 'auto';
-                      } else {
-                        el.style.top = '50%';
-                        el.style.transform = 'translateY(-50%)';
-                      }
-                    }
+                  className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{
+                    left: `${xPercent}%`,
+                    top: `${yPercent}%`,
+                    width: "36px",
+                    height: "36px",
+                    zIndex: 100,
                   }}
-                  className="absolute bg-[#1a2332] rounded p-2 border border-[#2a3a4a] shadow-xl w-[140px] pointer-events-auto"
                 >
-                  {/* Health Bar */}
-                  <div className="mb-1">
-                    <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-green-500 transition-all"
-                        style={{
-                          width: `${((participantFrame.championStats?.health || 0) / (participantFrame.championStats?.healthMax || 1)) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Mana Bar */}
-                  <div className="mb-1.5">
-                    <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 transition-all"
-                        style={{
-                          width: `${((participantFrame.championStats?.power || 0) / (participantFrame.championStats?.powerMax || 1)) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Gold */}
-                  <div className="text-[9px] text-yellow-400 mb-1.5">
-                    💰 {participantFrame.currentGold || 0}g
-                  </div>
-                  
-                  {/* Items */}
-                  <div className="flex items-center gap-0.5">
-                    {(() => {
-                      const participant = matchData.info.participants[hoveredPos.participantId - 1];
-                      const rawItems = [
-                        participant?.item0 || 0,
-                        participant?.item1 || 0,
-                        participant?.item2 || 0,
-                        participant?.item3 || 0,
-                        participant?.item4 || 0,
-                        participant?.item5 || 0,
-                      ];
-                      const trinket = participant?.item6 || 0;
-                      
-                      const filledItems = rawItems.filter(item => item > 0);
-                      const emptySlots = 6 - filledItems.length;
-                      const sortedItems = [...filledItems, ...Array(emptySlots).fill(0), trinket];
-                      
-                      return sortedItems.map((itemId, slot) => {
-                        return itemId > 0 ? (
+                  <div
+                    ref={(el) => {
+                      if (el && mapContainerRef.current) {
+                        const mapRect =
+                          mapContainerRef.current.getBoundingClientRect();
+                        const cardRect = el.getBoundingClientRect();
+
+                        const championX = (xPercent / 100) * mapRect.width;
+                        const championY = (yPercent / 100) * mapRect.height;
+
+                        el.style.left = "";
+                        el.style.right = "";
+                        el.style.top = "";
+                        el.style.bottom = "";
+
+                        const spaceRight = mapRect.width - championX;
+
+                        if (spaceRight < cardRect.width + 26) {
+                          el.style.right = "calc(100% + 8px)";
+                          el.style.left = "auto";
+                        } else {
+                          el.style.left = "calc(100% + 8px)";
+                          el.style.right = "auto";
+                        }
+
+                        const updatedCardRect = el.getBoundingClientRect();
+                        const cardHeight = updatedCardRect.height;
+
+                        if (championY + cardHeight > mapRect.height) {
+                          el.style.bottom = "0px";
+                          el.style.top = "auto";
+                        } else if (championY - cardHeight < 0) {
+                          el.style.top = "0px";
+                          el.style.bottom = "auto";
+                        } else {
+                          el.style.top = "50%";
+                          el.style.transform = "translateY(-50%)";
+                        }
+                      }
+                    }}
+                    className="absolute bg-[#1a2332] rounded p-2 border border-[#2a3a4a] shadow-xl w-[140px] pointer-events-auto"
+                  >
+                    {/* Health Bar */}
+                    <div className="mb-1">
+                      <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
                         <div
-                          key={slot}
-                          className="relative w-4 h-4 bg-[#0a0e14] rounded border border-[#3a4a5a] flex-shrink-0"
-                        >
-                          <Image
-                            src={getItemImageUrl(itemId)}
-                            alt={`Item ${itemId}`}
-                            width={16}
-                            height={16}
-                            className="object-cover"
-                            unoptimized
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          key={slot}
-                          className="w-4 h-4 bg-[#0a0e14] rounded border border-[#2a3a4a] flex-shrink-0"
+                          className="h-full bg-green-500 transition-all"
+                          style={{
+                            width: `${((participantFrame.championStats?.health || 0) / (participantFrame.championStats?.healthMax || 1)) * 100}%`,
+                          }}
                         />
-                      );
-                      });
-                    })()}
+                      </div>
+                    </div>
+
+                    {/* Mana Bar */}
+                    <div className="mb-1.5">
+                      <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 transition-all"
+                          style={{
+                            width: `${((participantFrame.championStats?.power || 0) / (participantFrame.championStats?.powerMax || 1)) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Gold */}
+                    <div className="text-[9px] text-yellow-400 mb-1.5">
+                      💰 {participantFrame.currentGold || 0}g
+                    </div>
+
+                    {/* Items */}
+                    <div className="flex items-center gap-0.5">
+                      {(() => {
+                        const participant =
+                          matchData.info.participants[
+                            hoveredPos.participantId - 1
+                          ];
+                        const rawItems = [
+                          participant?.item0 || 0,
+                          participant?.item1 || 0,
+                          participant?.item2 || 0,
+                          participant?.item3 || 0,
+                          participant?.item4 || 0,
+                          participant?.item5 || 0,
+                        ];
+                        const trinket = participant?.item6 || 0;
+
+                        const filledItems = rawItems.filter((item) => item > 0);
+                        const emptySlots = 6 - filledItems.length;
+                        const sortedItems = [
+                          ...filledItems,
+                          ...Array(emptySlots).fill(0),
+                          trinket,
+                        ];
+
+                        return sortedItems.map((itemId, slot) => {
+                          return itemId > 0 ? (
+                            <div
+                              key={slot}
+                              className="relative w-4 h-4 bg-[#0a0e14] rounded border border-[#3a4a5a] flex-shrink-0"
+                            >
+                              <Image
+                                src={getItemImageUrl(itemId)}
+                                alt={`Item ${itemId}`}
+                                width={16}
+                                height={16}
+                                className="object-cover"
+                                unoptimized
+                              />
+                            </div>
+                          ) : (
+                            <div
+                              key={slot}
+                              className="w-4 h-4 bg-[#0a0e14] rounded border border-[#2a3a4a] flex-shrink-0"
+                            />
+                          );
+                        });
+                      })()}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
 
           {/* Towers */}
           {Object.entries(towerPositions).map(([towerName, tower]) => {
             const currentTimestamp = frame?.timestamp || 0;
             const destroyedAt = towerDestructions.current.get(towerName);
-            
+
             let isVisible = true;
-            
+
             if (destroyedAt !== undefined) {
               if (tower.isNexus) {
                 const timeSinceDestruction = currentTimestamp - destroyedAt;
@@ -1940,22 +2173,22 @@ return (
                 isVisible = currentTimestamp < destroyedAt;
               }
             }
-            
+
             if (!isVisible) return null;
-            
+
             const normalizedX = (tower.x - mapMinX) / mapWidth;
             const normalizedY = 1 - (tower.y - mapMinY) / mapHeight;
             const xPercent = normalizedX * 100;
             const yPercent = normalizedY * 100;
-            
+
             const isHighlighted = highlightedBuilding?.name === towerName;
             const animationType = highlightedBuilding?.type;
-            
+
             return (
               <div
                 key={towerName}
                 className={`absolute transform -translate-x-1/2 -translate-y-1/2 ${
-                  isHighlighted ? 'gold-glow-pulse' : ''
+                  isHighlighted ? "gold-glow-pulse" : ""
                 }`}
                 style={{
                   left: `${xPercent}%`,
@@ -1978,105 +2211,116 @@ return (
           })}
 
           {/* Highlighted Destroyed Tower */}
-          {highlightedBuilding && (() => {
-            const tower = towerPositions[highlightedBuilding.name as keyof typeof towerPositions];
-            if (!tower) return null;
-            
-            const normalizedX = (tower.x - mapMinX) / mapWidth;
-            const normalizedY = 1 - (tower.y - mapMinY) / mapHeight;
-            const xPercent = normalizedX * 100;
-            const yPercent = normalizedY * 100;
-            
-            return (
-              <div
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 fade-in-gold-pulse-out"
-                style={{
-                  left: `${xPercent}%`,
-                  top: `${yPercent}%`,
-                  width: "36px",
-                  height: "36px",
-                  zIndex: 25,
-                }}
-              >
-                <Image
-                  src={tower.team === 100 ? "/blue.png" : "/red.png"}
-                  alt={`${tower.team === 100 ? "Blue" : "Red"} Tower`}
-                  width={120}
-                  height={120}
-                  className="object-contain"
-                  unoptimized
-                />
-              </div>
-            );
-          })()}
+          {highlightedBuilding &&
+            (() => {
+              const tower =
+                towerPositions[
+                  highlightedBuilding.name as keyof typeof towerPositions
+                ];
+              if (!tower) return null;
+
+              const normalizedX = (tower.x - mapMinX) / mapWidth;
+              const normalizedY = 1 - (tower.y - mapMinY) / mapHeight;
+              const xPercent = normalizedX * 100;
+              const yPercent = normalizedY * 100;
+
+              return (
+                <div
+                  className="absolute transform -translate-x-1/2 -translate-y-1/2 fade-in-gold-pulse-out"
+                  style={{
+                    left: `${xPercent}%`,
+                    top: `${yPercent}%`,
+                    width: "36px",
+                    height: "36px",
+                    zIndex: 25,
+                  }}
+                >
+                  <Image
+                    src={tower.team === 100 ? "/blue.png" : "/red.png"}
+                    alt={`${tower.team === 100 ? "Blue" : "Red"} Tower`}
+                    width={120}
+                    height={120}
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
+              );
+            })()}
 
           {/* Highlighted Monster */}
-          {highlightedMonster && (() => {
-            const normalizedX = (highlightedMonster.position.x - mapMinX) / mapWidth;
-            const normalizedY = 1 - (highlightedMonster.position.y - mapMinY) / mapHeight;
-            const xPercent = normalizedX * 100;
-            const yPercent = normalizedY * 100;
-            
-            return (
-              <div
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 fade-in-gold-pulse-out"
-                style={{
-                  left: `${xPercent}%`,
-                  top: `${yPercent}%`,
-                  width: "32px",
-                  height: "32px",
-                  zIndex: 25,
-                }}
-              >
-                {highlightedMonster.monsterType === "DRAGON" ? (
-                  <Image
-                    src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/dragon-${highlightedMonster.teamId}.png`}
-                    alt="Dragon"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                    unoptimized
-                  />
-                ) : highlightedMonster.monsterType === "BARON_NASHOR" ? (
-                  <Image
-                    src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/baron-${highlightedMonster.teamId}.png`}
-                    alt="Baron"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                    unoptimized
-                  />
-                ) : highlightedMonster.monsterType === "RIFTHERALD" ? (
-                  <Image
-                    src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/herald-${highlightedMonster.teamId}.png`}
-                    alt="Herald"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                    unoptimized
-                  />
-                ) : highlightedMonster.monsterType === "HORDE" ? (
-                  <Image
-                    src={highlightedMonster.teamId === 100 ? "/grub-blue.png" : "/grub-red.png"}
-                    alt="Grubs"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                    unoptimized
-                  />
-                ) : highlightedMonster.monsterType === "ATAKHAN" ? (
-                  <Image
-                    src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/vilemaw-${highlightedMonster.teamId}.png`}
-                    alt="Atakhan"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                    unoptimized
-                  />
-                ) : null}
-              </div>
-            );
-          })()}
+          {highlightedMonster &&
+            (() => {
+              const normalizedX =
+                (highlightedMonster.position.x - mapMinX) / mapWidth;
+              const normalizedY =
+                1 - (highlightedMonster.position.y - mapMinY) / mapHeight;
+              const xPercent = normalizedX * 100;
+              const yPercent = normalizedY * 100;
+
+              return (
+                <div
+                  className="absolute transform -translate-x-1/2 -translate-y-1/2 fade-in-gold-pulse-out"
+                  style={{
+                    left: `${xPercent}%`,
+                    top: `${yPercent}%`,
+                    width: "32px",
+                    height: "32px",
+                    zIndex: 25,
+                  }}
+                >
+                  {highlightedMonster.monsterType === "DRAGON" ? (
+                    <Image
+                      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/dragon-${highlightedMonster.teamId}.png`}
+                      alt="Dragon"
+                      width={32}
+                      height={32}
+                      className="object-contain"
+                      unoptimized
+                    />
+                  ) : highlightedMonster.monsterType === "BARON_NASHOR" ? (
+                    <Image
+                      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/baron-${highlightedMonster.teamId}.png`}
+                      alt="Baron"
+                      width={32}
+                      height={32}
+                      className="object-contain"
+                      unoptimized
+                    />
+                  ) : highlightedMonster.monsterType === "RIFTHERALD" ? (
+                    <Image
+                      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/herald-${highlightedMonster.teamId}.png`}
+                      alt="Herald"
+                      width={32}
+                      height={32}
+                      className="object-contain"
+                      unoptimized
+                    />
+                  ) : highlightedMonster.monsterType === "HORDE" ? (
+                    <Image
+                      src={
+                        highlightedMonster.teamId === 100
+                          ? "/grub-blue.png"
+                          : "/grub-red.png"
+                      }
+                      alt="Grubs"
+                      width={32}
+                      height={32}
+                      className="object-contain"
+                      unoptimized
+                    />
+                  ) : highlightedMonster.monsterType === "ATAKHAN" ? (
+                    <Image
+                      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/vilemaw-${highlightedMonster.teamId}.png`}
+                      alt="Atakhan"
+                      width={32}
+                      height={32}
+                      className="object-contain"
+                      unoptimized
+                    />
+                  ) : null}
+                </div>
+              );
+            })()}
         </div>
       </div>
     </div>
@@ -2176,10 +2420,14 @@ function PlayerRow({
 
   const damageDealt = player.totalDamageDealtToChampions || 0;
   const damageK = (damageDealt / 1000).toFixed(1);
-  const damagePerMin = Math.round(damageDealt / (matchData.info.gameDuration / 60));
-  
+  const damagePerMin = Math.round(
+    damageDealt / (matchData.info.gameDuration / 60)
+  );
+
   const maxDamage = Math.max(
-    ...matchData.info.participants.map(p => p.totalDamageDealtToChampions || 0)
+    ...matchData.info.participants.map(
+      (p) => p.totalDamageDealtToChampions || 0
+    )
   );
   const damageBarPercent = maxDamage > 0 ? (damageDealt / maxDamage) * 100 : 0;
 
@@ -2200,7 +2448,6 @@ function PlayerRow({
     >
       <div className="flex items-center gap-1.5">
         {/* Rank Badge */}
-
 
         {/* Champion & Player Info */}
         <div className="flex items-center gap-1.5 w-[140px] flex-shrink-0">
@@ -2401,7 +2648,10 @@ function PlayerRow({
           </div>
           <div className="text-right min-w-[85px]">
             <div className="text-xs font-semibold text-white">
-              {damageK}K <span className="text-[9px] text-gray-400">({damagePerMin}/m)</span>
+              {damageK}K{" "}
+              <span className="text-[9px] text-gray-400">
+                ({damagePerMin}/m)
+              </span>
             </div>
           </div>
         </div>
@@ -2424,14 +2674,33 @@ interface EventTimelineProps {
   matchData: MatchData;
   setCurrentFrame: (frame: number) => void;
   setHighlightedParticipants: (participants: number[]) => void;
-  setHighlightedBuilding: (building: { name: string; type: 'flash-out' | 'flash-in-out' } | null) => void;
-  setHighlightedMonster: (monster: { position: { x: number; y: number }; monsterType: string; teamId: number } | null) => void;
+  setHighlightedBuilding: (
+    building: { name: string; type: "flash-out" | "flash-in-out" } | null
+  ) => void;
+  setHighlightedMonster: (
+    monster: {
+      position: { x: number; y: number };
+      monsterType: string;
+      teamId: number;
+    } | null
+  ) => void;
   onEventClick: (position: { x: number; y: number } | null) => void;
 }
 
-function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlightedParticipants, setHighlightedBuilding, setHighlightedMonster, onEventClick }: EventTimelineProps) {
+function EventTimeline({
+  timelineData,
+  matchData,
+  setCurrentFrame,
+  setHighlightedParticipants,
+  setHighlightedBuilding,
+  setHighlightedMonster,
+  onEventClick,
+}: EventTimelineProps) {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [highlightPosition, setHighlightPosition] = useState<{ x: number; y: number } | null>(null);
+  const [highlightPosition, setHighlightPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const excludedEventTypes = [
     "ITEM_DESTROYED",
@@ -2446,7 +2715,7 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
     "KILL_FIRST_BLOOD",
     "CHAMPION_SPECIAL_KILL",
     "DRAGON_SOUL_GIVEN",
-    "OBJECTIVE_BOUNTY_PRESTART"
+    "OBJECTIVE_BOUNTY_PRESTART",
   ];
 
   // Filter out FEAT_UPDATE events with value 1001 and non-claimed feats
@@ -2455,11 +2724,12 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
     if (event.type === "FEAT_UPDATE") {
       // Exclude 1001 events
       if (event.featValue === 1001) return false;
-      
+
       // Only include claimed feats
-      const isClaimed = (event.featType === 0 && event.featValue === 3) || 
-                       (event.featType === 1 && event.featValue === 1) || 
-                       (event.featType === 2 && event.featValue === 3);
+      const isClaimed =
+        (event.featType === 0 && event.featValue === 3) ||
+        (event.featType === 1 && event.featValue === 1) ||
+        (event.featType === 2 && event.featValue === 3);
       return isClaimed;
     }
     return true;
@@ -2515,47 +2785,73 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
 
   const getParticipantName = (participantId: number) => {
     const participant = matchData.info.participants[participantId - 1];
-    return participant?.riotIdGameName || participant?.summonerName || `Player ${participantId}`;
+    return (
+      participant?.riotIdGameName ||
+      participant?.summonerName ||
+      `Player ${participantId}`
+    );
   };
 
   const getEventDetails = (event: any) => {
     switch (event.type) {
       case "CHAMPION_KILL":
-        const killer = event.killerId ? getParticipantName(event.killerId) : "Unknown";
-        const victim = event.victimId ? getParticipantName(event.victimId) : "Unknown";
-        const assists = event.assistingParticipantIds?.map((id: number) => getParticipantName(id)).join(", ") || "None";
+        const killer = event.killerId
+          ? getParticipantName(event.killerId)
+          : "Unknown";
+        const victim = event.victimId
+          ? getParticipantName(event.victimId)
+          : "Unknown";
+        const assists =
+          event.assistingParticipantIds
+            ?.map((id: number) => getParticipantName(id))
+            .join(", ") || "None";
         return {
           title: "Champion Kill",
           details: [
             { label: "Killer", value: killer },
             { label: "Victim", value: victim },
             { label: "Assists", value: assists },
-            { label: "Bounty", value: event.bounty ? `${event.bounty}g` : "0g" },
+            {
+              label: "Bounty",
+              value: event.bounty ? `${event.bounty}g` : "0g",
+            },
           ],
         };
       case "BUILDING_KILL":
-        const buildingKiller = event.killerId ? getParticipantName(event.killerId) : "Team";
+        const buildingKiller = event.killerId
+          ? getParticipantName(event.killerId)
+          : "Team";
         return {
           title: "Building Destroyed",
           details: [
-            { label: "Type", value: event.buildingType?.replace("_", " ") || "Unknown" },
+            {
+              label: "Type",
+              value: event.buildingType?.replace("_", " ") || "Unknown",
+            },
             { label: "Lane", value: event.laneType || "N/A" },
             { label: "Team", value: event.teamId === 100 ? "Blue" : "Red" },
             { label: "Destroyed by", value: buildingKiller },
           ],
         };
       case "ELITE_MONSTER_KILL":
-        const monsterKiller = event.killerId ? getParticipantName(event.killerId) : "Unknown";
+        const monsterKiller = event.killerId
+          ? getParticipantName(event.killerId)
+          : "Unknown";
         return {
           title: "Elite Monster Kill",
           details: [
             { label: "Monster", value: event.monsterType || "Unknown" },
             { label: "Killer", value: monsterKiller },
-            { label: "Team", value: event.killerTeamId === 100 ? "Blue" : "Red" },
+            {
+              label: "Team",
+              value: event.killerTeamId === 100 ? "Blue" : "Red",
+            },
           ],
         };
       case "TURRET_PLATE_DESTROYED":
-        const plateKiller = event.killerId ? getParticipantName(event.killerId) : "Unknown";
+        const plateKiller = event.killerId
+          ? getParticipantName(event.killerId)
+          : "Unknown";
         return {
           title: "Turret Plate Destroyed",
           details: [
@@ -2569,7 +2865,12 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
           title: "Special Kill",
           details: [
             { label: "Type", value: event.killType || "Unknown" },
-            { label: "Killer", value: event.killerId ? getParticipantName(event.killerId) : "Unknown" },
+            {
+              label: "Killer",
+              value: event.killerId
+                ? getParticipantName(event.killerId)
+                : "Unknown",
+            },
           ],
         };
       case "FEAT_UPDATE":
@@ -2580,26 +2881,31 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
             details: [{ label: "Type", value: "Ignored" }],
           };
         }
-        
+
         const featTypeMap: { [key: number]: string } = {
           0: "Warfare",
           1: "First Turret",
           2: "Monster Slaying",
         };
-        
-        const featType = featTypeMap[event.featType] || `Unknown Feat (${event.featType})`;
+
+        const featType =
+          featTypeMap[event.featType] || `Unknown Feat (${event.featType})`;
         const featValue = event.featValue;
-        
+
         // Check if it's a claim event (value 3 for warfare/monster slaying, value 1 for turret)
-        const isClaimed = (event.featType === 0 && featValue === 3) || 
-                         (event.featType === 1 && featValue === 1) || 
-                         (event.featType === 2 && featValue === 3);
-        
+        const isClaimed =
+          (event.featType === 0 && featValue === 3) ||
+          (event.featType === 1 && featValue === 1) ||
+          (event.featType === 2 && featValue === 3);
+
         return {
           title: "Feat Update",
           details: [
             { label: "Type", value: featType },
-            { label: "Value", value: isClaimed ? "Claimed" : featValue.toString() },
+            {
+              label: "Value",
+              value: isClaimed ? "Claimed" : featValue.toString(),
+            },
             { label: "Team", value: event.teamId === 100 ? "Blue" : "Red" },
           ],
         };
@@ -2612,32 +2918,35 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
   };
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
+  const [popupPosition, setPopupPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const handleEventClick = (event: any, buttonElement: HTMLButtonElement) => {
     // Clear all highlights first to force animation restart
     setHighlightedParticipants([]);
     setHighlightedBuilding(null);
     setHighlightedMonster(null);
-    
+
     // Always update the selected event and position (even if clicking the same event)
     setSelectedEvent(event);
     const rect = buttonElement.getBoundingClientRect();
-      setPopupPosition({
-        x: rect.left + rect.width / 2,
-        y: rect.top,
-      });
-      
-      // Navigate to the frame where this event occurred
-      // Timeline frames are at 1 minute intervals (60000ms) - round up to next frame
-      const frameIndex = Math.ceil(event.timestamp / 60000);
-      setCurrentFrame(frameIndex);
-      
-      // Use setTimeout to ensure state clears before setting new highlights
-      setTimeout(() => {
+    setPopupPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+    });
+
+    // Navigate to the frame where this event occurred
+    // Timeline frames are at 1 minute intervals (60000ms) - round up to next frame
+    const frameIndex = Math.ceil(event.timestamp / 60000);
+    setCurrentFrame(frameIndex);
+
+    // Use setTimeout to ensure state clears before setting new highlights
+    setTimeout(() => {
       // Highlight involved participants
       const participantsToHighlight: number[] = [];
-      
+
       if (event.type === "CHAMPION_KILL") {
         if (event.killerId) participantsToHighlight.push(event.killerId);
         if (event.victimId) participantsToHighlight.push(event.victimId);
@@ -2649,15 +2958,15 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
         if (event.assistingParticipantIds) {
           participantsToHighlight.push(...event.assistingParticipantIds);
         }
-        
+
         // Highlight the monster at its position
         if (event.position) {
           setHighlightedMonster({
             position: event.position,
             monsterType: event.monsterType,
-            teamId: event.killerTeamId
+            teamId: event.killerTeamId,
           });
-          
+
           setTimeout(() => {
             setHighlightedMonster(null);
           }, 2000);
@@ -2667,42 +2976,45 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
         if (event.assistingParticipantIds) {
           participantsToHighlight.push(...event.assistingParticipantIds);
         }
-      } else if (event.type === "BUILDING_KILL" && event.buildingType === "TOWER_BUILDING") {
+      } else if (
+        event.type === "BUILDING_KILL" &&
+        event.buildingType === "TOWER_BUILDING"
+      ) {
         if (event.killerId) participantsToHighlight.push(event.killerId);
         if (event.assistingParticipantIds) {
           participantsToHighlight.push(...event.assistingParticipantIds);
         }
-        
+
         // Highlight the tower with flash-in-out animation
         const teamPrefix = event.teamId === 100 ? "BLUE" : "RED";
         const laneType = event.laneType;
         const towerTier = event.towerType;
         const towerName = `${teamPrefix}_${laneType}_${towerTier}`;
-        setHighlightedBuilding({ name: towerName, type: 'flash-in-out' });
-        
+        setHighlightedBuilding({ name: towerName, type: "flash-in-out" });
+
         setTimeout(() => {
           setHighlightedBuilding(null);
         }, 2000);
       }
-      
+
       if (event.type === "TURRET_PLATE_DESTROYED") {
         // Highlight the tower with flash-out animation
         const teamPrefix = event.teamId === 100 ? "BLUE" : "RED";
         const laneType = event.laneType;
         // Turret plates are on outer turrets
         const towerName = `${teamPrefix}_${laneType}_OUTER_TURRET`;
-        setHighlightedBuilding({ name: towerName, type: 'flash-out' });
-        
+        setHighlightedBuilding({ name: towerName, type: "flash-out" });
+
         setTimeout(() => {
           setHighlightedBuilding(null);
         }, 1000);
       }
-      
+
       setHighlightedParticipants(participantsToHighlight);
       setTimeout(() => {
         setHighlightedParticipants([]);
       }, 2000);
-      
+
       // Handle position highlighting
       if (event.position) {
         setHighlightPosition(event.position);
@@ -2712,7 +3024,7 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
           setHighlightPosition(null);
         }, 3000);
       }
-      }, 10); // Small delay to ensure state clears before resetting
+    }, 10); // Small delay to ensure state clears before resetting
   };
 
   // Close popup when clicking outside
@@ -2721,28 +3033,30 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
       if (selectedEvent && popupPosition) {
         const target = event.target as HTMLElement;
         // Check if click is outside the popup and event buttons
-        if (!target.closest('.event-popup') && !target.closest('.event-button')) {
+        if (
+          !target.closest(".event-popup") &&
+          !target.closest(".event-button")
+        ) {
           setSelectedEvent(null);
           setPopupPosition(null);
         }
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [selectedEvent, popupPosition]);
 
   return (
     <div className="pt-[25px] bg-[rgba(0,0,0,0.2)] rounded-lg p-4 border border-[#2a3544]/50 relative">
-      
-      <div 
+      <div
         ref={containerRef}
         className="flex items-center gap-0 overflow-x-auto pb-2"
         style={{
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#7f1d1d #1a2332',
+          scrollbarWidth: "thin",
+          scrollbarColor: "#7f1d1d #1a2332",
         }}
       >
         <style jsx>{`
@@ -2761,7 +3075,7 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
             background: #991b1b;
           }
         `}</style>
-        
+
         {allEvents.map((event, idx) => (
           <div key={idx} className="flex items-center flex-shrink-0">
             <div className="p-2 flex flex-col items-center gap-1">
@@ -2806,10 +3120,16 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                 ) : event.type === "ELITE_MONSTER_KILL" ? (
                   event.monsterType === "DRAGON" ? (
                     <Image
-                      src={event.monsterSubType === "ELDER_DRAGON" 
-                        ? `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/elder-${event.killerTeamId}.png`
-                        : `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/dragon-${event.killerTeamId}.png`}
-                      alt={event.monsterSubType === "ELDER_DRAGON" ? "Elder Dragon" : "Dragon"}
+                      src={
+                        event.monsterSubType === "ELDER_DRAGON"
+                          ? `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/elder-${event.killerTeamId}.png`
+                          : `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/dragon-${event.killerTeamId}.png`
+                      }
+                      alt={
+                        event.monsterSubType === "ELDER_DRAGON"
+                          ? "Elder Dragon"
+                          : "Dragon"
+                      }
                       width={28}
                       height={28}
                       className="object-contain"
@@ -2835,7 +3155,11 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                     />
                   ) : event.monsterType === "HORDE" ? (
                     <Image
-                      src={event.killerTeamId === 100 ? "/grub-blue.png" : "/grub-red.png"}
+                      src={
+                        event.killerTeamId === 100
+                          ? "/grub-blue.png"
+                          : "/grub-red.png"
+                      }
                       alt="Grubs"
                       width={28}
                       height={28}
@@ -2865,14 +3189,15 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                   />
                 ) : event.type === "GAME_END" ? (
                   <Image
-                    src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/nexus_building_${event.winningTeam === 100 ? 'blue' : 'red'}.png`}
+                    src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/nexus_building_${event.winningTeam === 100 ? "blue" : "red"}.png`}
                     alt="Game End"
                     width={28}
                     height={28}
                     className="object-contain"
                     unoptimized
                   />
-                ) : event.type === "BUILDING_KILL" && event.buildingType === "TOWER_BUILDING" ? (
+                ) : event.type === "BUILDING_KILL" &&
+                  event.buildingType === "TOWER_BUILDING" ? (
                   <Image
                     src={`/tower-${event.teamId}.png`}
                     alt="Tower"
@@ -2889,7 +3214,7 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                 {formatTime(event.timestamp)}
               </span>
             </div>
-            
+
             {/* Connecting Line */}
             {idx < allEvents.length - 1 && (
               <div className="w-6 h-0.5 bg-gradient-to-r from-blue-500/50 to-transparent flex-shrink-0" />
@@ -2900,12 +3225,12 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
 
       {/* Popup Card - Rendered outside scroll container */}
       {selectedEvent && popupPosition && (
-        <div 
+        <div
           className="event-popup fixed z-[9999]"
           style={{
             left: `${popupPosition.x}px`,
             top: `${popupPosition.y}px`,
-            transform: 'translate(-50%, calc(-100% - 8px))',
+            transform: "translate(-50%, calc(-100% - 8px))",
           }}
         >
           {selectedEvent.type === "CHAMPION_KILL" ? (
@@ -2916,25 +3241,34 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
               </h4>
               <div className="flex items-center gap-2">
                 {/* Assists Grid (Left) - Only show if there are assists */}
-                {selectedEvent.assistingParticipantIds && selectedEvent.assistingParticipantIds.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    {selectedEvent.assistingParticipantIds.map((assistId: number) => {
-                      const assistParticipant = matchData.info.participants[assistId - 1];
-                      return (
-                        <div key={assistId} className="w-6 h-6 rounded border border-[#3a4a5a] overflow-hidden">
-                          <Image
-                            src={getChampionImageUrl(assistParticipant?.championName || "")}
-                            alt="Assist"
-                            width={24}
-                            height={24}
-                            className="object-cover"
-                            unoptimized
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                {selectedEvent.assistingParticipantIds &&
+                  selectedEvent.assistingParticipantIds.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      {selectedEvent.assistingParticipantIds.map(
+                        (assistId: number) => {
+                          const assistParticipant =
+                            matchData.info.participants[assistId - 1];
+                          return (
+                            <div
+                              key={assistId}
+                              className="w-6 h-6 rounded border border-[#3a4a5a] overflow-hidden"
+                            >
+                              <Image
+                                src={getChampionImageUrl(
+                                  assistParticipant?.championName || ""
+                                )}
+                                alt="Assist"
+                                width={24}
+                                height={24}
+                                className="object-cover"
+                                unoptimized
+                              />
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
 
                 {/* Killer (Bigger) */}
                 <div className="w-10 h-10 rounded border-2 border-green-500 overflow-hidden flex-shrink-0">
@@ -2942,10 +3276,16 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                     src={
                       selectedEvent.killerId && selectedEvent.killerId > 0
                         ? getChampionImageUrl(
-                            matchData.info.participants[selectedEvent.killerId - 1]?.championName || ""
+                            matchData.info.participants[
+                              selectedEvent.killerId - 1
+                            ]?.championName || ""
                           )
                         : `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/minion-${
-                            matchData.info.participants[selectedEvent.victimId - 1]?.teamId === 100 ? "200" : "100"
+                            matchData.info.participants[
+                              selectedEvent.victimId - 1
+                            ]?.teamId === 100
+                              ? "200"
+                              : "100"
                           }.jpg`
                     }
                     alt={selectedEvent.killerId > 0 ? "Killer" : "Minion"}
@@ -2978,7 +3318,8 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                   <div className="w-10 h-10 rounded border-2 border-red-500 overflow-hidden flex-shrink-0">
                     <Image
                       src={getChampionImageUrl(
-                        matchData.info.participants[selectedEvent.victimId - 1]?.championName || ""
+                        matchData.info.participants[selectedEvent.victimId - 1]
+                          ?.championName || ""
                       )}
                       alt="Victim"
                       width={40}
@@ -3003,7 +3344,9 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                     src={
                       selectedEvent.killerId && selectedEvent.killerId > 0
                         ? getChampionImageUrl(
-                            matchData.info.participants[selectedEvent.killerId - 1]?.championName || ""
+                            matchData.info.participants[
+                              selectedEvent.killerId - 1
+                            ]?.championName || ""
                           )
                         : `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/minion-${selectedEvent.teamId === 100 ? "200" : "100"}.jpg`
                     }
@@ -3051,25 +3394,34 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
               </h4>
               <div className="flex items-center justify-center gap-2">
                 {/* Assists Grid (Left) - Only show if there are assists */}
-                {selectedEvent.assistingParticipantIds && selectedEvent.assistingParticipantIds.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    {selectedEvent.assistingParticipantIds.map((assistId: number) => {
-                      const assistParticipant = matchData.info.participants[assistId - 1];
-                      return (
-                        <div key={assistId} className="w-6 h-6 rounded border border-[#3a4a5a] overflow-hidden">
-                          <Image
-                            src={getChampionImageUrl(assistParticipant?.championName || "")}
-                            alt="Assist"
-                            width={24}
-                            height={24}
-                            className="object-cover"
-                            unoptimized
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                {selectedEvent.assistingParticipantIds &&
+                  selectedEvent.assistingParticipantIds.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      {selectedEvent.assistingParticipantIds.map(
+                        (assistId: number) => {
+                          const assistParticipant =
+                            matchData.info.participants[assistId - 1];
+                          return (
+                            <div
+                              key={assistId}
+                              className="w-6 h-6 rounded border border-[#3a4a5a] overflow-hidden"
+                            >
+                              <Image
+                                src={getChampionImageUrl(
+                                  assistParticipant?.championName || ""
+                                )}
+                                alt="Assist"
+                                width={24}
+                                height={24}
+                                className="object-cover"
+                                unoptimized
+                              />
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
 
                 {/* Killer Champion */}
                 <div className="w-10 h-10 rounded border-2 border-purple-500 overflow-hidden flex-shrink-0 flex items-center justify-center">
@@ -3077,7 +3429,9 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                     src={
                       selectedEvent.killerId && selectedEvent.killerId > 0
                         ? getChampionImageUrl(
-                            matchData.info.participants[selectedEvent.killerId - 1]?.championName || ""
+                            matchData.info.participants[
+                              selectedEvent.killerId - 1
+                            ]?.championName || ""
                           )
                         : `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/minion-${selectedEvent.killerTeamId === 100 ? "100" : "200"}.jpg`
                     }
@@ -3105,10 +3459,16 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                 <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
                   {selectedEvent.monsterType === "DRAGON" ? (
                     <Image
-                      src={selectedEvent.monsterSubType === "ELDER_DRAGON"
-                        ? `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/elder-${selectedEvent.killerTeamId}.png`
-                        : `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/dragon-${selectedEvent.killerTeamId}.png`}
-                      alt={selectedEvent.monsterSubType === "ELDER_DRAGON" ? "Elder Dragon" : "Dragon"}
+                      src={
+                        selectedEvent.monsterSubType === "ELDER_DRAGON"
+                          ? `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/elder-${selectedEvent.killerTeamId}.png`
+                          : `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/dragon-${selectedEvent.killerTeamId}.png`
+                      }
+                      alt={
+                        selectedEvent.monsterSubType === "ELDER_DRAGON"
+                          ? "Elder Dragon"
+                          : "Dragon"
+                      }
                       width={40}
                       height={40}
                       className="object-contain"
@@ -3134,7 +3494,11 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                     />
                   ) : selectedEvent.monsterType === "HORDE" ? (
                     <Image
-                      src={selectedEvent.killerTeamId === 100 ? "/grub-blue.png" : "/grub-red.png"}
+                      src={
+                        selectedEvent.killerTeamId === 100
+                          ? "/grub-blue.png"
+                          : "/grub-red.png"
+                      }
                       alt="Grubs"
                       width={40}
                       height={40}
@@ -3156,7 +3520,8 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                 </div>
               </div>
             </div>
-          ) : selectedEvent.type === "BUILDING_KILL" && selectedEvent.buildingType === "TOWER_BUILDING" ? (
+          ) : selectedEvent.type === "BUILDING_KILL" &&
+            selectedEvent.buildingType === "TOWER_BUILDING" ? (
             // Special layout for Tower Kill
             <div className="bg-[#1a2332] rounded-lg p-3 border border-[#2a3a4a] shadow-xl">
               <h4 className="text-white font-semibold text-xs mb-3 text-center">
@@ -3164,25 +3529,34 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
               </h4>
               <div className="flex items-center justify-center gap-2">
                 {/* Assists Grid (Left) - Only show if there are assists */}
-                {selectedEvent.assistingParticipantIds && selectedEvent.assistingParticipantIds.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    {selectedEvent.assistingParticipantIds.map((assistId: number) => {
-                      const assistParticipant = matchData.info.participants[assistId - 1];
-                      return (
-                        <div key={assistId} className="w-6 h-6 rounded border border-[#3a4a5a] overflow-hidden">
-                          <Image
-                            src={getChampionImageUrl(assistParticipant?.championName || "")}
-                            alt="Assist"
-                            width={24}
-                            height={24}
-                            className="object-cover"
-                            unoptimized
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                {selectedEvent.assistingParticipantIds &&
+                  selectedEvent.assistingParticipantIds.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      {selectedEvent.assistingParticipantIds.map(
+                        (assistId: number) => {
+                          const assistParticipant =
+                            matchData.info.participants[assistId - 1];
+                          return (
+                            <div
+                              key={assistId}
+                              className="w-6 h-6 rounded border border-[#3a4a5a] overflow-hidden"
+                            >
+                              <Image
+                                src={getChampionImageUrl(
+                                  assistParticipant?.championName || ""
+                                )}
+                                alt="Assist"
+                                width={24}
+                                height={24}
+                                className="object-cover"
+                                unoptimized
+                              />
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
 
                 {/* Destroyer Champion */}
                 <div className="w-10 h-10 rounded border-2 border-yellow-500 overflow-hidden flex-shrink-0 flex items-center justify-center">
@@ -3190,7 +3564,9 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                     src={
                       selectedEvent.killerId && selectedEvent.killerId > 0
                         ? getChampionImageUrl(
-                            matchData.info.participants[selectedEvent.killerId - 1]?.championName || ""
+                            matchData.info.participants[
+                              selectedEvent.killerId - 1
+                            ]?.championName || ""
                           )
                         : `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-match-history/global/default/minion-${selectedEvent.teamId === 100 ? "200" : "100"}.jpg`
                     }
@@ -3229,16 +3605,23 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
             </div>
           ) : selectedEvent.type === "GAME_END" ? (
             // Special layout for Game End
-            <div className={`rounded-lg p-3 border shadow-xl ${
-              selectedEvent.winningTeam === 100 
-                ? 'bg-blue-900/50 border-blue-500' 
-                : 'bg-red-900/50 border-red-500'
-            }`}>
+            <div
+              className={`rounded-lg p-3 border shadow-xl ${
+                selectedEvent.winningTeam === 100
+                  ? "bg-blue-900/50 border-blue-500"
+                  : "bg-red-900/50 border-red-500"
+              }`}
+            >
               <div className="text-center">
-                <span className={`text-xs font-bold ${
-                  selectedEvent.winningTeam === 100 ? 'text-blue-400' : 'text-red-400'
-                }`}>
-                  {selectedEvent.winningTeam === 100 ? 'Blue Team' : 'Red Team'} Victory
+                <span
+                  className={`text-xs font-bold ${
+                    selectedEvent.winningTeam === 100
+                      ? "text-blue-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  {selectedEvent.winningTeam === 100 ? "Blue Team" : "Red Team"}{" "}
+                  Victory
                 </span>
               </div>
             </div>
@@ -3249,17 +3632,25 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
                 {getEventDetails(selectedEvent).title}
               </h4>
               <div className="space-y-1">
-                {getEventDetails(selectedEvent).details.map((detail, detailIdx) => (
-                  <div key={detailIdx} className="flex justify-between text-[10px]">
-                    <span className="text-gray-400">{detail.label}:</span>
-                    <span className="text-white truncate ml-2">{detail.value}</span>
-                  </div>
-                ))}
+                {getEventDetails(selectedEvent).details.map(
+                  (detail, detailIdx) => (
+                    <div
+                      key={detailIdx}
+                      className="flex justify-between text-[10px]"
+                    >
+                      <span className="text-gray-400">{detail.label}:</span>
+                      <span className="text-white truncate ml-2">
+                        {detail.value}
+                      </span>
+                    </div>
+                  )
+                )}
                 {selectedEvent.position && (
                   <div className="flex justify-between text-[10px] mt-2 pt-2 border-t border-[#2a3544]/50">
                     <span className="text-gray-400">Position:</span>
                     <span className="text-white">
-                      ({Math.round(selectedEvent.position.x)}, {Math.round(selectedEvent.position.y)})
+                      ({Math.round(selectedEvent.position.x)},{" "}
+                      {Math.round(selectedEvent.position.y)})
                     </span>
                   </div>
                 )}
@@ -3269,5 +3660,19 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
         </div>
       )}
     </div>
+  );
+}
+
+export default function MatchDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-linear-to-b from-[#0a1428] via-[#1a2332] to-[#0f1923] flex items-center justify-center">
+          <div className="text-white text-xl">Loading match details...</div>
+        </div>
+      }
+    >
+      <MatchDetailPageContent />
+    </Suspense>
   );
 }

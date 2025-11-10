@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use, useRef } from "react";
+import { useEffect, useState, use, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -28,7 +28,7 @@ import {
 import { useDisplayedMatches } from "@/contexts/DisplayedMatchesContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 
-export default function SummonerPage({
+function SummonerPageContent({
   params,
 }: {
   params: Promise<{ name: string }>;
@@ -966,5 +966,23 @@ export default function SummonerPage({
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SummonerPage({
+  params,
+}: {
+  params: Promise<{ name: string }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-linear-to-b from-[#0a1428] via-[#1a2332] to-[#0f1923] flex items-center justify-center">
+          <div className="text-white text-xl">Loading...</div>
+        </div>
+      }
+    >
+      <SummonerPageContent params={params} />
+    </Suspense>
   );
 }
