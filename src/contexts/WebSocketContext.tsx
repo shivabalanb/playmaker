@@ -274,6 +274,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
   // Poll ingestion status
   const startIngestionPolling = useCallback((uploadTime: string) => {
+    // Don't start if already polling or already complete
+    if (pollingIntervalRef.current) {
+      console.log('[Ingestion Polling] Already polling, skipping');
+      return;
+    }
+    
     console.log('[Ingestion Polling] Starting polling with uploadTime:', uploadTime);
     setIsIngesting(true);
     setIngestionStatus('PENDING');
@@ -295,11 +301,19 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           // Stop polling if completed or failed
           if (data.status === 'COMPLETE' || data.status === 'FAILED') {
             console.log('[Ingestion Polling] Ingestion finished with status:', data.status);
-            setIsIngesting(false);
             if (pollingIntervalRef.current) {
               clearInterval(pollingIntervalRef.current);
               pollingIntervalRef.current = null;
             }
+            
+            // Wait 10 seconds before unblocking UI
+            console.log('[Ingestion Polling] Waiting 10 seconds before unblocking UI...');
+            setTimeout(() => {
+              console.log('[Ingestion Polling] UI unblocked');
+              setIsIngesting(false);
+            }, 10000);
+            
+            return; // Stop polling immediately
           } else {
             console.log('[Ingestion Polling] Still processing, status:', data.status);
           }
@@ -311,13 +325,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       }
     };
     
-    // Poll immediately and then every 2 seconds
+    // Poll immediately and then every 5 seconds
     console.log('[Ingestion Polling] Starting immediate poll...');
     pollStatus();
     pollingIntervalRef.current = setInterval(() => {
       console.log('[Ingestion Polling] Interval poll triggered');
       pollStatus();
-    }, 2000);
+    }, 5000);
   }, []);
 
   const stopIngestionPolling = useCallback(() => {

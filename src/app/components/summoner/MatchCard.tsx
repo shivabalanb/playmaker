@@ -14,6 +14,7 @@ import {
 import { calculatePlayerRank } from "@/lib/utils/performanceScore";
 import { getPerformanceTags } from "@/lib/utils/performanceTags";
 import { PerformanceScore } from "./PerformanceScore";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 
 interface MatchCardProps {
   match: MatchData;
@@ -52,6 +53,7 @@ export function MatchCard({
   reorderItemsWithBootsFirst,
 }: MatchCardProps) {
   const router = useRouter();
+  const { isIngesting, ingestionStatus } = useWebSocket();
   const playerData = match.info.participants.find((p) => p.puuid === puuid);
   if (!playerData) return null;
 
@@ -527,12 +529,16 @@ export function MatchCard({
           <button
             onClick={(e) => {
               e.preventDefault();
+              // Check if ingestion is complete
+              const ingestionComplete = !isIngesting && (ingestionStatus === 'COMPLETE' || ingestionStatus === null);
+              
               // Navigate to match detail page
-              const url = `/match/${match.metadata.matchId}?region=${region}${puuid ? `&puuid=${encodeURIComponent(puuid)}` : ""}`;
+              // Only add review=true if ingestion is complete
+              const url = `/match/${match.metadata.matchId}?region=${region}${puuid ? `&puuid=${encodeURIComponent(puuid)}` : ""}${ingestionComplete ? '&review=true' : ''}`;
               router.push(url);
             }}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all cursor-pointer bg-gray-700/30 hover:bg-gray-600/40 z-20"
-            aria-label="View match details"
+            aria-label="Review match and generate story"
           >
             <svg 
               xmlns="http://www.w3.org/2000/svg" 

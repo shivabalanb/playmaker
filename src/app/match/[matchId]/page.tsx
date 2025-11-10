@@ -18,6 +18,7 @@ import {
 } from "@/lib";
 import { calculatePlayerRank } from "@/lib/utils/performanceScore";
 import { PerformanceScore } from "@/app/components/summoner/PerformanceScore";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 
 // Cache for summoner spells and runes
 let summonerSpellCache: Map<number, { image: { full: string } }> | null = null;
@@ -43,6 +44,16 @@ export default function MatchDetailPage() {
   const [highlightedParticipants, setHighlightedParticipants] = useState<number[]>([]);
   const [highlightedBuilding, setHighlightedBuilding] = useState<{ name: string; type: 'flash-out' | 'flash-in-out' } | null>(null);
   const [highlightedMonster, setHighlightedMonster] = useState<{ position: { x: number; y: number }; monsterType: string; teamId: number } | null>(null);
+  
+  // Story generation state
+  const [showStoryPopup, setShowStoryPopup] = useState(false);
+  const [storyContent, setStoryContent] = useState("");
+  const [isGeneratingStory, setIsGeneratingStory] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const storyContainerRef = useRef<HTMLDivElement | null>(null);
+  
+  // Get ingestion status from WebSocket context
+  const { isIngesting, ingestionStatus } = useWebSocket();
 
   // Fetch summoner spells and runes data
   useEffect(() => {
@@ -173,6 +184,119 @@ export default function MatchDetailPage() {
     fetchMatchAnalysis();
   }, [matchData, matchId, region, puuid]);
 
+  // Story generation function - no retry logic
+  const generateStory = () => {
+    if (!puuid || !matchId || storyContent) return; // Don't regenerate if story already exists
+    
+    // Prevent multiple simultaneous requests
+    if (wsRef.current) {
+      console.log('[Story] WebSocket already exists, skipping');
+      return;
+    }
+    
+    setIsGeneratingStory(true);
+
+    // Connect to websocket
+    const ws = new WebSocket(process.env.NEXT_PUBLIC_WEBSOCKET_ENDPOINT || 'wss://ot204y8uvd.execute-api.us-east-2.amazonaws.com/test/');
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('[Story] WebSocket connected');
+      ws.send(JSON.stringify({
+        match_id: matchId,
+        puuid: puuid,
+        action: "generateStory"
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "chunk" && data.content) {
+          setStoryContent(prev => prev + data.content);
+        } else if (data.type === "complete") {
+          setIsGeneratingStory(false);
+          ws.close();
+          wsRef.current = null;
+        } else if (data.type === "error") {
+          console.error('[Story] Error:', data.message);
+          setIsGeneratingStory(false);
+          ws.close();
+          wsRef.current = null;
+        }
+      } catch (err) {
+        console.error('[Story] Failed to parse message:', err);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('[Story] WebSocket error:', error);
+      setIsGeneratingStory(false);
+      ws.close();
+      wsRef.current = null;
+    };
+
+    ws.onclose = (event) => {
+      console.log('[Story] WebSocket closed', event.code, event.reason);
+      setIsGeneratingStory(false);
+      wsRef.current = null;
+    };
+  };
+
+  // Auto-generate story if review=true in URL AND ingestion is complete
+  useEffect(() => {
+    const shouldReview = searchParams.get("review") === "true";
+    const ingestionComplete = !isIngesting && (ingestionStatus === 'COMPLETE' || ingestionStatus === null);
+    
+    if (shouldReview && puuid && matchId && !storyContent && !isGeneratingStory && ingestionComplete) {
+      setShowStoryPopup(true);
+      generateStory();
+    }
+  }, [searchParams, puuid, matchId, isIngesting, ingestionStatus]);
+
+  // Keyboard navigation for frames
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!timelineData?.info?.frames) return;
+      
+      const maxFrame = timelineData.info.frames.length - 1;
+      
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setCurrentFrame(prev => Math.max(0, prev - 1));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setCurrentFrame(prev => Math.min(maxFrame, prev + 1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [timelineData]);
+
+  // Auto-scroll as story content updates
+  useEffect(() => {
+    if (isGeneratingStory && storyContainerRef.current) {
+      const container = storyContainerRef.current;
+      // Use requestAnimationFrame for smoother scrolling
+      requestAnimationFrame(() => {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        });
+      });
+    }
+  }, [storyContent, isGeneratingStory]);
+
+  // Cleanup websocket on unmount
+  useEffect(() => {
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0a1428] via-[#1a2332] to-[#0f1923] flex items-center justify-center">
@@ -287,6 +411,39 @@ export default function MatchDetailPage() {
           <path d="M15 19l-7-7 7-7" />
         </svg>
       </Link>
+
+      {/* View Story Button */}
+      {puuid && (
+        <button
+          onClick={() => {
+            const ingestionComplete = !isIngesting && (ingestionStatus === 'COMPLETE' || ingestionStatus === null);
+            if (!ingestionComplete) return;
+            
+            setShowStoryPopup(true);
+            if (!storyContent && !isGeneratingStory) {
+              generateStory();
+            }
+          }}
+          disabled={isIngesting || (isGeneratingStory && !storyContent)}
+          className="fixed top-4 left-16 px-4 h-10 rounded-full bg-blue-600/80 hover:bg-blue-600 disabled:bg-gray-600/50 disabled:cursor-not-allowed flex items-center justify-center transition-colors border border-blue-500/50 z-50 text-white text-sm font-semibold"
+          aria-label="View Match Story"
+          title={isIngesting ? "Processing match data..." : "View Match Story"}
+        >
+          {isIngesting ? (
+            <>
+              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing...
+            </>
+          ) : isGeneratingStory && !storyContent ? (
+            "Generating..."
+          ) : (
+            "View Story"
+          )}
+        </button>
+      )}
 
       {/* Header with Logo */}
       <header className="pt-8 pb-6">
@@ -661,6 +818,75 @@ export default function MatchDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Story Popup */}
+      {showStoryPopup && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setShowStoryPopup(false)}
+        >
+          <div 
+            ref={storyContainerRef}
+            className="relative bg-transparent rounded-xl max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto story-scroll"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <style jsx>{`
+              .story-scroll::-webkit-scrollbar {
+                width: 8px;
+              }
+              .story-scroll::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              .story-scroll::-webkit-scrollbar-thumb {
+                background: #1e3a8a;
+                border-radius: 4px;
+              }
+              .story-scroll::-webkit-scrollbar-thumb:hover {
+                background: #1e40af;
+              }
+              .story-scroll {
+                scrollbar-width: thin;
+                scrollbar-color: #1e3a8a transparent;
+              }
+            `}</style>
+
+            {/* Close button */}
+            <button
+              onClick={() => setShowStoryPopup(false)}
+              className="absolute top-2 right-2 p-2 hover:opacity-70 transition-opacity z-10"
+              aria-label="Close"
+            >
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Story content */}
+            <div className="px-6 pb-6">
+              {storyContent ? (
+                <div className="text-gray-200 whitespace-pre-wrap leading-relaxed text-lg">
+                  {storyContent}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-gray-400">Generating your match story...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
@@ -2489,6 +2715,25 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
       }, 10); // Small delay to ensure state clears before resetting
   };
 
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectedEvent && popupPosition) {
+        const target = event.target as HTMLElement;
+        // Check if click is outside the popup and event buttons
+        if (!target.closest('.event-popup') && !target.closest('.event-button')) {
+          setSelectedEvent(null);
+          setPopupPosition(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [selectedEvent, popupPosition]);
+
   return (
     <div className="pt-[25px] bg-[rgba(0,0,0,0.2)] rounded-lg p-4 border border-[#2a3544]/50 relative">
       
@@ -2497,7 +2742,7 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
         className="flex items-center gap-0 overflow-x-auto pb-2"
         style={{
           scrollbarWidth: 'thin',
-          scrollbarColor: '#000000 #1a2332',
+          scrollbarColor: '#7f1d1d #1a2332',
         }}
       >
         <style jsx>{`
@@ -2509,11 +2754,11 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
             border-radius: 4px;
           }
           div::-webkit-scrollbar-thumb {
-            background: #000000;
+            background: #7f1d1d;
             border-radius: 4px;
           }
           div::-webkit-scrollbar-thumb:hover {
-            background: #1a1a1a;
+            background: #991b1b;
           }
         `}</style>
         
@@ -2522,7 +2767,7 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
             <div className="p-2 flex flex-col items-center gap-1">
               <button
                 onClick={(e) => handleEventClick(event, e.currentTarget)}
-                className={`w-12 h-12 rounded-lg border-2 flex items-center justify-center text-xl transition-all hover:scale-110 ${getEventColor(event.type)} ${
+                className={`event-button w-12 h-12 rounded-lg border-2 flex items-center justify-center text-xl transition-all hover:scale-110 ${getEventColor(event.type)} ${
                   selectedEvent === event ? "ring-2 ring-blue-400" : ""
                 }`}
               >
@@ -2656,7 +2901,7 @@ function EventTimeline({ timelineData, matchData, setCurrentFrame, setHighlighte
       {/* Popup Card - Rendered outside scroll container */}
       {selectedEvent && popupPosition && (
         <div 
-          className="fixed z-[9999]"
+          className="event-popup fixed z-[9999]"
           style={{
             left: `${popupPosition.x}px`,
             top: `${popupPosition.y}px`,

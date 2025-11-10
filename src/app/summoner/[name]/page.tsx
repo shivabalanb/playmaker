@@ -123,6 +123,10 @@ export default function SummonerPage({
         }
 
         try {
+          // Fire-and-forget with timeout - don't wait for slow responses
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+          
           const response = await fetch(process.env.NEXT_PUBLIC_PARSE_ENDPOINT!, {
             method: "POST",
             headers: {
@@ -132,7 +136,10 @@ export default function SummonerPage({
               matchId: match.metadata.matchId,
               region: region,
             }),
+            signal: controller.signal,
           });
+          
+          clearTimeout(timeoutId);
           
           if (response.ok) {
             const data = await response.json();
@@ -154,7 +161,10 @@ export default function SummonerPage({
             });
           }
         } catch (error) {
+          // If timeout or error, assume it needs processing and start polling
           console.warn(`Failed to fetch timeline for ${match.metadata.matchId}:`, error);
+          needsPolling = true;
+          setIngesting(true);
         }
       }
       
@@ -237,9 +247,11 @@ export default function SummonerPage({
           setResolvedPuuid(actualPuuid);
           
           // Update URL with PUUID to maintain consistency
-          const url = new URL(window.location.href);
-          url.searchParams.set('puuid', actualPuuid);
-          window.history.replaceState({}, '', url.toString());
+          if (actualPuuid) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('puuid', actualPuuid);
+            window.history.replaceState({}, '', url.toString());
+          }
         } catch (err) {
           console.error("Error looking up PUUID:", err);
           setError("Failed to look up summoner");
